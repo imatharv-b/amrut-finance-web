@@ -31,7 +31,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
       <meta charset="utf-8">
       <title>Invoice ${sale.invoice_no}</title>
       <style>
-        @page { size: landscape; margin: 8mm; }
+        @page { size: A5 landscape; margin: 5mm; }
         html, body { 
           margin: 0; 
           padding: 0;
@@ -185,7 +185,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
     <body>
       <div class="invoice-wrapper">
         <div class="top-labels">
-          <div>${isPakka ? 'TAX INVOICE' : 'PRO FORMA'}</div>
+          <div>AMRUT BIOCHEM - ${isPakka ? 'TAX INVOICE' : 'PRO FORMA'}</div>
           <div style="font-style: italic;">Original Copy</div>
         </div>
         
