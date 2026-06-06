@@ -22,7 +22,7 @@ export default function SeasonsPage() {
       key: 'status', 
       label: 'Status', 
       render: (_, season) => (
-        season.is_active === 1 
+        (season.is_active === 1 || season.is_active === true)
           ? <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Active</span>
           : <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-full">Inactive</span>
       )
@@ -31,7 +31,7 @@ export default function SeasonsPage() {
       key: 'actions',
       label: '',
       render: (_, season) => (
-        season.is_active === 0 && (
+        (!season.is_active || season.is_active === 0 || season.is_active === false) && (
           <button 
             onClick={() => handleSetActive(season.id)}
             className="flex items-center text-sm text-primary-600 hover:text-primary-800 font-medium"
