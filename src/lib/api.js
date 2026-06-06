@@ -246,7 +246,7 @@ export const api = {
         }
         case 'sales:getById': {
           const [id] = args
-          const { data: sale, error } = await supabase.from('sales').select('*').eq('id', id).single()
+          const { data: sale, error } = await supabase.from('sales_with_details').select('*').eq('id', id).single()
           if (error) throw error
           const { data: items } = await supabase.from('sale_items').select('*, products(name)').eq('sale_id', id)
           return { sale, items: items.map(i => ({...i, product_name: i.products?.name})) }

@@ -66,31 +66,31 @@ export const generateInvoiceHTML = (sale, items, settings) => {
         
         .company-details {
           flex: 1.5;
-          padding: 10px 15px;
+          padding: 5px 10px;
           border-right: 1px solid #000;
           text-align: center;
         }
         
         .company-details img {
           max-width: 100%;
-          max-height: 85px;
-          margin-bottom: 5px;
+          max-height: 55px;
+          margin-bottom: 2px;
           object-fit: contain;
         }
         
         .company-details p {
-          margin: 4px 0;
-          font-size: 11px;
+          margin: 0;
+          font-size: 10px;
         }
         
         .billing-details {
           flex: 1;
-          padding: 10px 15px;
-          font-size: 12px;
+          padding: 5px 10px;
+          font-size: 11px;
         }
         
         .billing-details p {
-          margin: 4px 0;
+          margin: 1px 0;
         }
         
         .meta-row {
@@ -176,7 +176,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
         .footer-row {
           display: flex;
           justify-content: space-between;
-          padding: 35px 15px 10px 15px;
+          padding: 15px 15px 5px 15px;
           font-style: italic;
           font-weight: bold;
         }
@@ -197,7 +197,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
           <div class="billing-details">
             <p><strong>Billed to : </strong> ${sale.party_name} ${sale.party_village ? `(${sale.party_village})` : ''}</p>
             <p><strong>Address : </strong> ${[sale.party_taluka, sale.party_district].filter(Boolean).join(', ')}</p>
-            <p style="margin-top: 20px;"><strong>GSTIN &nbsp;&nbsp;&nbsp;&nbsp;: </strong> ${sale.party_gstin || ''}</p>
+            <p style="margin-top: 5px;"><strong>GSTIN &nbsp;&nbsp;&nbsp;&nbsp;: </strong> ${sale.party_gstin || ''}</p>
           </div>
         </div>
         
