@@ -18,9 +18,11 @@ import {
   ChevronDown,
   Leaf,
   Calendar,
-  RotateCcw
+  RotateCcw,
+  LogOut
 } from 'lucide-react'
 import { SeasonContext } from '../context/SeasonContext'
+import { supabase } from '../lib/supabase'
 
 // ── Navigation Structure ─────────────────────────────────────────────
 const navigation = [
@@ -178,6 +180,10 @@ function NavItem({ item }) {
 export default function Sidebar() {
   const { activeSeason } = useContext(SeasonContext)
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+  }
+
   return (
     <aside className="w-[260px] shrink-0 bg-primary-900 text-white flex flex-col h-full overflow-hidden">
       {/* ── Logo Area ───────────────────────────────────────────── */}
@@ -202,9 +208,9 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* ── Season Badge ────────────────────────────────────────── */}
-      <div className="px-4 py-3 border-t border-primary-800/60">
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary-800/40">
+      {/* ── Season Badge & Logout ────────────────────────────────────────── */}
+      <div className="px-4 py-3 border-t border-primary-800/60 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-primary-800/40 flex-1 min-w-0 mr-2">
           <span className="relative flex h-2.5 w-2.5 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-400" />
@@ -218,6 +224,14 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
+        
+        <button 
+          onClick={handleLogout}
+          className="p-2.5 rounded-lg text-primary-300 hover:text-white hover:bg-red-500/80 transition-colors shrink-0"
+          title="Logout"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
     </aside>
   )

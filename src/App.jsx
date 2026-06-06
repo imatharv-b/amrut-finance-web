@@ -6,7 +6,8 @@ import Titlebar from './components/Titlebar'
 import LoadingSpinner from './components/LoadingSpinner'
 
 import { SeasonContext } from './context/SeasonContext'
-
+import { supabase } from './lib/supabase'
+import LoginPage from './pages/auth/LoginPage'
 // ── Lazy-loaded Pages ────────────────────────────────────────────────
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const ProductsPage = React.lazy(() => import('./pages/masters/ProductsPage'))
@@ -44,9 +45,12 @@ function PageFallback() {
 export default function App() {
   const [activeSeason, setActiveSeason] = useState(null)
   const [allSeasons, setAllSeasons] = useState([])
+  const [session, setSession] = useState(null)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   const refreshSeason = useCallback(async () => {
     try {
+      if (!session) return;
       const seasons = await window.db.invoke('seasons:getAll')
       setAllSeasons(seasons || [])
       const active = (seasons || []).find((s) => s.is_active)
@@ -56,11 +60,43 @@ export default function App() {
     } catch (err) {
       console.error('Failed to load seasons:', err)
     }
+  }, [session])
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setIsInitializing(false)
+    })
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
-    refreshSeason()
-  }, [refreshSeason])
+    if (session) {
+      refreshSeason()
+    }
+  }, [refreshSeason, session])
+
+  if (isInitializing) {
+    return <PageFallback />
+  }
+
+  if (!session) {
+    return (
+      <>
+        <LoginPage onLogin={setSession} />
+        <Toaster position="top-right" />
+      </>
+    )
+  }
 
   return (
     <SeasonContext.Provider value={{ activeSeason, setActiveSeason, allSeasons, refreshSeason }}>
