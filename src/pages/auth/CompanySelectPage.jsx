@@ -1,7 +1,7 @@
 import React from 'react';
-import { useCompany } from '../context/CompanyContext';
+import { useCompany } from '../../context/CompanyContext';
 import { Building2, LogOut } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 export default function CompanySelectPage() {
   const { companies, selectCompany } = useCompany();
