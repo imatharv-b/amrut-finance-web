@@ -179,6 +179,15 @@ function NavItem({ item }) {
 // ── Sidebar Component ────────────────────────────────────────────────
 export default function Sidebar() {
   const { activeSeason } = useContext(SeasonContext)
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email)
+      }
+    })
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -192,11 +201,16 @@ export default function Sidebar() {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center shadow-lg shadow-accent-500/20">
             <Leaf size={18} className="text-white" />
           </div>
-          <div>
-            <h1 className="text-[15px] font-bold tracking-tight leading-tight">
+          <div className="min-w-0">
+            <h1 className="text-[15px] font-bold tracking-tight leading-tight truncate">
               Amrut Biochem
             </h1>
-            <p className="text-[11px] text-primary-400 font-medium">Finance Manager</p>
+            <p className="text-[11px] text-primary-400 font-medium truncate">Finance Manager</p>
+            {userEmail && (
+              <p className="text-[10px] text-primary-300/80 mt-0.5 truncate" title={userEmail}>
+                {userEmail}
+              </p>
+            )}
           </div>
         </div>
       </div>
