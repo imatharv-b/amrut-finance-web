@@ -1,12 +1,22 @@
 import { supabase } from './supabase'
 
+export let globalCompanyId = null;
+export const setGlobalCompanyId = (id) => {
+  globalCompanyId = id;
+};
+
+// Helper to filter by company (for per-company tables)
+const withCompany = (query) => globalCompanyId ? query.eq('company_id', globalCompanyId) : query;
+// Helper to inject company_id (for inserts)
+const injectCompany = (data) => globalCompanyId ? { ...data, company_id: globalCompanyId } : data;
+
 export const api = {
   invoke: async (channel, ...args) => {
     try {
       switch (channel) {
         // =================== SEASONS ===================
         case 'seasons:getAll': {
-          const { data, error } = await supabase.from('seasons').select('*').order('id', { ascending: false })
+          const { data, error } = await withCompany(supabase.from('seasons').select('*')).order('id', { ascending: false })
           if (error) throw error
           return data
         }
@@ -22,7 +32,7 @@ export const api = {
             end_date = `${data.year + 1}-03-31`
             name = `Rabi ${data.year}-${(data.year + 1).toString().slice(2)}`
           }
-          const insertData = { ...data, name, start_date, end_date, is_active: false }
+          const insertData = injectCompany({ ...data, name, start_date, end_date, is_active: false })
           const { data: result, error } = await supabase.from('seasons').insert(insertData).select().single()
           if (error) throw error
           return result
@@ -37,13 +47,13 @@ export const api = {
 
         // =================== PARTIES ===================
         case 'parties:getAll': {
-          const { data, error } = await supabase.from('parties_with_balance').select('*').order('name')
+          const { data, error } = await withCompany(supabase.from('parties_with_balance').select('*')).order('name')
           if (error) throw error
           return data
         }
         case 'parties:add': {
           const [partyData] = args
-          const { data, error } = await supabase.from('parties').insert(partyData).select().single()
+          const { data, error } = await supabase.from('parties').insert(injectCompany(partyData)).select().single()
           if (error) throw error
           return data
         }
@@ -95,13 +105,13 @@ export const api = {
 
         // =================== ASSOCIATES ===================
         case 'associates:getAll': {
-          const { data, error } = await supabase.from('sale_associates').select('*').order('name')
+          const { data, error } = await withCompany(supabase.from('sale_associates').select('*')).order('name')
           if (error) throw error
           return data
         }
         case 'associates:add': {
           const [assocData] = args
-          const { data, error } = await supabase.from('sale_associates').insert(assocData).select().single()
+          const { data, error } = await supabase.from('sale_associates').insert(injectCompany(assocData)).select().single()
           if (error) throw error
           return data
         }
@@ -169,7 +179,7 @@ export const api = {
         }
         case 'expenses:getAll': {
           const [filters] = args || [{}]
-          let q = supabase.from('expenses').select('*, expense_types(name), parties(name)').order('date', { ascending: false })
+          let q = withCompany(supabase.from('expenses').select('*, expense_types(name), parties(name)')).order('date', { ascending: false })
           if (filters?.season_id) {
             // Note: Currently expenses don't have season_id in schema, skipping filter or join if needed
           }
@@ -179,7 +189,7 @@ export const api = {
         }
         case 'expenses:add': {
           const [expData] = args
-          const { data, error } = await supabase.from('expenses').insert(expData).select().single()
+          const { data, error } = await supabase.from('expenses').insert(injectCompany(expData)).select().single()
           if (error) throw error
           return data
         }
@@ -192,13 +202,13 @@ export const api = {
 
         // =================== PAYMENTS ===================
         case 'payments:getAll': {
-          const { data, error } = await supabase.from('payments').select('*, parties(name)').order('date', { ascending: false })
+          const { data, error } = await withCompany(supabase.from('payments').select('*, parties(name)')).order('date', { ascending: false })
           if (error) throw error
           return data.map(d => ({...d, party_name: d.parties?.name}))
         }
         case 'payments:add': {
           const [paymentData] = args
-          const { data, error } = await supabase.from('payments').insert(paymentData).select().single()
+          const { data, error } = await supabase.from('payments').insert(injectCompany(paymentData)).select().single()
           if (error) throw error
           return data
         }
@@ -218,7 +228,7 @@ export const api = {
         // =================== SALES ===================
         case 'sales:getAll': {
           const [filters] = args || [{}]
-          let q = supabase.from('sales_with_details').select('*').order('date', { ascending: false }).order('id', { ascending: false })
+          let q = withCompany(supabase.from('sales_with_details').select('*')).order('date', { ascending: false }).order('id', { ascending: false })
           if (filters?.season_id) q = q.eq('season_id', filters.season_id)
           const { data, error } = await q
           if (error) throw error
@@ -226,7 +236,7 @@ export const api = {
         }
         case 'sales:getNextInvoice': {
           // This is a naive implementation. For production, a sequence or transaction is better.
-          const { data } = await supabase.from('sales').select('invoice_no').order('id', { ascending: false }).limit(1)
+          const { data } = await withCompany(supabase.from('sales').select('invoice_no')).order('id', { ascending: false }).limit(1)
           if (!data || data.length === 0) return 'INV-001'
           const num = parseInt(data[0].invoice_no.replace('INV-', '')) + 1
           return `INV-${String(num).padStart(3, '0')}`
@@ -236,7 +246,7 @@ export const api = {
           // Supabase doesn't easily do nested inserts with relationships in the client unless structured perfectly.
           // We'll do it sequentially for simplicity.
           const { items, ...rest } = saleData
-          const { data: sale, error } = await supabase.from('sales').insert(rest).select().single()
+          const { data: sale, error } = await supabase.from('sales').insert(injectCompany(rest)).select().single()
           if (error) throw error
           if (items && items.length > 0) {
             const itemsToInsert = items.map(i => ({ ...i, sale_id: sale.id }))
@@ -271,8 +281,8 @@ export const api = {
         // =================== SALE RETURNS ===================
         case 'saleReturns:getAll': {
           const [filters] = args || [{}]
-          let q = supabase.from('sale_returns')
-            .select('*, parties(name), sales(invoice_no)')
+          let q = withCompany(supabase.from('sale_returns')
+            .select('*, parties(name), sales(invoice_no)'))
             .order('date', { ascending: false })
             .order('id', { ascending: false })
           if (filters?.season_id) q = q.eq('season_id', filters.season_id)
@@ -285,7 +295,7 @@ export const api = {
           }))
         }
         case 'saleReturns:getNextReturnNo': {
-          const { data } = await supabase.from('sale_returns').select('return_no').order('id', { ascending: false }).limit(1)
+          const { data } = await withCompany(supabase.from('sale_returns').select('return_no')).order('id', { ascending: false }).limit(1)
           if (!data || data.length === 0) return 'RET-001'
           const num = parseInt(data[0].return_no.replace('RET-', '')) + 1
           return `RET-${String(num).padStart(3, '0')}`
@@ -293,7 +303,7 @@ export const api = {
         case 'saleReturns:add': {
           const [returnData] = args
           const { items, ...rest } = returnData
-          const { data: saleReturn, error } = await supabase.from('sale_returns').insert(rest).select().single()
+          const { data: saleReturn, error } = await supabase.from('sale_returns').insert(injectCompany(rest)).select().single()
           if (error) throw error
           if (items && items.length > 0) {
             const itemsToInsert = items.map(i => ({ ...i, sale_return_id: saleReturn.id }))
@@ -317,7 +327,7 @@ export const api = {
         // =================== SCHEMES & COUPONS ===================
         case 'schemes:getAll': {
           const [seasonId] = args || []
-          let q = supabase.from('schemes').select('*').order('name')
+          let q = withCompany(supabase.from('schemes').select('*')).order('name')
           if (seasonId) q = q.eq('season_id', seasonId)
           const { data, error } = await q
           if (error) throw error
@@ -325,7 +335,7 @@ export const api = {
         }
         case 'schemes:add': {
           const [schemeData] = args
-          const { data, error } = await supabase.from('schemes').insert(schemeData).select().single()
+          const { data, error } = await supabase.from('schemes').insert(injectCompany(schemeData)).select().single()
           if (error) throw error
           return data
         }
@@ -342,7 +352,7 @@ export const api = {
         }
         case 'coupons:getAll': {
           const [seasonId] = args || []
-          let q = supabase.from('scheme_coupons').select('*, schemes(name, season_id), parties(name)').order('issue_date', { ascending: false })
+          let q = withCompany(supabase.from('scheme_coupons').select('*, schemes(name, season_id), parties(name)')).order('issue_date', { ascending: false })
           const { data, error } = await q
           if (error) throw error
           // Filter by season
@@ -351,7 +361,7 @@ export const api = {
         }
         case 'coupons:add': {
           const [couponData] = args
-          const { data, error } = await supabase.from('scheme_coupons').insert(couponData).select().single()
+          const { data, error } = await supabase.from('scheme_coupons').insert(injectCompany(couponData)).select().single()
           if (error) throw error
           return data
         }
@@ -370,8 +380,8 @@ export const api = {
         // =================== REPORTS & SETTINGS & DASHBOARD ===================
         case 'dashboard:stats': {
           const [seasonId] = args || []
-          const { data: salesData } = await supabase.from('sales').select('total_amount').eq('season_id', seasonId)
-          const { data: expData } = await supabase.from('expenses').select('amount')
+          const { data: salesData } = await withCompany(supabase.from('sales').select('total_amount')).eq('season_id', seasonId)
+          const { data: expData } = await withCompany(supabase.from('expenses').select('amount'))
           const totalSales = salesData?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
           const totalExpenses = expData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
           return { totalSales, totalExpenses }

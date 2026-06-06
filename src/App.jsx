@@ -6,8 +6,10 @@ import Titlebar from './components/Titlebar'
 import LoadingSpinner from './components/LoadingSpinner'
 
 import { SeasonContext } from './context/SeasonContext'
+import { CompanyProvider, useCompany } from './context/CompanyContext'
 import { supabase } from './lib/supabase'
 import LoginPage from './pages/auth/LoginPage'
+import CompanySelectPage from './pages/auth/CompanySelectPage'
 // ── Lazy-loaded Pages ────────────────────────────────────────────────
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const ProductsPage = React.lazy(() => import('./pages/masters/ProductsPage'))
@@ -32,7 +34,7 @@ const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'))
 // ── Page Loading Fallback ────────────────────────────────────────────
 function PageFallback() {
   return (
-    <div className="flex items-center justify-center h-full bg-slate-50">
+    <div className="flex items-center justify-center h-full min-h-screen bg-slate-50">
       <div className="text-center">
         <LoadingSpinner size="lg" />
         <p className="mt-4 text-sm text-slate-500 font-medium">Loading...</p>
@@ -41,16 +43,14 @@ function PageFallback() {
   )
 }
 
-// ── App Component ────────────────────────────────────────────────────
-export default function App() {
+function AppWithCompany() {
+  const { activeCompany, loading } = useCompany()
   const [activeSeason, setActiveSeason] = useState(null)
   const [allSeasons, setAllSeasons] = useState([])
-  const [session, setSession] = useState(null)
-  const [isInitializing, setIsInitializing] = useState(true)
 
   const refreshSeason = useCallback(async () => {
     try {
-      if (!session) return;
+      if (!activeCompany) return;
       const seasons = await window.db.invoke('seasons:getAll')
       setAllSeasons(seasons || [])
       const active = (seasons || []).find((s) => s.is_active)
@@ -60,43 +60,16 @@ export default function App() {
     } catch (err) {
       console.error('Failed to load seasons:', err)
     }
-  }, [session])
+  }, [activeCompany])
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setIsInitializing(false)
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    if (session) {
+    if (activeCompany) {
       refreshSeason()
     }
-  }, [refreshSeason, session])
+  }, [refreshSeason, activeCompany])
 
-  if (isInitializing) {
-    return <PageFallback />
-  }
-
-  if (!session) {
-    return (
-      <>
-        <LoginPage onLogin={setSession} />
-        <Toaster position="top-right" />
-      </>
-    )
-  }
+  if (loading) return <PageFallback />
+  if (!activeCompany) return <CompanySelectPage />
 
   return (
     <SeasonContext.Provider value={{ activeSeason, setActiveSeason, allSeasons, refreshSeason }}>
@@ -139,7 +112,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Toast Notifications */}
         <Toaster
           position="top-right"
           toastOptions={{
@@ -150,18 +122,50 @@ export default function App() {
               padding: '12px 16px',
               fontSize: '14px',
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
-            },
-            success: {
-              iconTheme: { primary: '#16a34a', secondary: '#fff' },
-              style: { border: '1px solid #dcfce7', background: '#f0fdf4' }
-            },
-            error: {
-              iconTheme: { primary: '#dc2626', secondary: '#fff' },
-              style: { border: '1px solid #fee2e2', background: '#fef2f2' }
             }
           }}
         />
       </HashRouter>
     </SeasonContext.Provider>
+  )
+}
+
+// ── App Component ────────────────────────────────────────────────────
+export default function App() {
+  const [session, setSession] = useState(null)
+  const [isInitializing, setIsInitializing] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setIsInitializing(false)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (isInitializing) {
+    return <PageFallback />
+  }
+
+  if (!session) {
+    return (
+      <>
+        <LoginPage onLogin={setSession} />
+        <Toaster position="top-right" />
+      </>
+    )
+  }
+
+  return (
+    <CompanyProvider session={session}>
+      <AppWithCompany />
+    </CompanyProvider>
   )
 }
