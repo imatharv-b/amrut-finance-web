@@ -212,10 +212,8 @@ export const generateInvoiceHTML = (sale, items, settings) => {
             <tr>
               <th style="width: 30px;">S.N.</th>
               <th class="text-left">Goods / Services</th>
-              <th style="width: 70px;">HSN/SAC</th>
               <th style="width: 50px;">Qty.</th>
               <th style="width: 50px;">Unit</th>
-              <th style="width: 70px;">List Price</th>
               <th style="width: 50px;">Dis(%)</th>
               <th style="width: 60px;">Dis Amt.</th>
               <th style="width: 70px;">Price</th>
@@ -233,10 +231,8 @@ export const generateInvoiceHTML = (sale, items, settings) => {
                 <tr>
                   <td class="text-center">${i + 1}</td>
                   <td>${item.product_name}</td>
-                  <td class="text-center"></td>
                   <td class="text-center">${item.qty}</td>
                   <td class="text-center">${item.unit}</td>
-                  <td class="text-right">${listPrice.toFixed(2)}</td>
                   <td class="text-right">${itemDiscountPct.toFixed(2)}</td>
                   <td class="text-right">${itemDiscountAmt.toFixed(2)}</td>
                   <td class="text-right">${priceAfterDiscount.toFixed(2)}</td>
