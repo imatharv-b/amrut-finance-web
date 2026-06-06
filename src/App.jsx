@@ -14,6 +14,7 @@ const PartiesPage = React.lazy(() => import('./pages/masters/PartiesPage'))
 const AssociatesPage = React.lazy(() => import('./pages/masters/AssociatesPage'))
 const NewSalePage = React.lazy(() => import('./pages/sales/NewSalePage'))
 const EditSalePage = React.lazy(() => import('./pages/sales/EditSalePage'))
+const SaleReturnPage = React.lazy(() => import('./pages/sales/SaleReturnPage'))
 const AllSalesPage = React.lazy(() => import('./pages/sales/AllSalesPage'))
 
 const NewExpensePage = React.lazy(() => import('./pages/expenses/NewExpensePage'))
@@ -84,6 +85,7 @@ export default function App() {
                   <Route path="/sales/new" element={<NewSalePage />} />
                   <Route path="/sales/edit/:id" element={<EditSalePage />} />
                   <Route path="/sales/all" element={<AllSalesPage />} />
+                  <Route path="/sales/return" element={<SaleReturnPage />} />
 
                   <Route path="/expenses/new" element={<NewExpensePage />} />
                   <Route path="/expenses/all" element={<AllExpensesPage />} />

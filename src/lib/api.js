@@ -257,6 +257,52 @@ export const api = {
           return true
         }
 
+        // =================== SALE RETURNS ===================
+        case 'saleReturns:getAll': {
+          const [filters] = args || [{}]
+          let q = supabase.from('sale_returns')
+            .select('*, parties(name), sales(invoice_no)')
+            .order('date', { ascending: false })
+            .order('id', { ascending: false })
+          if (filters?.season_id) q = q.eq('season_id', filters.season_id)
+          const { data, error } = await q
+          if (error) throw error
+          return data.map(d => ({
+            ...d, 
+            party_name: d.parties?.name,
+            original_invoice: d.sales?.invoice_no
+          }))
+        }
+        case 'saleReturns:getNextReturnNo': {
+          const { data } = await supabase.from('sale_returns').select('return_no').order('id', { ascending: false }).limit(1)
+          if (!data || data.length === 0) return 'RET-001'
+          const num = parseInt(data[0].return_no.replace('RET-', '')) + 1
+          return `RET-${String(num).padStart(3, '0')}`
+        }
+        case 'saleReturns:add': {
+          const [returnData] = args
+          const { items, ...rest } = returnData
+          const { data: saleReturn, error } = await supabase.from('sale_returns').insert(rest).select().single()
+          if (error) throw error
+          if (items && items.length > 0) {
+            const itemsToInsert = items.map(i => ({ ...i, sale_return_id: saleReturn.id }))
+            await supabase.from('sale_return_items').insert(itemsToInsert)
+          }
+          return { id: saleReturn.id, return_no: saleReturn.return_no }
+        }
+        case 'saleReturns:getById': {
+          const [id] = args
+          const { data: saleReturn, error } = await supabase.from('sale_returns').select('*').eq('id', id).single()
+          if (error) throw error
+          const { data: items } = await supabase.from('sale_return_items').select('*, products(name)').eq('sale_return_id', id)
+          return { saleReturn, items: items.map(i => ({...i, product_name: i.products?.name})) }
+        }
+        case 'saleReturns:delete': {
+          const [id] = args
+          await supabase.from('sale_returns').delete().eq('id', id)
+          return true
+        }
+
         // =================== SCHEMES & COUPONS ===================
         case 'schemes:getAll': {
           const [seasonId] = args || []

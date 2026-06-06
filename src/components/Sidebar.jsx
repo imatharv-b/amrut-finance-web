@@ -43,7 +43,8 @@ const navigation = [
     icon: FileText,
     children: [
       { label: 'New Sale', icon: PlusCircle, path: '/sales/new' },
-      { label: 'All Sales', icon: FileText, path: '/sales/all' }
+      { label: 'All Sales', icon: FileText, path: '/sales/all' },
+      { label: 'Sale Returns', icon: RotateCcw, path: '/sales/return' }
     ]
   },
   {
