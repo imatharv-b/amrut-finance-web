@@ -7,6 +7,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { SeasonContext } from '../../context/SeasonContext';
 import { generateInvoiceHTML } from '../../components/print/InvoicePrint';
+import { printHTML } from '../../lib/printUtils';
 
 export default function AllSalesPage() {
   const navigate = useNavigate();
@@ -83,9 +84,9 @@ export default function AllSalesPage() {
         details = await window.db.invoke('sales:getById', sale.id);
       }
       const html = generateInvoiceHTML(details.sale, details.items, firmSettings);
-      await window.app.print(html);
+      await printHTML(html);
     } catch (err) {
-      toast.error('Failed to generate print view');
+      toast.error(err.message || 'Failed to generate print view');
     }
   };
 

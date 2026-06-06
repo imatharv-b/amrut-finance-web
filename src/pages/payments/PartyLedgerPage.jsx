@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
 import { generateLedgerHTML } from '../../components/print/LedgerPrint';
+import { printHTML } from '../../lib/printUtils';
 
 export default function PartyLedgerPage() {
   const [searchParams] = useSearchParams();
@@ -69,9 +70,9 @@ export default function PartyLedgerPage() {
     if (!ledgerData) return;
     try {
       const html = generateLedgerHTML(ledgerData, firmSettings);
-      await window.app.print(html);
+      await printHTML(html);
     } catch (err) {
-      toast.error('Failed to print ledger');
+      toast.error(err.message || 'Failed to print ledger');
     }
   };
 
