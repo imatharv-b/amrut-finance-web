@@ -11,10 +11,21 @@ export const api = {
           return data
         }
         case 'seasons:add': {
-          const [seasonData] = args
-          const { data, error } = await supabase.from('seasons').insert(seasonData).select().single()
+          const [data] = args
+          let start_date, end_date, name
+          if (data.type === 'kharif') {
+            start_date = `${data.year}-04-01`
+            end_date = `${data.year}-11-30`
+            name = `Kharif ${data.year}`
+          } else {
+            start_date = `${data.year}-12-01`
+            end_date = `${data.year + 1}-03-31`
+            name = `Rabi ${data.year}-${(data.year + 1).toString().slice(2)}`
+          }
+          const insertData = { ...data, name, start_date, end_date, is_active: false }
+          const { data: result, error } = await supabase.from('seasons').insert(insertData).select().single()
           if (error) throw error
-          return data
+          return result
         }
         case 'seasons:setActive': {
           const [id] = args
