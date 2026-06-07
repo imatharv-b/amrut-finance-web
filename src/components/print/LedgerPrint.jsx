@@ -1,123 +1,109 @@
 export const generateLedgerHTML = (ledgerData, settings) => {
-  const { party, entries } = ledgerData;
-  const currentBalance = entries.length > 0 
-    ? entries[entries.length - 1].balance 
-    : ledgerData.opening_balance;
+  const currentBalance = ledgerData.entries.length > 0 
+    ? ledgerData.entries[ledgerData.entries.length - 1].balance 
+    : Number(ledgerData.openingBalanceForPeriod || 0);
+  
+  const currentBalanceText = currentBalance > 0 
+    ? `₹${currentBalance.toFixed(2)} Dr` 
+    : `₹${Math.abs(currentBalance).toFixed(2)} Cr`;
+  const currentBalanceColor = currentBalance > 0 ? 'text-red-600' : 'text-green-600';
 
   return `
     <!DOCTYPE html>
     <html>
     <head>
-      <meta charset="utf-8">
-      <title>Ledger - ${party.name}</title>
+      <title>Ledger - ${ledgerData.party.name}</title>
+      <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        body { font-family: 'Arial', sans-serif; padding: 40px; color: #333; }
-        .header { text-align: center; border-bottom: 2px solid #1a4731; padding-bottom: 20px; margin-bottom: 30px; }
-        .firm-name { font-size: 28px; font-weight: bold; color: #1a4731; margin: 0; }
-        .firm-details { font-size: 14px; color: #666; margin-top: 5px; }
-        .report-title { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 20px; text-transform: uppercase; }
-        
-        .party-info { margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; display: flex; justify-content: space-between; }
-        .party-info h3 { margin-top: 0; margin-bottom: 10px; font-size: 18px; color: #1a4731; }
-        .party-info p { margin: 5px 0; font-size: 14px; }
-        
-        .balance-box { text-align: right; }
-        .balance-amount { font-size: 24px; font-weight: bold; margin-top: 5px; }
-        .dr { color: #dc2626; }
-        .cr { color: #16a34a; }
-        
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f9f9f9; color: #1a4731; font-weight: bold; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        
-        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @media print {
+          @page { margin: 10mm; size: auto; }
+          body { margin: 0; padding: 20px; }
+        }
       </style>
     </head>
-    <body>
-      <div class="header" style="position: relative;">
-        <img src="/logo.png" style="position: absolute; left: 0; top: 0; max-height: 80px; object-fit: contain;" onerror="this.style.display='none'" />
-        <h1 class="firm-name">${settings.firm_name || 'Amrut Biochem'}</h1>
-        <div class="firm-details">
-          ${settings.address ? `<p>${settings.address}</p>` : ''}
-          <p>Mob: ${settings.mobile || '-'}</p>
-        </div>
-      </div>
-      
-      <div class="report-title">Statement of Account (Ledger)</div>
-      
-      <div class="party-info">
+    <body class="bg-white text-sm">
+      <div class="flex justify-between items-start mb-6 border-b border-slate-200 pb-4">
         <div>
-          <h3>${party.name}</h3>
-          <p>${[party.village, party.taluka, party.district].filter(Boolean).join(', ')}</p>
-          <p>Mob: ${party.mobile || '-'}</p>
+          <h2 class="text-xl font-bold text-slate-800">${ledgerData.party.name}</h2>
+          ${ledgerData.party.village ? `<p class="text-slate-600 text-sm">${[ledgerData.party.village, ledgerData.party.taluka, ledgerData.party.district].filter(Boolean).join(', ')}</p>` : ''}
+          <p class="text-slate-500 text-xs mt-1">Mobile: ${ledgerData.party.mobile || '-'}</p>
         </div>
-        <div class="balance-box">
-          <p>Current Balance:</p>
-          <div class="balance-amount ${currentBalance > 0 ? 'dr' : 'cr'}">
-            ${currentBalance > 0 ? `₹${currentBalance.toFixed(2)} Dr` : currentBalance < 0 ? `₹${Math.abs(currentBalance).toFixed(2)} Cr` : '₹0.00'}
-          </div>
+        <div class="text-right">
+          <p class="text-xs text-slate-500 mb-1">Current Balance</p>
+          <p class="text-2xl font-bold ${currentBalanceColor}">${currentBalanceText}</p>
         </div>
       </div>
-      
-      <table>
-        <thead>
+
+      <table class="w-full text-left text-xs whitespace-nowrap">
+        <thead class="bg-slate-50 text-slate-600 font-medium">
           <tr>
-            <th style="width: 80px;">Date</th>
-            <th style="width: 50px;">Type</th>
-            <th style="width: 80px;">Vch No.</th>
-            <th>Particulars</th>
-            <th class="text-right" style="width: 80px;">Debit (₹)</th>
-            <th class="text-right" style="width: 80px;">Credit (₹)</th>
-            <th class="text-right" style="width: 90px;">Balance (₹)</th>
+            <th class="px-4 py-3 border-b border-slate-200">Date</th>
+            <th class="px-4 py-3 border-b border-slate-200">Type</th>
+            <th class="px-4 py-3 border-b border-slate-200">Vch No.</th>
+            <th class="px-4 py-3 border-b border-slate-200">Particulars</th>
+            <th class="px-4 py-3 border-b border-slate-200 text-right">Debit (₹)</th>
+            <th class="px-4 py-3 border-b border-slate-200 text-right">Credit (₹)</th>
+            <th class="px-4 py-3 border-b border-slate-200 text-right">Balance (₹)</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td><strong>Opening Balance</strong></td>
-            <td></td>
-            <td></td>
-            <td class="text-right"><strong>${Number(ledgerData.openingBalanceForPeriod || 0) > 0 ? `${Number(ledgerData.openingBalanceForPeriod || 0).toFixed(2)} Dr` : Number(ledgerData.openingBalanceForPeriod || 0) < 0 ? `${Math.abs(Number(ledgerData.openingBalanceForPeriod || 0)).toFixed(2)} Cr` : '0.00'}</strong></td>
+        <tbody class="divide-y divide-slate-100">
+          <tr class="bg-white font-medium">
+            <td class="px-4 py-3 text-slate-500">-</td>
+            <td class="px-4 py-3 text-slate-500">-</td>
+            <td class="px-4 py-3 text-slate-500">-</td>
+            <td class="px-4 py-3 text-slate-800">Opening Balance</td>
+            <td class="px-4 py-3 text-right"></td>
+            <td class="px-4 py-3 text-right"></td>
+            <td class="px-4 py-3 text-right text-slate-800">
+              ${Number(ledgerData.openingBalanceForPeriod || 0) > 0 
+                ? `${Number(ledgerData.openingBalanceForPeriod || 0).toFixed(2)} Dr` 
+                : Number(ledgerData.openingBalanceForPeriod || 0) < 0 
+                  ? `${Math.abs(Number(ledgerData.openingBalanceForPeriod || 0)).toFixed(2)} Cr` 
+                  : '0.00'}
+            </td>
           </tr>
-          ${entries.map(entry => `
-            <tr>
-              <td style="vertical-align: top;">${entry.date}</td>
-              <td style="vertical-align: top;">${entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}</td>
-              <td style="vertical-align: top;">${entry.vch_no || entry.ref}</td>
-              <td style="vertical-align: top;">
-                <div>${entry.particulars}</div>
-                ${entry.narration ? `<div style="font-style: italic; color: #555; margin-top: 2px;">${entry.narration}</div>` : ''}
+          ${ledgerData.entries.map(entry => `
+            <tr class="bg-white align-top hover:bg-slate-50">
+              <td class="px-4 py-3 whitespace-nowrap">${entry.date}</td>
+              <td class="px-4 py-3 text-slate-500 whitespace-nowrap">
+                ${entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}
+              </td>
+              <td class="px-4 py-3 text-slate-500 whitespace-nowrap">${entry.vch_no || entry.ref}</td>
+              <td class="px-4 py-3 text-slate-700 min-w-[250px] whitespace-normal">
+                <div class="font-semibold text-slate-800">${entry.particulars}</div>
+                ${entry.narration ? `<div class="text-[10px] italic text-slate-500 mt-0.5">${entry.narration}</div>` : ''}
                 ${entry.items && entry.items.length > 0 ? `
-                  <div style="margin-top: 5px; padding-left: 15px;">
+                  <div class="mt-2 ml-4 pl-3 border-l-2 border-slate-200 space-y-1 bg-slate-50/50 py-1.5 pr-2">
                     ${entry.items.map(item => `
-                      <div style="display: flex; font-size: 11px; margin-bottom: 2px; font-style: italic;">
-                        <div style="width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
-                        <div style="width: 80px; text-align: right;">${Number(item.qty).toFixed(2)} ${item.unit}</div>
-                        <div style="width: 70px; text-align: center;">@ ${Number(item.rate).toFixed(2)}</div>
-                        <div style="width: 80px; text-align: right;">= ${Number(item.amount).toFixed(2)}</div>
+                      <div class="flex text-[10px] text-slate-600 items-center justify-between">
+                         <div class="w-1/3 italic truncate pr-2 font-medium">${item.name}</div>
+                         <div class="w-1/6 text-right whitespace-nowrap">${Number(item.qty).toFixed(2)} <span class="text-[9px] text-slate-400">${item.unit}</span></div>
+                         <div class="w-1/6 text-center whitespace-nowrap"><span class="text-[9px] text-slate-400">@</span> ${Number(item.rate).toFixed(2)}</div>
+                         <div class="w-1/6 text-right whitespace-nowrap"><span class="text-[9px] text-slate-400">=</span> ${Number(item.amount).toFixed(2)}</div>
                       </div>
                     `).join('')}
                   </div>
                 ` : ''}
               </td>
-              <td class="text-right dr" style="vertical-align: top;">${entry.debit > 0 ? entry.debit.toFixed(2) : ''}</td>
-              <td class="text-right cr" style="vertical-align: top;">${entry.credit > 0 ? entry.credit.toFixed(2) : ''}</td>
-              <td class="text-right" style="vertical-align: top;">
-                ${entry.balance > 0 ? `${entry.balance.toFixed(2)} Dr` : entry.balance < 0 ? `${Math.abs(entry.balance).toFixed(2)} Cr` : '0.00'}
+              <td class="px-4 py-3 text-right text-red-600 font-medium whitespace-nowrap">
+                ${entry.debit > 0 ? entry.debit.toFixed(2) : ''}
+              </td>
+              <td class="px-4 py-3 text-right text-green-600 font-medium whitespace-nowrap">
+                ${entry.credit > 0 ? entry.credit.toFixed(2) : ''}
+              </td>
+              <td class="px-4 py-3 text-right font-bold whitespace-nowrap">
+                ${!isNaN(entry.balance) && entry.balance > 0 
+                  ? `${entry.balance.toFixed(2)} Dr` 
+                  : !isNaN(entry.balance) && entry.balance < 0 
+                    ? `${Math.abs(entry.balance).toFixed(2)} Cr` 
+                    : '0.00'}
               </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      
-      <div class="footer">
-        <p>This is a computer-generated document. No signature is required.</p>
-        <p>Generated on: ${new Date().toLocaleString()}</p>
-      </div>
     </body>
     </html>
   `;

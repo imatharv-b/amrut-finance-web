@@ -151,13 +151,14 @@ export const api = {
           let entries = [];
           
           for (const e of rawEntries) {
-            if (fromDate && e.entry_date < fromDate) {
+            const eDate = e.entry_date ? e.entry_date.substring(0, 10) : '';
+            if (fromDate && eDate < fromDate) {
               runningBalance += (Number(e.debit) - Number(e.credit))
               openingBalanceForPeriod = runningBalance
-            } else if ((!fromDate || e.entry_date >= fromDate) && (!toDate || e.entry_date <= toDate)) {
+            } else if ((!fromDate || eDate >= fromDate) && (!toDate || eDate <= toDate)) {
               runningBalance += (Number(e.debit) - Number(e.credit))
               entries.push({
-                date: e.entry_date,
+                date: eDate,
                 vch_no: e.vch_no,
                 particulars: e.particulars,
                 narration: e.narration,
