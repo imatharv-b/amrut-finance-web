@@ -107,11 +107,14 @@ export default function AllSalesPage() {
     { key: 'amount_paid', label: 'Paid (₹)', render: (val) => `₹${Number(val || 0).toFixed(2)}` },
     { 
       key: 'balance', label: 'Balance (₹)', sortable: true,
-      render: (val) => (
-        <span className={Number(val || 0) > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
-          ₹{Number(val || 0).toFixed(2)}
-        </span>
-      )
+      render: (val, row) => {
+        const computedBalance = val != null ? Number(val) : (Number(row.total_amount || 0) - Number(row.amount_paid || 0));
+        return (
+          <span className={computedBalance > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+            ₹{computedBalance.toFixed(2)}
+          </span>
+        );
+      }
     }
   ];
 
@@ -123,7 +126,7 @@ export default function AllSalesPage() {
   ];
 
   const totalSales = sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
-  const totalBalance = sales.reduce((acc, s) => acc + Number(s.balance || 0), 0);
+  const totalBalance = sales.reduce((acc, s) => acc + (s.balance != null ? Number(s.balance) : (Number(s.total_amount || 0) - Number(s.amount_paid || 0))), 0);
 
   return (
     <div className="p-6 h-full flex flex-col">
