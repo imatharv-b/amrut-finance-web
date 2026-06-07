@@ -36,7 +36,8 @@ export const generateLedgerHTML = (ledgerData, settings) => {
       </style>
     </head>
     <body>
-      <div class="header">
+      <div class="header" style="position: relative;">
+        <img src="/logo.png" style="position: absolute; left: 0; top: 0; max-height: 80px; object-fit: contain;" onerror="this.style.display='none'" />
         <h1 class="firm-name">${settings.firm_name || 'Amrut Biochem'}</h1>
         <div class="firm-details">
           ${settings.address ? `<p>${settings.address}</p>` : ''}
@@ -100,12 +101,6 @@ export const generateLedgerHTML = (ledgerData, settings) => {
                         <div style="width: 80px; text-align: right;">= ${Number(item.amount).toFixed(2)}</div>
                       </div>
                     `).join('')}
-                    <div style="display: flex; font-size: 11px; margin-top: 4px; font-weight: bold; border-top: 1px dashed #ccc; padding-top: 2px;">
-                      <div style="width: 180px; font-style: italic;">**** Total Qty. =</div>
-                      <div style="width: 80px; text-align: right;">${entry.items.reduce((s, i) => s + Number(i.qty || 0), 0).toFixed(2)} Units</div>
-                      <div style="width: 70px; text-align: center;">: Amt. =</div>
-                      <div style="width: 80px; text-align: right;">${entry.items.reduce((s, i) => s + Number(i.amount || 0), 0).toFixed(2)} ****</div>
-                    </div>
                   </div>
                 ` : ''}
               </td>

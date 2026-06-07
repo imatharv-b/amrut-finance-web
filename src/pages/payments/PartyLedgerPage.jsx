@@ -209,12 +209,6 @@ export default function PartyLedgerPage() {
                                    <div className="w-1/6 text-right whitespace-nowrap"><span className="text-[10px] text-slate-400">=</span> {Number(item.amount).toFixed(2)}</div>
                                 </div>
                              ))}
-                             <div className="flex text-[11px] font-bold text-slate-700 mt-2 border-t border-slate-200 pt-1.5 justify-between">
-                                <div className="w-1/3 italic">**** Total Qty. =</div>
-                                <div className="w-1/6 text-right">{entry.items.reduce((s, i) => s + Number(i.qty || 0), 0).toFixed(2)} Units</div>
-                                <div className="w-1/6 text-center">: Amt. =</div>
-                                <div className="w-1/6 text-right">{entry.items.reduce((s, i) => s + Number(i.amount || 0), 0).toFixed(2)} ****</div>
-                             </div>
                            </div>
                         )}
                       </td>
