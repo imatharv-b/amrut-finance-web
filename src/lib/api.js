@@ -235,11 +235,22 @@ export const api = {
           return data
         }
         case 'sales:getNextInvoice': {
-          // This is a naive implementation. For production, a sequence or transaction is better.
+          let prefix = 'INV-'
+          if (globalCompanyId) {
+            const { data: comp } = await supabase.from('companies').select('name').eq('id', globalCompanyId).single()
+            if (comp) {
+              if (comp.name === 'Ajay Bulk') prefix = 'BULK-'
+              else if (comp.name === 'Uncle Bulk') prefix = 'UBULK-'
+              // Pintu Sir Retail uses 'INV-'
+            }
+          }
+
           const { data } = await withCompany(supabase.from('sales').select('invoice_no')).order('id', { ascending: false }).limit(1)
-          if (!data || data.length === 0) return 'INV-001'
-          const num = parseInt(data[0].invoice_no.replace('INV-', '')) + 1
-          return `INV-${String(num).padStart(3, '0')}`
+          if (!data || data.length === 0) return `${prefix}001`
+          
+          const match = data[0].invoice_no.match(/(\d+)$/)
+          const num = match ? parseInt(match[1], 10) + 1 : 1
+          return `${prefix}${String(num).padStart(3, '0')}`
         }
         case 'sales:add': {
           const [saleData] = args
