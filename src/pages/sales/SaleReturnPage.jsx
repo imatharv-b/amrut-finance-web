@@ -172,7 +172,7 @@ export default function SaleReturnPage() {
     { header: 'Original Invoice', accessor: 'original_invoice' },
     { 
       header: 'Total Amount', 
-      accessor: (row) => `₹${row.total_amount?.toFixed(2)}`,
+      accessor: (row) => `₹${Number(row.total_amount || 0).toFixed(2)}`,
       className: 'text-right font-medium'
     },
     { header: 'Reason', accessor: 'reason' },

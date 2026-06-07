@@ -80,7 +80,7 @@ export const api = {
           if (error) throw error
           
           let allEntries = ledgerEntries.sort((a, b) => a.entry_date.localeCompare(b.entry_date))
-          let runningBalance = party.opening_balance || 0
+          let runningBalance = Number(party.opening_balance || 0)
           let openingBalanceForPeriod = runningBalance
           let entries = []
           

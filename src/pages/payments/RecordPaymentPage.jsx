@@ -138,7 +138,7 @@ export default function RecordPaymentPage() {
   const columns = [
     { key: 'date', label: 'Date', sortable: true },
     { key: 'party_name', label: 'Party', sortable: true, render: (val) => <span className="font-medium text-slate-800">{val}</span> },
-    { key: 'amount', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-green-600">₹{val.toFixed(2)}</span> },
+    { key: 'amount', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-green-600">₹{Number(val || 0).toFixed(2)}</span> },
     { key: 'payment_type', label: 'Type', sortable: true, render: (val) => {
       const typeConfig = {
         'Payment from Party': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },

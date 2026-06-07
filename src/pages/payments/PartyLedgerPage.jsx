@@ -148,7 +148,7 @@ export default function PartyLedgerPage() {
                 {(() => {
                   const currentBalance = ledgerData.entries.length > 0 
                     ? ledgerData.entries[ledgerData.entries.length - 1].balance 
-                    : ledgerData.opening_balance;
+                    : Number(ledgerData.openingBalanceForPeriod || 0);
                   return (
                     <p className={`text-2xl font-bold ${currentBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
                       {currentBalance > 0 ? `₹${currentBalance.toFixed(2)} Dr` : `₹${Math.abs(currentBalance).toFixed(2)} Cr`}
@@ -180,10 +180,10 @@ export default function PartyLedgerPage() {
                     <td className="px-6 py-3 text-right"></td>
                     <td className="px-6 py-3 text-right"></td>
                     <td className="px-6 py-3 text-right text-slate-800">
-                      {ledgerData.opening_balance > 0 
-                        ? `${ledgerData.opening_balance.toFixed(2)} Dr` 
-                        : ledgerData.opening_balance < 0 
-                          ? `${Math.abs(ledgerData.opening_balance).toFixed(2)} Cr` 
+                      {Number(ledgerData.openingBalanceForPeriod || 0) > 0 
+                        ? `${Number(ledgerData.openingBalanceForPeriod || 0).toFixed(2)} Dr` 
+                        : Number(ledgerData.openingBalanceForPeriod || 0) < 0 
+                          ? `${Math.abs(Number(ledgerData.openingBalanceForPeriod || 0)).toFixed(2)} Cr` 
                           : '0.00'}
                     </td>
                   </tr>

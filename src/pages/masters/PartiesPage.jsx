@@ -289,11 +289,14 @@ export default function PartiesPage() {
     },
     { 
       key: 'balance', label: 'Balance (₹)', sortable: true,
-      render: (val) => (
-        <span className={val > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
-          {val > 0 ? `₹${val.toFixed(2)}` : val === 0 ? '₹0.00' : `₹${Math.abs(val).toFixed(2)} (Adv)`}
-        </span>
-      )
+      render: (val) => {
+        const numVal = Number(val || 0);
+        return (
+          <span className={numVal > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+            {numVal > 0 ? `₹${numVal.toFixed(2)}` : numVal === 0 ? '₹0.00' : `₹${Math.abs(numVal).toFixed(2)} (Adv)`}
+          </span>
+        );
+      }
     }
   ];
 
@@ -302,7 +305,7 @@ export default function PartiesPage() {
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ];
 
-  const totalOutstanding = parties.reduce((acc, p) => acc + (p.balance > 0 ? p.balance : 0), 0);
+  const totalOutstanding = parties.reduce((acc, p) => acc + (Number(p.balance || 0) > 0 ? Number(p.balance || 0) : 0), 0);
 
   return (
     <div className="p-6 h-full flex flex-col">

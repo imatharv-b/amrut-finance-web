@@ -103,13 +103,13 @@ export default function AllSalesPage() {
         </span>
       )
     },
-    { key: 'total_amount', label: 'Total (₹)', sortable: true, render: (val) => `₹${val.toFixed(2)}` },
-    { key: 'amount_paid', label: 'Paid (₹)', render: (val) => `₹${val.toFixed(2)}` },
+    { key: 'total_amount', label: 'Total (₹)', sortable: true, render: (val) => `₹${Number(val || 0).toFixed(2)}` },
+    { key: 'amount_paid', label: 'Paid (₹)', render: (val) => `₹${Number(val || 0).toFixed(2)}` },
     { 
       key: 'balance', label: 'Balance (₹)', sortable: true,
       render: (val) => (
-        <span className={val > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
-          ₹{val.toFixed(2)}
+        <span className={Number(val || 0) > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+          ₹{Number(val || 0).toFixed(2)}
         </span>
       )
     }
@@ -122,8 +122,8 @@ export default function AllSalesPage() {
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ];
 
-  const totalSales = sales.reduce((acc, s) => acc + s.total_amount, 0);
-  const totalBalance = sales.reduce((acc, s) => acc + s.balance, 0);
+  const totalSales = sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
+  const totalBalance = sales.reduce((acc, s) => acc + Number(s.balance || 0), 0);
 
   return (
     <div className="p-6 h-full flex flex-col">
