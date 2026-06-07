@@ -63,23 +63,55 @@ export const generateLedgerHTML = (ledgerData, settings) => {
       <table>
         <thead>
           <tr>
-            <th style="width: 90px;">Date</th>
+            <th style="width: 80px;">Date</th>
+            <th style="width: 50px;">Type</th>
+            <th style="width: 80px;">Vch No.</th>
             <th>Particulars</th>
-            <th style="width: 100px;">Ref / Inv No</th>
-            <th class="text-right" style="width: 90px;">Debit (₹)</th>
-            <th class="text-right" style="width: 90px;">Credit (₹)</th>
-            <th class="text-right" style="width: 100px;">Balance (₹)</th>
+            <th class="text-right" style="width: 80px;">Debit (₹)</th>
+            <th class="text-right" style="width: 80px;">Credit (₹)</th>
+            <th class="text-right" style="width: 90px;">Balance (₹)</th>
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td><strong>Opening Balance</strong></td>
+            <td></td>
+            <td></td>
+            <td class="text-right"><strong>${Number(ledgerData.openingBalanceForPeriod || 0) > 0 ? `${Number(ledgerData.openingBalanceForPeriod || 0).toFixed(2)} Dr` : Number(ledgerData.openingBalanceForPeriod || 0) < 0 ? `${Math.abs(Number(ledgerData.openingBalanceForPeriod || 0)).toFixed(2)} Cr` : '0.00'}</strong></td>
+          </tr>
           ${entries.map(entry => `
             <tr>
-              <td>${entry.date}</td>
-              <td>${entry.particulars}</td>
-              <td>${entry.ref || '-'}</td>
-              <td class="text-right dr">${entry.debit > 0 ? entry.debit.toFixed(2) : ''}</td>
-              <td class="text-right cr">${entry.credit > 0 ? entry.credit.toFixed(2) : ''}</td>
-              <td class="text-right font-bold">
+              <td style="vertical-align: top;">${entry.date}</td>
+              <td style="vertical-align: top;">${entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}</td>
+              <td style="vertical-align: top;">${entry.vch_no || entry.ref}</td>
+              <td style="vertical-align: top;">
+                <div>${entry.particulars}</div>
+                ${entry.narration ? `<div style="font-style: italic; color: #555; margin-top: 2px;">${entry.narration}</div>` : ''}
+                ${entry.items && entry.items.length > 0 ? `
+                  <div style="margin-top: 5px; padding-left: 15px;">
+                    ${entry.items.map(item => `
+                      <div style="display: flex; font-size: 11px; margin-bottom: 2px; font-style: italic;">
+                        <div style="width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                        <div style="width: 80px; text-align: right;">${Number(item.qty).toFixed(2)} ${item.unit}</div>
+                        <div style="width: 70px; text-align: center;">@ ${Number(item.rate).toFixed(2)}</div>
+                        <div style="width: 80px; text-align: right;">= ${Number(item.amount).toFixed(2)}</div>
+                      </div>
+                    `).join('')}
+                    <div style="display: flex; font-size: 11px; margin-top: 4px; font-weight: bold; border-top: 1px dashed #ccc; padding-top: 2px;">
+                      <div style="width: 180px; font-style: italic;">**** Total Qty. =</div>
+                      <div style="width: 80px; text-align: right;">${entry.items.reduce((s, i) => s + Number(i.qty || 0), 0).toFixed(2)} Units</div>
+                      <div style="width: 70px; text-align: center;">: Amt. =</div>
+                      <div style="width: 80px; text-align: right;">${entry.items.reduce((s, i) => s + Number(i.amount || 0), 0).toFixed(2)} ****</div>
+                    </div>
+                  </div>
+                ` : ''}
+              </td>
+              <td class="text-right dr" style="vertical-align: top;">${entry.debit > 0 ? entry.debit.toFixed(2) : ''}</td>
+              <td class="text-right cr" style="vertical-align: top;">${entry.credit > 0 ? entry.credit.toFixed(2) : ''}</td>
+              <td class="text-right" style="vertical-align: top;">
                 ${entry.balance > 0 ? `${entry.balance.toFixed(2)} Dr` : entry.balance < 0 ? `${Math.abs(entry.balance).toFixed(2)} Cr` : '0.00'}
               </td>
             </tr>

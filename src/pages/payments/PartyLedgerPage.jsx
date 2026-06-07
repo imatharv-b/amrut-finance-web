@@ -164,8 +164,9 @@ export default function PartyLedgerPage() {
                 <thead className="bg-slate-100 text-slate-600 font-medium sticky top-0 z-10">
                   <tr>
                     <th className="px-6 py-3 border-b border-slate-200">Date</th>
+                    <th className="px-6 py-3 border-b border-slate-200">Type</th>
+                    <th className="px-6 py-3 border-b border-slate-200">Vch No.</th>
                     <th className="px-6 py-3 border-b border-slate-200">Particulars</th>
-                    <th className="px-6 py-3 border-b border-slate-200">Ref / Inv No</th>
                     <th className="px-6 py-3 border-b border-slate-200 text-right">Debit (₹)</th>
                     <th className="px-6 py-3 border-b border-slate-200 text-right">Credit (₹)</th>
                     <th className="px-6 py-3 border-b border-slate-200 text-right">Balance (₹)</th>
@@ -175,8 +176,9 @@ export default function PartyLedgerPage() {
                   {/* Opening Balance Row */}
                   <tr className="bg-slate-50 font-medium">
                     <td className="px-6 py-3 text-slate-500">-</td>
-                    <td className="px-6 py-3 text-slate-800">Opening Balance</td>
                     <td className="px-6 py-3 text-slate-500">-</td>
+                    <td className="px-6 py-3 text-slate-500">-</td>
+                    <td className="px-6 py-3 text-slate-800">Opening Balance</td>
                     <td className="px-6 py-3 text-right"></td>
                     <td className="px-6 py-3 text-right"></td>
                     <td className="px-6 py-3 text-right text-slate-800">
@@ -188,17 +190,41 @@ export default function PartyLedgerPage() {
                     </td>
                   </tr>
                   {ledgerData.entries.map((entry, index) => (
-                    <tr key={index} className="hover:bg-slate-50 transition">
-                      <td className="px-6 py-3">{entry.date}</td>
-                      <td className="px-6 py-3 text-slate-700">{entry.particulars}</td>
-                      <td className="px-6 py-3 text-slate-500">{entry.ref}</td>
-                      <td className="px-6 py-3 text-right text-red-600">
+                    <tr key={index} className="hover:bg-slate-50 transition align-top">
+                      <td className="px-6 py-3 whitespace-nowrap">{entry.date}</td>
+                      <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
+                        {entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}
+                      </td>
+                      <td className="px-6 py-3 text-slate-500 whitespace-nowrap">{entry.vch_no || entry.ref}</td>
+                      <td className="px-6 py-3 text-slate-700 min-w-[300px] whitespace-normal">
+                        <div className="font-semibold text-slate-800">{entry.particulars}</div>
+                        {entry.narration && <div className="text-xs italic text-slate-500 mt-0.5">{entry.narration}</div>}
+                        {entry.items && entry.items.length > 0 && (
+                           <div className="mt-2 ml-4 pl-3 border-l-2 border-slate-200/60 space-y-1 bg-slate-50/50 rounded-r-md py-1.5 pr-2">
+                             {entry.items.map((item, i) => (
+                                <div key={i} className="flex text-[11px] text-slate-600 items-center justify-between">
+                                   <div className="w-1/3 italic truncate pr-2 font-medium" title={item.name}>{item.name}</div>
+                                   <div className="w-1/6 text-right whitespace-nowrap">{Number(item.qty).toFixed(2)} <span className="text-[10px] text-slate-400">{item.unit}</span></div>
+                                   <div className="w-1/6 text-center whitespace-nowrap"><span className="text-[10px] text-slate-400">@</span> {Number(item.rate).toFixed(2)}</div>
+                                   <div className="w-1/6 text-right whitespace-nowrap"><span className="text-[10px] text-slate-400">=</span> {Number(item.amount).toFixed(2)}</div>
+                                </div>
+                             ))}
+                             <div className="flex text-[11px] font-bold text-slate-700 mt-2 border-t border-slate-200 pt-1.5 justify-between">
+                                <div className="w-1/3 italic">**** Total Qty. =</div>
+                                <div className="w-1/6 text-right">{entry.items.reduce((s, i) => s + Number(i.qty || 0), 0).toFixed(2)} Units</div>
+                                <div className="w-1/6 text-center">: Amt. =</div>
+                                <div className="w-1/6 text-right">{entry.items.reduce((s, i) => s + Number(i.amount || 0), 0).toFixed(2)} ****</div>
+                             </div>
+                           </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-3 text-right text-red-600 font-medium whitespace-nowrap">
                         {entry.debit > 0 ? entry.debit.toFixed(2) : ''}
                       </td>
-                      <td className="px-6 py-3 text-right text-green-600">
+                      <td className="px-6 py-3 text-right text-green-600 font-medium whitespace-nowrap">
                         {entry.credit > 0 ? entry.credit.toFixed(2) : ''}
                       </td>
-                      <td className="px-6 py-3 text-right font-medium">
+                      <td className="px-6 py-3 text-right font-bold whitespace-nowrap">
                         {!isNaN(entry.balance) && entry.balance > 0 
                           ? `${entry.balance.toFixed(2)} Dr` 
                           : !isNaN(entry.balance) && entry.balance < 0 
@@ -209,7 +235,7 @@ export default function PartyLedgerPage() {
                   ))}
                   {ledgerData.entries.length === 0 && (
                     <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
+                      <td colSpan="7" className="px-6 py-8 text-center text-slate-500">
                         No transactions found for this party.
                       </td>
                     </tr>

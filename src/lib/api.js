@@ -76,22 +76,81 @@ export const api = {
           const { data: party } = await supabase.from('parties').select('*').eq('id', partyId).single()
           if (!party) return null
           
-          const { data: ledgerEntries, error } = await supabase.rpc('get_party_ledger', { p_id: partyId })
-          if (error) throw error
+          const [salesRes, paymentsRes, expensesRes, returnsRes] = await Promise.all([
+            supabase.from('sales').select('*, sale_items(*, products(name))').eq('party_id', partyId),
+            supabase.from('payments').select('*').eq('party_id', partyId),
+            supabase.from('expenses').select('*, expense_types(name)').eq('party_id', partyId),
+            supabase.from('sale_returns').select('*, sale_return_items(*, products(name))').eq('party_id', partyId)
+          ]);
           
-          let allEntries = ledgerEntries.sort((a, b) => a.entry_date.localeCompare(b.entry_date))
-          let runningBalance = Number(party.opening_balance || 0)
-          let openingBalanceForPeriod = runningBalance
-          let entries = []
-          
-          for (const e of allEntries) {
-            let particulars = ''
-            if (e.entry_type === 'sale') particulars = 'To Sales A/c'
-            else if (e.entry_type === 'payment') particulars = 'By Cash/Bank'
-            else if (e.entry_type === 'expense') particulars = e.ref === 'Advance to Party' ? 'To Advance' : 'By Bad Debt'
-            else if (e.entry_type === 'sale_return') particulars = 'By Sales Return'
-            else particulars = 'Other'
+          let rawEntries = [];
 
+          salesRes.data?.forEach(s => {
+             rawEntries.push({
+                entry_date: s.date,
+                ref: s.invoice_no + (s.coupon_no ? ` (Coupon: ${s.coupon_no})` : ''),
+                vch_no: s.invoice_no,
+                debit: Number(s.total_amount),
+                credit: 0,
+                entry_type: 'sale',
+                particulars: 'Cr Sales',
+                narration: s.remarks || '',
+                items: s.sale_items?.map(i => ({ name: i.products?.name, qty: i.qty, unit: i.unit, rate: i.rate, amount: i.amount })) || []
+             });
+          });
+
+          paymentsRes.data?.forEach(p => {
+             rawEntries.push({
+                entry_date: p.date,
+                ref: `Payment - ${p.mode}`,
+                vch_no: 'Rcpt',
+                debit: 0,
+                credit: Number(p.amount),
+                entry_type: 'payment',
+                particulars: `Dr ${p.mode || 'Cash'}`,
+                narration: p.remarks || '',
+                items: []
+             });
+          });
+
+          expensesRes.data?.forEach(e => {
+             if (e.expense_types?.name === 'Advance to Party' || e.expense_types?.name === 'Bad Debt') {
+               const isAdvance = e.expense_types?.name === 'Advance to Party';
+               rawEntries.push({
+                  entry_date: e.date,
+                  ref: e.expense_types?.name,
+                  vch_no: 'Jrnl',
+                  debit: isAdvance ? Number(e.amount) : 0,
+                  credit: isAdvance ? 0 : Number(e.amount),
+                  entry_type: 'expense',
+                  particulars: isAdvance ? 'To Advance' : 'By Bad Debt',
+                  narration: e.description || '',
+                  items: []
+               });
+             }
+          });
+
+          returnsRes.data?.forEach(r => {
+             rawEntries.push({
+                entry_date: r.date,
+                ref: `Sale Return - ${r.return_no}`,
+                vch_no: r.return_no,
+                debit: 0,
+                credit: Number(r.total_amount),
+                entry_type: 'sale_return',
+                particulars: 'By Sales Return',
+                narration: r.reason || '',
+                items: r.sale_return_items?.map(i => ({ name: i.products?.name, qty: i.qty, unit: i.unit, rate: i.rate, amount: i.amount })) || []
+             });
+          });
+
+          rawEntries.sort((a, b) => a.entry_date.localeCompare(b.entry_date) || a.entry_type.localeCompare(b.entry_type));
+
+          let runningBalance = Number(party.opening_balance || 0);
+          let openingBalanceForPeriod = runningBalance;
+          let entries = [];
+          
+          for (const e of rawEntries) {
             if (fromDate && e.entry_date < fromDate) {
               runningBalance += (Number(e.debit) - Number(e.credit))
               openingBalanceForPeriod = runningBalance
@@ -99,7 +158,10 @@ export const api = {
               runningBalance += (Number(e.debit) - Number(e.credit))
               entries.push({
                 date: e.entry_date,
-                particulars: particulars,
+                vch_no: e.vch_no,
+                particulars: e.particulars,
+                narration: e.narration,
+                items: e.items,
                 ref: e.ref,
                 debit: Number(e.debit),
                 credit: Number(e.credit),
