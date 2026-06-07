@@ -85,6 +85,13 @@ export const api = {
           let entries = []
           
           for (const e of allEntries) {
+            let particulars = ''
+            if (e.entry_type === 'sale') particulars = 'To Sales A/c'
+            else if (e.entry_type === 'payment') particulars = 'By Cash/Bank'
+            else if (e.entry_type === 'expense') particulars = e.ref === 'Advance to Party' ? 'To Advance' : 'By Bad Debt'
+            else if (e.entry_type === 'sale_return') particulars = 'By Sales Return'
+            else particulars = 'Other'
+
             if (fromDate && e.entry_date < fromDate) {
               runningBalance += (Number(e.debit) - Number(e.credit))
               openingBalanceForPeriod = runningBalance
@@ -92,6 +99,7 @@ export const api = {
               runningBalance += (Number(e.debit) - Number(e.credit))
               entries.push({
                 date: e.entry_date,
+                particulars: particulars,
                 ref: e.ref,
                 debit: Number(e.debit),
                 credit: Number(e.credit),
