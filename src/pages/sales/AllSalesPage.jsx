@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { SeasonContext } from '../../context/SeasonContext';
 import { generateInvoiceHTML } from '../../components/print/InvoicePrint';
 import { printHTML } from '../../lib/printUtils';
+import { formatDate } from '../../lib/dateUtils';
 
 export default function AllSalesPage() {
   const navigate = useNavigate();
@@ -92,7 +93,10 @@ export default function AllSalesPage() {
 
   const columns = [
     { key: 'invoice_no', label: 'Invoice No', sortable: true },
-    { key: 'date', label: 'Date', sortable: true },
+    { 
+      key: 'date', label: 'Date', sortable: true,
+      render: (val) => formatDate(val)
+    },
     { key: 'party_name', label: 'Party', sortable: true },
     { key: 'associate_name', label: 'Associate', sortable: true },
     { 
@@ -162,7 +166,7 @@ export default function AllSalesPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Date</p>
-                <p className="font-medium text-slate-800">{saleDetails.sale.date}</p>
+                <p className="font-medium text-slate-800">{formatDate(saleDetails.sale.date)}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500">Associate</p>

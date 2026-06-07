@@ -7,6 +7,7 @@ import FormField from '../../components/FormField'
 import SearchableSelect from '../../components/SearchableSelect'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { SeasonContext } from '../../context/SeasonContext'
+import { formatDate } from '../../lib/dateUtils'
 
 export default function SaleReturnPage() {
   const { activeSeason } = useContext(SeasonContext)
@@ -166,7 +167,10 @@ export default function SaleReturnPage() {
   const productOptions = products.map(p => ({ value: p.id, label: p.name }))
 
   const columns = [
-    { header: 'Date', accessor: 'date' },
+    { 
+      header: 'Date', accessor: 'date',
+      cell: (row) => formatDate(row.date)
+    },
     { header: 'Return No', accessor: 'return_no' },
     { header: 'Party', accessor: 'party_name' },
     { header: 'Original Invoice', accessor: 'original_invoice' },

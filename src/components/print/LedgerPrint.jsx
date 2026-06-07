@@ -1,3 +1,5 @@
+import { formatDate } from '../../lib/dateUtils';
+
 export const generateLedgerHTML = (ledgerData, settings) => {
   const currentBalance = ledgerData.entries.length > 0 
     ? ledgerData.entries[ledgerData.entries.length - 1].balance 
@@ -66,7 +68,7 @@ export const generateLedgerHTML = (ledgerData, settings) => {
           </tr>
           ${ledgerData.entries.map(entry => `
             <tr class="bg-white align-top hover:bg-slate-50">
-              <td class="px-4 py-3 whitespace-nowrap">${entry.date}</td>
+              <td class="px-4 py-3 whitespace-nowrap">${formatDate(entry.date)}</td>
               <td class="px-4 py-3 text-slate-500 whitespace-nowrap">
                 ${entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}
               </td>

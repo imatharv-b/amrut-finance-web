@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import DataTable from '../../components/DataTable';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { SeasonContext } from '../../context/SeasonContext';
+import { formatDate } from '../../lib/dateUtils';
 
 export default function AllExpensesPage() {
   const { activeSeason } = useContext(SeasonContext);
@@ -49,7 +50,10 @@ export default function AllExpensesPage() {
   };
 
   const columns = [
-    { key: 'date', label: 'Date', sortable: true },
+    { 
+      key: 'date', label: 'Date', sortable: true,
+      render: (val) => formatDate(val)
+    },
     { 
       key: 'expense_type_name', label: 'Type', sortable: true,
       render: (val) => <span className="font-medium text-slate-700">{val}</span>

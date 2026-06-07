@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
 import SearchableSelect from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { formatDate } from '../../lib/dateUtils';
 
 export default function RecordPaymentPage() {
   const [payments, setPayments] = useState([]);
@@ -136,7 +137,10 @@ export default function RecordPaymentPage() {
   };
 
   const columns = [
-    { key: 'date', label: 'Date', sortable: true },
+    { 
+      key: 'date', label: 'Date', sortable: true,
+      render: (val) => formatDate(val)
+    },
     { key: 'party_name', label: 'Party', sortable: true, render: (val) => <span className="font-medium text-slate-800">{val}</span> },
     { key: 'amount', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-green-600">₹{Number(val || 0).toFixed(2)}</span> },
     { key: 'payment_type', label: 'Type', sortable: true, render: (val) => {

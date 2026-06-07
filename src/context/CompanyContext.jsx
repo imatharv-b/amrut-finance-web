@@ -33,8 +33,13 @@ export const CompanyProvider = ({ children, session }) => {
         const userCompanies = cuData.map(d => d.companies).filter(Boolean);
         setCompanies(userCompanies);
 
-        // Auto-select first company
-        if (userCompanies.length > 0) {
+        // Auto-select company from localStorage or fallback to first
+        const savedCompanyId = localStorage.getItem('selected_company_id');
+        const savedCompany = savedCompanyId ? userCompanies.find(c => c.id.toString() === savedCompanyId) : null;
+
+        if (savedCompany) {
+          selectCompany(savedCompany);
+        } else if (userCompanies.length > 0) {
           selectCompany(userCompanies[0]);
         } else {
           setLoading(false);
@@ -50,7 +55,12 @@ export const CompanyProvider = ({ children, session }) => {
 
   const selectCompany = (company) => {
     setActiveCompany(company);
-    setGlobalCompanyId(company.id);
+    if (company) {
+      setGlobalCompanyId(company.id);
+      localStorage.setItem('selected_company_id', company.id.toString());
+    } else {
+      localStorage.removeItem('selected_company_id');
+    }
     setLoading(false);
   };
 

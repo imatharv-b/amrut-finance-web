@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
 import { generateLedgerHTML } from '../../components/print/LedgerPrint';
 import { printHTML } from '../../lib/printUtils';
+import { formatDate } from '../../lib/dateUtils';
 
 export default function PartyLedgerPage() {
   const [searchParams] = useSearchParams();
@@ -191,7 +192,7 @@ export default function PartyLedgerPage() {
                   </tr>
                   {ledgerData.entries.map((entry, index) => (
                     <tr key={index} className="hover:bg-slate-50 transition align-top">
-                      <td className="px-6 py-3 whitespace-nowrap">{entry.date}</td>
+                      <td className="px-6 py-3 whitespace-nowrap">{formatDate(entry.date)}</td>
                       <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
                         {entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}
                       </td>
