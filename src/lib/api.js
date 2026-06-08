@@ -15,8 +15,9 @@ export const api = {
     try {
       switch (channel) {
         // =================== SEASONS ===================
+        // NOTE: Seasons are GLOBAL — shared across all companies (same Kharif/Rabi applies to everyone)
         case 'seasons:getAll': {
-          const { data, error } = await withCompany(supabase.from('seasons').select('*')).order('id', { ascending: false })
+          const { data, error } = await supabase.from('seasons').select('*').order('id', { ascending: false })
           if (error) throw error
           return data
         }
@@ -32,17 +33,62 @@ export const api = {
             end_date = `${data.year + 1}-03-31`
             name = `Rabi ${data.year}-${(data.year + 1).toString().slice(2)}`
           }
-          const insertData = injectCompany({ ...data, name, start_date, end_date, is_active: false })
+          // Check if season with same name already exists (prevent duplicates)
+          const { data: existing } = await supabase.from('seasons').select('id').eq('name', name).limit(1)
+          if (existing && existing.length > 0) {
+            throw new Error(`Season "${name}" already exists. Please set it active instead of creating a duplicate.`)
+          }
+          // Seasons are global — do NOT inject company_id
+          const insertData = { ...data, name, start_date, end_date, is_active: false }
           const { data: result, error } = await supabase.from('seasons').insert(insertData).select().single()
           if (error) throw error
           return result
         }
         case 'seasons:setActive': {
           const [id] = args
+          // Deactivate all seasons globally (seasons are shared across companies)
           await supabase.from('seasons').update({ is_active: false }).neq('id', 0)
           const { data, error } = await supabase.from('seasons').update({ is_active: true }).eq('id', id)
           if (error) throw error
           return data
+        }
+        case 'seasons:mergeDuplicates': {
+          // Find all seasons, group by name, merge duplicates
+          const { data: allSeasons } = await supabase.from('seasons').select('*').order('id', { ascending: true })
+          if (!allSeasons) return { merged: 0 }
+          
+          const byName = {}
+          for (const s of allSeasons) {
+            if (!byName[s.name]) byName[s.name] = []
+            byName[s.name].push(s)
+          }
+          
+          let merged = 0
+          for (const [name, seasons] of Object.entries(byName)) {
+            if (seasons.length <= 1) continue
+            
+            // Keep the first (oldest) season, reassign records from duplicates
+            const keepId = seasons[0].id
+            const keepActive = seasons.some(s => s.is_active)
+            const dupeIds = seasons.slice(1).map(s => s.id)
+            
+            // Reassign sales from duplicate seasons to the kept season
+            for (const dupeId of dupeIds) {
+              await supabase.from('sales').update({ season_id: keepId }).eq('season_id', dupeId)
+              await supabase.from('sale_returns').update({ season_id: keepId }).eq('season_id', dupeId)
+              await supabase.from('schemes').update({ season_id: keepId }).eq('season_id', dupeId)
+              // Delete the duplicate season
+              await supabase.from('seasons').delete().eq('id', dupeId)
+            }
+            
+            // If any duplicate was active, keep the merged season active
+            if (keepActive) {
+              await supabase.from('seasons').update({ is_active: true }).eq('id', keepId)
+            }
+            
+            merged += dupeIds.length
+          }
+          return { merged }
         }
 
         // =================== PARTIES ===================

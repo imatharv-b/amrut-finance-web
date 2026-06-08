@@ -47,15 +47,20 @@ export default function SeasonsPage() {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      await window.db.invoke('seasons:add', {
+      const newSeason = await window.db.invoke('seasons:add', {
         type: formData.type,
         year: Number(formData.year)
       });
       toast.success('Season added successfully');
+      // Auto-activate if no active season exists
+      if (!activeSeason) {
+        await window.db.invoke('seasons:setActive', newSeason.id);
+        toast.success('Season auto-activated');
+      }
       setShowAdd(false);
       refreshSeason();
     } catch (err) {
-      toast.error('Failed to add season');
+      toast.error(err.message || 'Failed to add season');
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback, Suspense } from 'react'
+import React, { createContext, useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Sidebar from './components/Sidebar'
@@ -47,16 +47,32 @@ function AppWithCompany() {
   const { activeCompany, loading } = useCompany()
   const [activeSeason, setActiveSeason] = useState(null)
   const [allSeasons, setAllSeasons] = useState([])
+  const hasMergedRef = useRef(false)
 
   const refreshSeason = useCallback(async () => {
     try {
-      if (!activeCompany) return;
+      if (!activeCompany) {
+        setActiveSeason(null)
+        setAllSeasons([])
+        return
+      }
+      // On first load only, merge any duplicate seasons to recover data
+      if (!hasMergedRef.current) {
+        hasMergedRef.current = true
+        try {
+          const mergeResult = await window.db.invoke('seasons:mergeDuplicates')
+          if (mergeResult?.merged > 0) {
+            console.log(`Merged ${mergeResult.merged} duplicate season(s)`)
+          }
+        } catch (mergeErr) {
+          console.warn('Season merge skipped:', mergeErr)
+        }
+      }
       const seasons = await window.db.invoke('seasons:getAll')
       setAllSeasons(seasons || [])
       const active = (seasons || []).find((s) => s.is_active)
-      if (active) {
-        setActiveSeason(active)
-      }
+      // ALWAYS update activeSeason — clear it if no active season found
+      setActiveSeason(active || null)
     } catch (err) {
       console.error('Failed to load seasons:', err)
     }
