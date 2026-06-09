@@ -485,7 +485,7 @@ export default function AnalyticsPage() {
           ) : (
             <DataTable
               columns={summaryColumns}
-              data={filteredSummary}
+              data={partySummaryData}
               loading={modalLoading}
               emptyMessage="No parties found matching your search."
               searchable={false}
