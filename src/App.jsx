@@ -30,6 +30,7 @@ const PartyLedgerPage = React.lazy(() => import('./pages/payments/PartyLedgerPag
 const ReportsPage = React.lazy(() => import('./pages/reports/ReportsPage'))
 const SeasonsPage = React.lazy(() => import('./pages/settings/SeasonsPage'))
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'))
+const AnalyticsPage = React.lazy(() => import('./pages/reports/AnalyticsPage'))
 
 // ── Page Loading Fallback ────────────────────────────────────────────
 function PageFallback() {
@@ -119,6 +120,7 @@ function AppWithCompany() {
                   <Route path="/schemes/coupons" element={<CouponIssuancePage />} />
                   <Route path="/payments/record" element={<RecordPaymentPage />} />
                   <Route path="/payments/ledger" element={<PartyLedgerPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/seasons" element={<SeasonsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />

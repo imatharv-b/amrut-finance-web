@@ -632,6 +632,82 @@ export const api = {
           return [] // Minimal stub
         }
 
+        case 'analytics:getHubData': {
+          const [seasonId] = args || []
+          
+          // Fast queries picking only needed columns
+          const { data: saleItems } = await withCompany(
+            supabase.from('sale_items')
+              .select('qty, amount, products!inner(name), sales!inner(season_id, party_id, date)')
+          ).eq('sales.season_id', seasonId)
+
+          const { data: expenses } = await withCompany(
+            supabase.from('expenses')
+              .select('amount, expense_types!inner(name), party_id')
+          )
+
+          const { data: parties } = await withCompany(
+            supabase.from('parties').select('id, name, opening_balance')
+          )
+          const { data: salesForParties } = await withCompany(
+            supabase.from('sales').select('total_amount, party_id')
+          )
+          const { data: paymentsForParties } = await withCompany(
+            supabase.from('payments').select('amount, party_id')
+          )
+          const { data: returnsForParties } = await withCompany(
+            supabase.from('sale_returns').select('total_amount, party_id')
+          )
+
+          // 1. Product Sales Analysis (Revenue & Volume)
+          const productMap = {}
+          saleItems?.forEach(si => {
+             const pName = si.products?.name || 'Unknown'
+             if(!productMap[pName]) productMap[pName] = { name: pName, revenue: 0, volume: 0 }
+             productMap[pName].revenue += Number(si.amount || 0)
+             productMap[pName].volume += Number(si.qty || 0)
+          })
+          const topProductsByRev = Object.values(productMap).sort((a,b) => b.revenue - a.revenue).slice(0, 10)
+          const topProductsByVol = Object.values(productMap).sort((a,b) => b.volume - a.volume).slice(0, 10)
+
+          // 2. Party Risk Analysis (Outstanding)
+          const partyRisks = []
+          parties?.forEach(p => {
+             let bal = Number(p.opening_balance || 0)
+             const pSales = salesForParties?.filter(s => s.party_id === p.id) || []
+             bal += pSales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0)
+             const pPayments = paymentsForParties?.filter(pay => pay.party_id === p.id) || []
+             bal -= pPayments.reduce((sum, pay) => sum + Number(pay.amount || 0), 0)
+             const pReturns = returnsForParties?.filter(r => r.party_id === p.id) || []
+             bal -= pReturns.reduce((sum, r) => sum + Number(r.total_amount || 0), 0)
+             
+             // Advances & Bad Debts
+             const pExp = expenses?.filter(e => e.party_id === p.id) || []
+             pExp.forEach(e => {
+               if (e.expense_types?.name === 'Advance to Party') bal += Number(e.amount || 0)
+               if (e.expense_types?.name === 'Bad Debt') bal -= Number(e.amount || 0)
+             })
+
+             if (bal > 0) {
+                // Find last payment date if any
+                const latestPay = pPayments.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0))[0]
+                partyRisks.push({
+                   id: p.id,
+                   name: p.name,
+                   outstanding: bal,
+                   lastPaymentDate: latestPay ? latestPay.date : null
+                })
+             }
+          })
+          const topRisks = partyRisks.sort((a,b) => b.outstanding - a.outstanding).slice(0, 15)
+
+          return {
+             topProductsByRev,
+             topProductsByVol,
+             topRisks
+          }
+        }
+
         default:
           console.warn('Unknown IPC channel invoked via API layer:', channel)
           return null

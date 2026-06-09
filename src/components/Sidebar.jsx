@@ -77,7 +77,10 @@ const navigation = [
   {
     label: 'Reports & Analytics',
     icon: BarChart3,
-    path: '/reports'
+    children: [
+      { label: 'Advanced Analytics', icon: BarChart3, path: '/analytics' },
+      { label: 'Standard Reports', icon: FileText, path: '/reports' }
+    ]
   },
   {
     label: 'Seasons',
