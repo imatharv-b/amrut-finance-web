@@ -7,10 +7,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, 
   ResponsiveContainer 
 } from 'recharts'
-import { LineChart, PieChart as PieChartIcon, AlertTriangle, TrendingUp, DollarSign, Package } from 'lucide-react'
+import { LineChart, PieChart as PieChartIcon, AlertTriangle, TrendingUp, DollarSign, Package, Printer } from 'lucide-react'
 import Modal from '../../components/Modal'
 import DataTable from '../../components/DataTable'
 import { formatDate } from '../../lib/dateUtils'
+import { printHTML } from '../../lib/printUtils'
 
 const formatCurrency = (num) => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(num || 0))
 const formatCompact = (num) => {
@@ -46,6 +47,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [productSales, setProductSales] = useState([])
+  const [sortBy, setSortBy] = useState('date')
   const [modalLoading, setModalLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -61,6 +63,52 @@ export default function AnalyticsPage() {
       console.error('Failed to load product sales', err);
     } finally {
       setModalLoading(false);
+    }
+  };
+
+  const sortedProductSales = [...productSales].sort((a, b) => {
+    if (sortBy === 'party') {
+      return (a.party_name || '').localeCompare(b.party_name || '');
+    }
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  const handlePrintProductSales = async () => {
+    const tableRows = sortedProductSales.map(row => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${formatDate(row.date)}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${row.invoice_no || '-'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${row.party_name || '-'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">${row.qty}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">${formatCurrency(row.amount)}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h2 style="text-align: center; color: #1e293b; margin-bottom: 5px;">Sales Report</h2>
+        <h3 style="text-align: center; color: #475569; margin-top: 0; margin-bottom: 20px;">Product: ${selectedProduct}</h3>
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+          <thead>
+            <tr style="background-color: #f8fafc; color: #475569;">
+              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Date</th>
+              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Invoice No</th>
+              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Party Name</th>
+              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Qty</th>
+              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1; text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+            ${sortedProductSales.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding: 20px;">No sales recorded for this product.</td></tr>' : ''}
+          </tbody>
+        </table>
+      </div>
+    `;
+    try {
+      await printHTML(html);
+    } catch (err) {
+      console.error('Print failed', err);
     }
   };
 
@@ -288,10 +336,30 @@ export default function AnalyticsPage() {
         title={`Sales Details - ${selectedProduct}`}
         size="4xl"
       >
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-600">Sort by:</span>
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-slate-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="date">Date (Newest First)</option>
+              <option value="party">Party Name (A-Z)</option>
+            </select>
+          </div>
+          <button 
+            onClick={handlePrintProductSales}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+            Print
+          </button>
+        </div>
         <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
           <DataTable
             columns={productColumns}
-            data={productSales}
+            data={sortedProductSales}
             loading={modalLoading}
             emptyMessage="No sales recorded for this product."
             searchable={false}
