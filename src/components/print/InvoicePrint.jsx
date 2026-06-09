@@ -72,10 +72,6 @@ export const generateInvoiceHTML = (sale, items, settings) => {
           <p class="text-[10px] text-indigo-600 font-bold mb-0.5 uppercase tracking-wider">Bill To</p>
           <h3 class="text-base font-bold text-slate-800">${sale.party_name}</h3>
         </div>
-        <div class="text-right">
-          <p class="text-[10px] text-indigo-600 font-bold mb-0.5 uppercase tracking-wider">Associate</p>
-          <p class="text-slate-800 font-medium">${sale.associate_name || 'Direct'}</p>
-        </div>
       </div>
 
       <!-- Items Table -->
@@ -87,6 +83,8 @@ export const generateInvoiceHTML = (sale, items, settings) => {
               <th class="px-3 py-2 border-b border-indigo-700 w-full">Item Description</th>
               <th class="px-3 py-2 border-b border-indigo-700 text-center">Qty</th>
               <th class="px-3 py-2 border-b border-indigo-700 text-center">Unit</th>
+              <th class="px-3 py-2 border-b border-indigo-700 text-center">Dis(%)</th>
+              <th class="px-3 py-2 border-b border-indigo-700 text-center">Dis Amt.</th>
               <th class="px-3 py-2 border-b border-indigo-700 text-right">Rate (₹)</th>
               <th class="px-3 py-2 border-b border-indigo-700 text-right rounded-tr-md">Amount (₹)</th>
             </tr>
@@ -98,6 +96,8 @@ export const generateInvoiceHTML = (sale, items, settings) => {
                 <td class="px-3 py-2 font-medium text-slate-800">${item.product_name}</td>
                 <td class="px-3 py-2 text-center text-slate-700">${item.qty}</td>
                 <td class="px-3 py-2 text-center text-slate-500 text-[10px]">${item.unit}</td>
+                <td class="px-3 py-2 text-center text-slate-500">0.00</td>
+                <td class="px-3 py-2 text-center text-slate-500">0.00</td>
                 <td class="px-3 py-2 text-right text-slate-700">${item.rate.toFixed(2)}</td>
                 <td class="px-3 py-2 text-right font-semibold text-slate-800">${item.amount.toFixed(2)}</td>
               </tr>
@@ -131,10 +131,6 @@ export const generateInvoiceHTML = (sale, items, settings) => {
               </table>
             </div>
           ` : ''}
-          <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-lg inline-block w-full">
-            <p class="text-[10px] text-emerald-600 font-bold mb-0.5 uppercase tracking-wider">Amount in Words</p>
-            <p class="text-emerald-900 font-semibold leading-snug">Rupees ${amountInWords}</p>
-          </div>
         </div>
 
         <div class="w-5/12 min-w-[200px]">
