@@ -22,6 +22,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
     return str.trim();
   };
   
+  const formatDate = (dateStr) => dateStr.split('-').reverse().join('-');
   const amountInWords = numberToWords(Math.round(sale.total_amount));
 
   return `
@@ -37,236 +38,103 @@ export const generateInvoiceHTML = (sale, items, settings) => {
           padding: 0;
           font-family: 'Arial', sans-serif; 
           color: #000;
-          font-size: 13px;
+          font-size: 11px;
           background: white;
         }
-        
-        .invoice-wrapper {
-          width: 100%;
-          box-sizing: border-box;
-          border: 1px solid #000;
-          display: flex;
-          flex-direction: column;
-          min-height: 95vh;
-        }
-        
-        .top-labels {
-          display: flex;
-          justify-content: space-between;
-          padding: 4px 12px;
-          font-weight: bold;
-          font-size: 14px;
-          border-bottom: 1px solid #000;
-        }
-        
-        .header-row {
-          display: flex;
-          border-bottom: 1px solid #000;
-        }
-        
-        .company-details {
-          flex: 1.5;
-          padding: 5px 10px;
-          border-right: 1px solid #000;
-          text-align: center;
-        }
-        
-        .company-details img {
-          max-width: 100%;
-          max-height: 55px;
-          margin-bottom: 2px;
-          object-fit: contain;
-        }
-        
-        .company-details p {
-          margin: 0;
-          font-size: 10px;
-        }
-        
-        .billing-details {
-          flex: 1;
-          padding: 5px 10px;
-          font-size: 11px;
-        }
-        
-        .billing-details p {
-          margin: 1px 0;
-        }
-        
-        .meta-row {
-          display: flex;
-          border-bottom: 1px solid #000;
-          padding: 6px 12px;
-          font-weight: bold;
-          justify-content: space-between;
-        }
-        
-        .table-container {
-          flex-grow: 1;
-        }
-        
-        table.items-table {
+        table.main-table {
           width: 100%;
           border-collapse: collapse;
-          height: 100%;
-        }
-        
-        table.items-table th, table.items-table td {
-          border-right: 1px solid #000;
-          border-bottom: 1px solid #000;
-          padding: 6px 8px;
-        }
-        
-        table.items-table th:last-child, table.items-table td:last-child {
-          border-right: none;
-        }
-        
-        table.items-table th {
-          text-align: center;
-          font-weight: normal;
-          background-color: #f9f9f9;
-        }
-        
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
-        
-        .grand-total-row {
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          border-bottom: 1px solid #000;
-          padding: 6px 12px;
-          font-weight: bold;
-          font-size: 14px;
-        }
-        
-        .grand-total-box {
           border: 1px solid #000;
-          padding: 4px 12px;
-          margin-left: 10px;
         }
-        
-        .tax-info-row {
-          padding: 6px 12px;
-          border-bottom: 1px solid #000;
+        table.main-table th, table.main-table td {
+          border: 1px solid #000;
+          padding: 3px 5px;
         }
-        
-        table.tax-table {
+        .no-border-table {
+          width: 100%;
           border-collapse: collapse;
-          margin-bottom: 6px;
+        }
+        .no-border-table th, .no-border-table td {
+          border: none !important;
+          padding: 2px !important;
           text-align: right;
         }
-        
-        table.tax-table th, table.tax-table td {
-          padding: 4px 10px;
-          font-weight: bold;
-          border-bottom: 1px solid #000;
-        }
-        
-        table.tax-table th { border-bottom: 1px solid #000; }
-        table.tax-table td { border-bottom: none; }
-        
-        .amount-words {
-          font-weight: bold;
-          font-size: 14px;
-          padding-top: 6px;
-        }
-        
-        .footer-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 15px 15px 5px 15px;
-          font-style: italic;
+        .no-border-table th {
           font-weight: bold;
         }
       </style>
     </head>
     <body>
-      <div class="invoice-wrapper">
-        <div class="top-labels">
-          <div>AMRUT BIOCHEM - ${isPakka ? 'TAX INVOICE' : 'PRO FORMA'}</div>
-          <div style="font-style: italic;">Original Copy</div>
-        </div>
-        
-        <div class="header-row">
-          <div class="company-details">
-          <div>Dated : ${sale.date.split('-').reverse().join('-')}</div>
-          <div>Place of Supply : Maharashtra (27)</div>
-        </div>
-        
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th style="width: 30px;">S.N.</th>
-              <th class="text-left">Goods / Services</th>
-              <th style="width: 50px;">Qty.</th>
-              <th style="width: 50px;">Unit</th>
-              <th style="width: 50px;">Dis(%)</th>
-              <th style="width: 60px;">Dis Amt.</th>
-              <th style="width: 70px;">Price</th>
-              <th style="width: 80px;">Amount(₹)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map((item, i) => {
-              const listPrice = item.rate;
-              const itemDiscountPct = 0; 
-              const itemDiscountAmt = 0;
-              const priceAfterDiscount = listPrice;
-              
-              return `
-                <tr>
-                  <td class="text-center">${i + 1}</td>
-                  <td>${item.product_name}</td>
-                  <td class="text-center">${item.qty}</td>
-                  <td class="text-center">${item.unit}</td>
-                  <td class="text-right">${itemDiscountPct.toFixed(2)}</td>
-                  <td class="text-right">${itemDiscountAmt.toFixed(2)}</td>
-                  <td class="text-right">${priceAfterDiscount.toFixed(2)}</td>
-                  <td class="text-right">${item.amount.toFixed(2)}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-        
-        <div class="grand-total-row">
-          <span>Grand Total ₹</span>
-          <span class="grand-total-box">${sale.total_amount.toFixed(2)}</span>
-        </div>
-        
-        <div class="tax-info-row">
-          <table class="tax-table">
-            <thead>
+      <table class="main-table">
+        <tr>
+          <td colspan="12" style="padding: 4px 8px; border-bottom: 2px solid #000;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px;">
+              <span>AMRUT BIOCHEM - ${isPakka ? 'TAX INVOICE' : 'PRO FORMA'}</span>
+              <span style="font-style: italic;">Original Copy</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td rowspan="${items.length + 1}" style="width: 12%; vertical-align: top;">
+            Dated : ${formatDate(sale.date)}<br>
+            Place of Supply :<br>Maharashtra (27)
+          </td>
+          <th style="width: 4%;">S.N.</th>
+          <th style="width: 20%; text-align: left;">Goods / Services</th>
+          <th style="width: 6%;">Qty.</th>
+          <th style="width: 6%;">Unit</th>
+          <th style="width: 6%;">Dis(%)</th>
+          <th style="width: 7%;">Dis Amt.</th>
+          <th style="width: 8%;">Price</th>
+          <th style="width: 10%;">Amount(₹)</th>
+          <td rowspan="${items.length + 1}" style="width: 10%; vertical-align: middle; text-align: center; font-weight: bold;">
+            Grand<br>Total<br>₹
+            <div style="border: 2px solid black; padding: 3px; margin-top: 5px; font-size: 12px;">${sale.total_amount.toFixed(2)}</div>
+          </td>
+          <td rowspan="${items.length + 1}" style="width: 25%; vertical-align: top;">
+            <table class="no-border-table">
               <tr>
-                <th class="text-left">Tax Rate</th>
-                <th>Taxable Amt.</th>
-                <th>CGST Amt.</th>
-                <th>SGST Amt.</th>
-                <th>Total Tax</th>
+                <th style="text-align: left;">Tax<br>Rate</th>
+                <th>Taxable<br>Amt.</th>
+                <th>CGST<br>Amt.</th>
+                <th>SGST<br>Amt.</th>
+                <th>Total<br>Tax</th>
               </tr>
-            </thead>
-            <tbody>
               <tr>
-                <td class="text-left">${isPakka ? taxRate : 0}%</td>
+                <td style="text-align: left;">${isPakka ? taxRate : 0}%</td>
                 <td>${subtotal.toFixed(2)}</td>
                 <td>${cgstAmount.toFixed(2)}</td>
                 <td>${sgstAmount.toFixed(2)}</td>
                 <td>${totalTax.toFixed(2)}</td>
               </tr>
-            </tbody>
-          </table>
-          <div class="amount-words">Rupees ${amountInWords}</div>
-        </div>
-        
-        <div class="footer-row">
-          <div>Receiver's Signature</div>
-          <div>Authorised Signatory</div>
-        </div>
-      </div>
+            </table>
+            <div style="margin-top: 20px; font-weight: bold; font-size: 12px; line-height: 1.4;">
+              Rupees ${amountInWords}
+            </div>
+          </td>
+          <td rowspan="${items.length + 1}" style="width: 15%; vertical-align: top; text-align: center; font-weight: bold; font-style: italic;">
+            Receiver's<br>Authorised<br>Signature Signatory
+          </td>
+        </tr>
+        ${items.map((item, i) => `
+        <tr style="text-align: center;">
+          <td>${i + 1}</td>
+          <td style="text-align: left;">${item.product_name}</td>
+          <td>${item.qty}</td>
+          <td>${item.unit}</td>
+          <td>0.00</td>
+          <td>0.00</td>
+          <td>${item.rate.toFixed(2)}</td>
+          <td>${item.amount.toFixed(2)}</td>
+        </tr>
+        `).join('')}
+      </table>
+      
+      <!-- Empty space to match the screenshot bottom area -->
+      <div style="min-height: 150px; border: 1px solid #000; border-top: none; width: 100%; box-sizing: border-box;"></div>
+      
       <script>
-        // Use base64 encoded image directly. Script embed_logo.js handles injecting it into the LOCAL_LOGO_PLACEHOLDER.
+        // Any post-render logic
       </script>
     </body>
     </html>
