@@ -40,132 +40,135 @@ export const generateInvoiceHTML = (sale, items, settings) => {
           print-color-adjust: exact; 
         }
         @media print {
-          @page { margin: 10mm; size: auto; }
-          body { margin: 0; padding: 20px; }
+          @page { size: A5; margin: 10mm; }
+          body { margin: 0; padding: 0; }
         }
       </style>
     </head>
-    <body class="bg-white text-sm">
+    <body class="bg-white text-xs">
       <!-- Header -->
-      <div class="flex justify-between items-start mb-8 border-b border-slate-200 pb-6">
-        <div class="flex gap-4 items-center">
-          <img src="LOCAL_LOGO_PLACEHOLDER" class="h-16 object-contain" onerror="this.style.display='none'" />
+      <div class="flex justify-between items-center mb-4 border-b-2 border-indigo-100 pb-3">
+        <div class="flex gap-3 items-center">
+          <img src="LOCAL_LOGO_PLACEHOLDER" class="h-12 object-contain" onerror="this.style.display='none'" />
           <div>
-            <h1 class="text-2xl font-bold text-slate-800">AMRUT BIOCHEM</h1>
-            <p class="text-slate-500 text-sm mt-1">${settings?.address || 'Maharashtra (27)'}</p>
-            ${settings?.mobile ? `<p class="text-slate-500 text-sm">Mob: ${settings.mobile}</p>` : ''}
+            <h1 class="text-xl font-bold text-indigo-800 tracking-tight">AMRUT BIOCHEM</h1>
+            <p class="text-slate-500 text-[10px] mt-0.5">${settings?.address || 'Maharashtra (27)'}</p>
+            ${settings?.mobile ? `<p class="text-slate-500 text-[10px]">Mob: ${settings.mobile}</p>` : ''}
           </div>
         </div>
         <div class="text-right">
-          <h2 class="text-xl font-bold text-primary-600 mb-1">${isPakka ? 'TAX INVOICE' : 'PRO FORMA INVOICE'}</h2>
-          <p class="text-slate-500 font-medium"># ${sale.invoice_no}</p>
-          <p class="text-slate-500 mt-1">Date: <span class="text-slate-800 font-medium">${formatDate(sale.date)}</span></p>
-          <p class="text-slate-500">Mode: <span class="text-slate-800 font-medium">${sale.payment_mode || 'Cash'}</span></p>
+          <h2 class="text-lg font-bold text-indigo-600 mb-0.5">${isPakka ? 'TAX INVOICE' : 'PRO FORMA INVOICE'}</h2>
+          <p class="text-slate-600 font-semibold"># ${sale.invoice_no}</p>
+          <div class="flex justify-end gap-3 mt-1 text-[11px]">
+            <p class="text-slate-500">Date: <span class="text-slate-800 font-medium">${formatDate(sale.date)}</span></p>
+            <p class="text-slate-500">Mode: <span class="text-slate-800 font-medium">${sale.payment_mode || 'Cash'}</span></p>
+          </div>
         </div>
       </div>
 
       <!-- Bill To Section -->
-      <div class="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between">
+      <div class="mb-4 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 flex justify-between items-center">
         <div>
-          <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Bill To</p>
-          <h3 class="text-lg font-bold text-slate-800">${sale.party_name}</h3>
+          <p class="text-[10px] text-indigo-600 font-bold mb-0.5 uppercase tracking-wider">Bill To</p>
+          <h3 class="text-base font-bold text-slate-800">${sale.party_name}</h3>
         </div>
         <div class="text-right">
-          <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Associate</p>
+          <p class="text-[10px] text-indigo-600 font-bold mb-0.5 uppercase tracking-wider">Associate</p>
           <p class="text-slate-800 font-medium">${sale.associate_name || 'Direct'}</p>
         </div>
       </div>
 
       <!-- Items Table -->
-      <table class="w-full text-left text-sm whitespace-nowrap mb-8">
-        <thead class="bg-slate-50 text-slate-600 font-semibold">
-          <tr>
-            <th class="px-4 py-3 border-b border-slate-200 rounded-tl-lg">S.N.</th>
-            <th class="px-4 py-3 border-b border-slate-200 w-full">Item Description</th>
-            <th class="px-4 py-3 border-b border-slate-200 text-center">Qty</th>
-            <th class="px-4 py-3 border-b border-slate-200 text-center">Unit</th>
-            <th class="px-4 py-3 border-b border-slate-200 text-right">Rate (₹)</th>
-            <th class="px-4 py-3 border-b border-slate-200 text-right rounded-tr-lg">Amount (₹)</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          ${items.map((item, i) => `
-            <tr class="hover:bg-slate-50/50 transition-colors">
-              <td class="px-4 py-3 text-slate-500">${i + 1}</td>
-              <td class="px-4 py-3 font-medium text-slate-800">${item.product_name}</td>
-              <td class="px-4 py-3 text-center text-slate-600">${item.qty}</td>
-              <td class="px-4 py-3 text-center text-slate-500 text-xs">${item.unit}</td>
-              <td class="px-4 py-3 text-right text-slate-600">${item.rate.toFixed(2)}</td>
-              <td class="px-4 py-3 text-right font-medium text-slate-800">${item.amount.toFixed(2)}</td>
+      <div class="min-h-[160px]">
+        <table class="w-full text-left text-xs whitespace-nowrap mb-4">
+          <thead class="bg-indigo-600 text-white font-semibold">
+            <tr>
+              <th class="px-3 py-2 border-b border-indigo-700 rounded-tl-md">S.N.</th>
+              <th class="px-3 py-2 border-b border-indigo-700 w-full">Item Description</th>
+              <th class="px-3 py-2 border-b border-indigo-700 text-center">Qty</th>
+              <th class="px-3 py-2 border-b border-indigo-700 text-center">Unit</th>
+              <th class="px-3 py-2 border-b border-indigo-700 text-right">Rate (₹)</th>
+              <th class="px-3 py-2 border-b border-indigo-700 text-right rounded-tr-md">Amount (₹)</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-slate-100 border-x border-b border-slate-200 rounded-b-md">
+            ${items.map((item, i) => `
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-3 py-2 text-slate-500">${i + 1}</td>
+                <td class="px-3 py-2 font-medium text-slate-800">${item.product_name}</td>
+                <td class="px-3 py-2 text-center text-slate-700">${item.qty}</td>
+                <td class="px-3 py-2 text-center text-slate-500 text-[10px]">${item.unit}</td>
+                <td class="px-3 py-2 text-right text-slate-700">${item.rate.toFixed(2)}</td>
+                <td class="px-3 py-2 text-right font-semibold text-slate-800">${item.amount.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
 
       <!-- Totals Section -->
-      <div class="flex justify-between items-end">
-        <div class="w-1/2">
+      <div class="flex justify-between items-start gap-4">
+        <div class="w-7/12">
           ${isPakka ? `
-            <div class="mb-6">
-              <p class="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wider">Tax Summary</p>
-              <table class="w-full text-xs text-left">
-                <thead class="text-slate-500 border-b border-slate-200">
+            <div class="mb-3">
+              <table class="w-full text-[10px] text-left border border-slate-200 rounded-md overflow-hidden">
+                <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
                   <tr>
-                    <th class="pb-2 font-medium">Rate</th>
-                    <th class="pb-2 font-medium">Taxable</th>
-                    <th class="pb-2 font-medium">CGST</th>
-                    <th class="pb-2 font-medium">SGST</th>
+                    <th class="px-2 py-1.5 font-semibold">Tax Rate</th>
+                    <th class="px-2 py-1.5 font-semibold">Taxable</th>
+                    <th class="px-2 py-1.5 font-semibold">CGST</th>
+                    <th class="px-2 py-1.5 font-semibold">SGST</th>
                   </tr>
                 </thead>
-                <tbody class="text-slate-700">
+                <tbody class="text-slate-700 bg-white">
                   <tr>
-                    <td class="py-2">${taxRate}%</td>
-                    <td class="py-2">₹${subtotal.toFixed(2)}</td>
-                    <td class="py-2">₹${cgstAmount.toFixed(2)}</td>
-                    <td class="py-2">₹${sgstAmount.toFixed(2)}</td>
+                    <td class="px-2 py-1.5 font-medium">${taxRate}%</td>
+                    <td class="px-2 py-1.5">₹${subtotal.toFixed(2)}</td>
+                    <td class="px-2 py-1.5 text-indigo-600">₹${cgstAmount.toFixed(2)}</td>
+                    <td class="px-2 py-1.5 text-indigo-600">₹${sgstAmount.toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           ` : ''}
-          <div class="bg-primary-50 p-4 rounded-xl inline-block mt-4">
-            <p class="text-xs text-primary-600 font-semibold mb-1 uppercase tracking-wider">Amount in Words</p>
-            <p class="text-primary-900 font-medium leading-relaxed">Rupees ${amountInWords}</p>
+          <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-lg inline-block w-full">
+            <p class="text-[10px] text-emerald-600 font-bold mb-0.5 uppercase tracking-wider">Amount in Words</p>
+            <p class="text-emerald-900 font-semibold leading-snug">Rupees ${amountInWords}</p>
           </div>
         </div>
 
-        <div class="w-1/3 min-w-[250px]">
-          <div class="space-y-3 text-sm">
-            <div class="flex justify-between text-slate-600">
+        <div class="w-5/12 min-w-[200px]">
+          <div class="space-y-2 text-xs bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <div class="flex justify-between text-slate-600 font-medium">
               <span>Subtotal</span>
               <span>₹${subtotal.toFixed(2)}</span>
             </div>
             ${sale.discount > 0 ? `
-              <div class="flex justify-between text-green-600">
+              <div class="flex justify-between text-emerald-600 font-medium">
                 <span>Discount</span>
                 <span>- ₹${sale.discount.toFixed(2)}</span>
               </div>
             ` : ''}
             ${isPakka ? `
-              <div class="flex justify-between text-slate-600">
+              <div class="flex justify-between text-slate-600 font-medium">
                 <span>CGST</span>
                 <span>+ ₹${cgstAmount.toFixed(2)}</span>
               </div>
-              <div class="flex justify-between text-slate-600 pb-3 border-b border-slate-200">
+              <div class="flex justify-between text-slate-600 font-medium pb-2 border-b border-slate-200">
                 <span>SGST</span>
                 <span>+ ₹${sgstAmount.toFixed(2)}</span>
               </div>
             ` : ''}
-            <div class="flex justify-between items-center pt-2">
-              <span class="text-base font-bold text-slate-800">Grand Total</span>
-              <span class="text-2xl font-bold text-primary-600">₹${sale.total_amount.toFixed(2)}</span>
+            <div class="flex justify-between items-center pt-1">
+              <span class="text-sm font-bold text-slate-800">Grand Total</span>
+              <span class="text-xl font-bold text-indigo-700">₹${sale.total_amount.toFixed(2)}</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Footer Signatures -->
-      <div class="mt-24 pt-8 border-t border-slate-200 flex justify-between text-slate-500 font-medium">
+      <div class="mt-12 pt-4 border-t border-slate-200 flex justify-between text-slate-500 font-medium text-[11px]">
         <div class="text-center w-48">
           <div class="border-b border-slate-300 pb-8 mb-2"></div>
           Receiver's Signature
