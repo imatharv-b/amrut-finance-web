@@ -643,29 +643,40 @@ export const api = {
         case 'analytics:getHubData': {
           const [seasonId] = args || []
           
-          // Fast queries picking only needed columns
-          const { data: saleItems } = await withCompany(
-            supabase.from('sale_items')
-              .select('qty, amount, products!inner(name), sales!inner(season_id, party_id, date)')
-          ).eq('sales.season_id', seasonId)
+          let saleItemsQuery = supabase.from('sale_items')
+              .select('qty, amount, products!inner(name), sales!inner(season_id, party_id, date, company_id)')
+              .eq('sales.season_id', seasonId)
+          if (globalCompanyId) {
+             saleItemsQuery = saleItemsQuery.eq('sales.company_id', globalCompanyId)
+          }
+          const { data: saleItems, error: err1 } = await saleItemsQuery
+          if (err1) throw err1
 
-          const { data: expenses } = await withCompany(
+          const { data: expenses, error: err2 } = await withCompany(
             supabase.from('expenses')
               .select('amount, expense_types!inner(name), party_id')
           )
+          if (err2) throw err2
 
-          const { data: parties } = await withCompany(
+          const { data: parties, error: err3 } = await withCompany(
             supabase.from('parties').select('id, name, opening_balance')
           )
-          const { data: salesForParties } = await withCompany(
+          if (err3) throw err3
+
+          const { data: salesForParties, error: err4 } = await withCompany(
             supabase.from('sales').select('total_amount, party_id')
           )
-          const { data: paymentsForParties } = await withCompany(
+          if (err4) throw err4
+
+          const { data: paymentsForParties, error: err5 } = await withCompany(
             supabase.from('payments').select('amount, party_id')
           )
-          const { data: returnsForParties } = await withCompany(
+          if (err5) throw err5
+
+          const { data: returnsForParties, error: err6 } = await withCompany(
             supabase.from('sale_returns').select('total_amount, party_id')
           )
+          if (err6) throw err6
 
           // 1. Product Sales Analysis (Revenue & Volume)
           const productMap = {}
