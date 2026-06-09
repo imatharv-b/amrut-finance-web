@@ -640,6 +640,27 @@ export const api = {
           return [] // Minimal stub
         }
 
+        case 'analytics:getProductSales': {
+          const [seasonId, productName] = args || []
+          let query = supabase.from('sale_items')
+              .select('qty, amount, products!inner(name), sales!inner(date, invoice_no, company_id, season_id, parties(name))')
+              .eq('sales.season_id', seasonId)
+              .eq('products.name', productName)
+          if (globalCompanyId) {
+             query = query.eq('sales.company_id', globalCompanyId)
+          }
+          const { data, error } = await query
+          if (error) throw error
+
+          return data.map(d => ({
+            date: d.sales.date,
+            invoice_no: d.sales.invoice_no,
+            party_name: d.sales.parties?.name,
+            qty: d.qty,
+            amount: d.amount
+          })).sort((a, b) => new Date(b.date) - new Date(a.date))
+        }
+
         case 'analytics:getHubData': {
           const [seasonId] = args || []
           

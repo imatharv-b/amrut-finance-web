@@ -8,6 +8,9 @@ import {
   ResponsiveContainer 
 } from 'recharts'
 import { LineChart, PieChart as PieChartIcon, AlertTriangle, TrendingUp, DollarSign, Package } from 'lucide-react'
+import Modal from '../../components/Modal'
+import DataTable from '../../components/DataTable'
+import { formatDate } from '../../lib/dateUtils'
 
 const formatCurrency = (num) => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(num || 0))
 const formatCompact = (num) => {
@@ -41,6 +44,33 @@ export default function AnalyticsPage() {
   const { activeSeason } = useContext(SeasonContext)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [productSales, setProductSales] = useState([])
+  const [modalLoading, setModalLoading] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleProductClick = async (productName) => {
+    if (!productName) return;
+    setSelectedProduct(productName);
+    setIsModalOpen(true);
+    setModalLoading(true);
+    try {
+      const salesData = await window.db.invoke('analytics:getProductSales', activeSeason.id, productName);
+      setProductSales(salesData || []);
+    } catch (err) {
+      console.error('Failed to load product sales', err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const productColumns = [
+    { key: 'date', label: 'Date', render: (val) => formatDate(val) },
+    { key: 'invoice_no', label: 'Invoice No' },
+    { key: 'party_name', label: 'Party Name' },
+    { key: 'qty', label: 'Qty', render: (val) => <span className="font-semibold">{val}</span> },
+    { key: 'amount', label: 'Amount', render: (val) => <span className="font-semibold text-emerald-600">{formatCurrency(val)}</span> }
+  ];
 
   useEffect(() => {
     if (!activeSeason) {
@@ -122,7 +152,15 @@ export default function AnalyticsPage() {
               <XAxis type="number" tickFormatter={formatCompact} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12, fill: '#475569' }} axisLine={false} tickLine={false} />
               <RechartsTooltip content={<CustomTooltip isCurrency={true} />} cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
-              <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
+              <Bar 
+                dataKey="revenue" 
+                name="Revenue" 
+                fill="#10b981" 
+                radius={[0, 4, 4, 0]} 
+                barSize={20} 
+                onClick={(data) => handleProductClick(data.name)} 
+                style={{ cursor: 'pointer' }}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -148,8 +186,13 @@ export default function AnalyticsPage() {
                   strokeWidth={2}
                   stroke="#fff"
                 >
-                  {(data.topProductsByVol || []).map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  {(data.topProductsByVol || []).map((entry, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={COLORS[index % COLORS.length]} 
+                      onClick={() => handleProductClick(entry.name)}
+                      style={{ cursor: 'pointer' }}
+                    />
                   ))}
                 </Pie>
                 <RechartsTooltip content={<CustomTooltip isCurrency={false} />} />
@@ -238,6 +281,23 @@ export default function AnalyticsPage() {
         </div>
 
       </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={`Sales Details - ${selectedProduct}`}
+        size="4xl"
+      >
+        <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+          <DataTable
+            columns={productColumns}
+            data={productSales}
+            loading={modalLoading}
+            emptyMessage="No sales recorded for this product."
+            searchable={false}
+          />
+        </div>
+      </Modal>
     </div>
   )
 }
