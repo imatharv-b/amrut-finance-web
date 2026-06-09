@@ -7,7 +7,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
   const totalTax = cgstAmount + sgstAmount;
   const taxRate = (sale.cgst_percent || 0) + (sale.sgst_percent || 0);
 
-  // Number to words converter (simple version for rupees)
+  // Number to words converter
   const numberToWords = (num) => {
     const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
     const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
@@ -31,108 +31,151 @@ export const generateInvoiceHTML = (sale, items, settings) => {
     <head>
       <meta charset="utf-8">
       <title>Invoice ${sale.invoice_no}</title>
+      <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        @page { size: A5 landscape; margin: 5mm; }
-        html, body { 
-          margin: 0; 
-          padding: 0;
-          font-family: 'Arial', sans-serif; 
-          color: #000;
-          font-size: 11px;
-          background: white;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { 
+          font-family: 'Inter', sans-serif; 
+          -webkit-print-color-adjust: exact; 
+          print-color-adjust: exact; 
         }
-        table.main-table {
-          width: 100%;
-          border-collapse: collapse;
-          border: 1px solid #000;
-        }
-        table.main-table th, table.main-table td {
-          border: 1px solid #000;
-          padding: 3px 5px;
-        }
-        .no-border-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .no-border-table th, .no-border-table td {
-          border: none !important;
-          padding: 2px !important;
-          text-align: right;
-        }
-        .no-border-table th {
-          font-weight: bold;
+        @media print {
+          @page { margin: 10mm; size: auto; }
+          body { margin: 0; padding: 20px; }
         }
       </style>
     </head>
-    <body>
-      <table class="main-table">
-        <tr>
-          <td colspan="12" style="padding: 4px 8px; border-bottom: 2px solid #000;">
-            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px;">
-              <span>AMRUT BIOCHEM - ${isPakka ? 'TAX INVOICE' : 'PRO FORMA'}</span>
-              <span style="font-style: italic;">Original Copy</span>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td rowspan="${items.length + 1}" style="width: 12%; vertical-align: top;">
-            Dated : ${formatDate(sale.date)}<br>
-            Place of Supply :<br>Maharashtra (27)
-          </td>
-          <th style="width: 4%;">S.N.</th>
-          <th style="width: 20%; text-align: left;">Goods / Services</th>
-          <th style="width: 6%;">Qty.</th>
-          <th style="width: 6%;">Unit</th>
-          <th style="width: 6%;">Dis(%)</th>
-          <th style="width: 7%;">Dis Amt.</th>
-          <th style="width: 8%;">Price</th>
-          <th style="width: 10%;">Amount(₹)</th>
-          <td rowspan="${items.length + 1}" style="width: 10%; vertical-align: middle; text-align: center; font-weight: bold;">
-            Grand<br>Total<br>₹
-            <div style="border: 2px solid black; padding: 3px; margin-top: 5px; font-size: 12px;">${sale.total_amount.toFixed(2)}</div>
-          </td>
-          <td rowspan="${items.length + 1}" style="width: 25%; vertical-align: top;">
-            <table class="no-border-table">
-              <tr>
-                <th style="text-align: left;">Tax<br>Rate</th>
-                <th>Taxable<br>Amt.</th>
-                <th>CGST<br>Amt.</th>
-                <th>SGST<br>Amt.</th>
-                <th>Total<br>Tax</th>
-              </tr>
-              <tr>
-                <td style="text-align: left;">${isPakka ? taxRate : 0}%</td>
-                <td>${subtotal.toFixed(2)}</td>
-                <td>${cgstAmount.toFixed(2)}</td>
-                <td>${sgstAmount.toFixed(2)}</td>
-                <td>${totalTax.toFixed(2)}</td>
-              </tr>
-            </table>
-            <div style="margin-top: 20px; font-weight: bold; font-size: 12px; line-height: 1.4;">
-              Rupees ${amountInWords}
-            </div>
-          </td>
-          <td rowspan="${items.length + 1}" style="width: 15%; vertical-align: top; text-align: center; font-weight: bold; font-style: italic;">
-            Receiver's<br>Authorised<br>Signature Signatory
-          </td>
-        </tr>
-        ${items.map((item, i) => `
-        <tr style="text-align: center;">
-          <td>${i + 1}</td>
-          <td style="text-align: left;">${item.product_name}</td>
-          <td>${item.qty}</td>
-          <td>${item.unit}</td>
-          <td>0.00</td>
-          <td>0.00</td>
-          <td>${item.rate.toFixed(2)}</td>
-          <td>${item.amount.toFixed(2)}</td>
-        </tr>
-        `).join('')}
+    <body class="bg-white text-sm">
+      <!-- Header -->
+      <div class="flex justify-between items-start mb-8 border-b border-slate-200 pb-6">
+        <div class="flex gap-4 items-center">
+          <img src="LOCAL_LOGO_PLACEHOLDER" class="h-16 object-contain" onerror="this.style.display='none'" />
+          <div>
+            <h1 class="text-2xl font-bold text-slate-800">AMRUT BIOCHEM</h1>
+            <p class="text-slate-500 text-sm mt-1">${settings?.address || 'Maharashtra (27)'}</p>
+            ${settings?.mobile ? `<p class="text-slate-500 text-sm">Mob: ${settings.mobile}</p>` : ''}
+          </div>
+        </div>
+        <div class="text-right">
+          <h2 class="text-xl font-bold text-primary-600 mb-1">${isPakka ? 'TAX INVOICE' : 'PRO FORMA INVOICE'}</h2>
+          <p class="text-slate-500 font-medium"># ${sale.invoice_no}</p>
+          <p class="text-slate-500 mt-1">Date: <span class="text-slate-800 font-medium">${formatDate(sale.date)}</span></p>
+          <p class="text-slate-500">Mode: <span class="text-slate-800 font-medium">${sale.payment_mode || 'Cash'}</span></p>
+        </div>
+      </div>
+
+      <!-- Bill To Section -->
+      <div class="mb-8 p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between">
+        <div>
+          <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Bill To</p>
+          <h3 class="text-lg font-bold text-slate-800">${sale.party_name}</h3>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Associate</p>
+          <p class="text-slate-800 font-medium">${sale.associate_name || 'Direct'}</p>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <table class="w-full text-left text-sm whitespace-nowrap mb-8">
+        <thead class="bg-slate-50 text-slate-600 font-semibold">
+          <tr>
+            <th class="px-4 py-3 border-b border-slate-200 rounded-tl-lg">S.N.</th>
+            <th class="px-4 py-3 border-b border-slate-200 w-full">Item Description</th>
+            <th class="px-4 py-3 border-b border-slate-200 text-center">Qty</th>
+            <th class="px-4 py-3 border-b border-slate-200 text-center">Unit</th>
+            <th class="px-4 py-3 border-b border-slate-200 text-right">Rate (₹)</th>
+            <th class="px-4 py-3 border-b border-slate-200 text-right rounded-tr-lg">Amount (₹)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          ${items.map((item, i) => `
+            <tr class="hover:bg-slate-50/50 transition-colors">
+              <td class="px-4 py-3 text-slate-500">${i + 1}</td>
+              <td class="px-4 py-3 font-medium text-slate-800">${item.product_name}</td>
+              <td class="px-4 py-3 text-center text-slate-600">${item.qty}</td>
+              <td class="px-4 py-3 text-center text-slate-500 text-xs">${item.unit}</td>
+              <td class="px-4 py-3 text-right text-slate-600">${item.rate.toFixed(2)}</td>
+              <td class="px-4 py-3 text-right font-medium text-slate-800">${item.amount.toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
       </table>
-      
-      <!-- Empty space to match the screenshot bottom area -->
-      <div style="min-height: 150px; border: 1px solid #000; border-top: none; width: 100%; box-sizing: border-box;"></div>
-      
+
+      <!-- Totals Section -->
+      <div class="flex justify-between items-end">
+        <div class="w-1/2">
+          ${isPakka ? `
+            <div class="mb-6">
+              <p class="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wider">Tax Summary</p>
+              <table class="w-full text-xs text-left">
+                <thead class="text-slate-500 border-b border-slate-200">
+                  <tr>
+                    <th class="pb-2 font-medium">Rate</th>
+                    <th class="pb-2 font-medium">Taxable</th>
+                    <th class="pb-2 font-medium">CGST</th>
+                    <th class="pb-2 font-medium">SGST</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-700">
+                  <tr>
+                    <td class="py-2">${taxRate}%</td>
+                    <td class="py-2">₹${subtotal.toFixed(2)}</td>
+                    <td class="py-2">₹${cgstAmount.toFixed(2)}</td>
+                    <td class="py-2">₹${sgstAmount.toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+          <div class="bg-primary-50 p-4 rounded-xl inline-block mt-4">
+            <p class="text-xs text-primary-600 font-semibold mb-1 uppercase tracking-wider">Amount in Words</p>
+            <p class="text-primary-900 font-medium leading-relaxed">Rupees ${amountInWords}</p>
+          </div>
+        </div>
+
+        <div class="w-1/3 min-w-[250px]">
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between text-slate-600">
+              <span>Subtotal</span>
+              <span>₹${subtotal.toFixed(2)}</span>
+            </div>
+            ${sale.discount > 0 ? `
+              <div class="flex justify-between text-green-600">
+                <span>Discount</span>
+                <span>- ₹${sale.discount.toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${isPakka ? `
+              <div class="flex justify-between text-slate-600">
+                <span>CGST</span>
+                <span>+ ₹${cgstAmount.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between text-slate-600 pb-3 border-b border-slate-200">
+                <span>SGST</span>
+                <span>+ ₹${sgstAmount.toFixed(2)}</span>
+              </div>
+            ` : ''}
+            <div class="flex justify-between items-center pt-2">
+              <span class="text-base font-bold text-slate-800">Grand Total</span>
+              <span class="text-2xl font-bold text-primary-600">₹${sale.total_amount.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Signatures -->
+      <div class="mt-24 pt-8 border-t border-slate-200 flex justify-between text-slate-500 font-medium">
+        <div class="text-center w-48">
+          <div class="border-b border-slate-300 pb-8 mb-2"></div>
+          Receiver's Signature
+        </div>
+        <div class="text-center w-48">
+          <div class="border-b border-slate-300 pb-8 mb-2"></div>
+          Authorised Signatory
+        </div>
+      </div>
+
       <script>
         // Any post-render logic
       </script>
