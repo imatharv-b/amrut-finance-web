@@ -508,11 +508,108 @@ export const api = {
         // =================== REPORTS & SETTINGS & DASHBOARD ===================
         case 'dashboard:stats': {
           const [seasonId] = args || []
-          const { data: salesData } = await withCompany(supabase.from('sales').select('total_amount')).eq('season_id', seasonId)
-          const { data: expData } = await withCompany(supabase.from('expenses').select('amount'))
-          const totalSales = salesData?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0
-          const totalExpenses = expData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
-          return { totalSales, totalExpenses }
+          
+          // Fetch relevant data
+          const { data: salesData } = await withCompany(supabase.from('sales').select('*, parties(name)')).eq('season_id', seasonId)
+          const { data: expData } = await withCompany(supabase.from('expenses').select('*, expense_types(name)'))
+          const { data: allCoupons } = await withCompany(supabase.from('scheme_coupons').select('*, schemes(season_id)'))
+          const couponsData = allCoupons?.filter(c => c.schemes?.season_id === seasonId) || []
+          
+          // For outstanding, we need all parties, all sales (all time), all payments, all returns
+          const { data: partiesData } = await withCompany(supabase.from('parties').select('id, name, opening_balance'))
+          const { data: allSales } = await withCompany(supabase.from('sales').select('total_amount, party_id'))
+          const { data: allPayments } = await withCompany(supabase.from('payments').select('amount, party_id'))
+          const { data: allReturns } = await withCompany(supabase.from('sale_returns').select('total_amount, party_id'))
+
+          // Basic totals
+          const totalSales = salesData?.reduce((sum, s) => sum + Number(s.total_amount || 0), 0) || 0
+          const totalExpenses = expData?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0
+          const netBalance = totalSales - totalExpenses
+          const couponsIssued = couponsData.length
+
+          // Compute Outstanding (Total Receivables > 0)
+          let totalReceivables = 0
+          if (partiesData) {
+            partiesData.forEach(p => {
+               let bal = Number(p.opening_balance || 0)
+               // Add sales
+               const pSales = allSales?.filter(s => s.party_id === p.id) || []
+               bal += pSales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0)
+               // Subtract payments
+               const pPayments = allPayments?.filter(pay => pay.party_id === p.id) || []
+               bal -= pPayments.reduce((sum, pay) => sum + Number(pay.amount || 0), 0)
+               // Subtract returns
+               const pReturns = allReturns?.filter(r => r.party_id === p.id) || []
+               bal -= pReturns.reduce((sum, r) => sum + Number(r.total_amount || 0), 0)
+               // Add advances/subtract bad debts
+               const pExp = expData?.filter(e => e.party_id === p.id) || []
+               pExp.forEach(e => {
+                 if (e.expense_types?.name === 'Advance to Party') bal += Number(e.amount || 0)
+                 if (e.expense_types?.name === 'Bad Debt') bal -= Number(e.amount || 0)
+               })
+               
+               if (bal > 0) totalReceivables += bal
+            })
+          }
+
+          // Monthly Sales & Expenses
+          const monthlyMap = {}
+          salesData?.forEach(s => {
+            const date = new Date(s.date)
+            const m = date.toLocaleString('default', { month: 'short' })
+            if(!monthlyMap[m]) monthlyMap[m] = { month: m, sales: 0, expenses: 0 }
+            monthlyMap[m].sales += Number(s.total_amount || 0)
+          })
+          expData?.forEach(e => {
+            const date = new Date(e.date)
+            const m = date.toLocaleString('default', { month: 'short' })
+            if(!monthlyMap[m]) monthlyMap[m] = { month: m, sales: 0, expenses: 0 }
+            monthlyMap[m].expenses += Number(e.amount || 0)
+          })
+          const monthsOrder = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+          const monthlySalesExpenses = Object.values(monthlyMap).sort((a,b) => monthsOrder.indexOf(a.month) - monthsOrder.indexOf(b.month))
+
+          // Expense Breakdown
+          const expBreakdownMap = {}
+          expData?.forEach(e => {
+             const type = e.expense_types?.name || 'Other'
+             if(!expBreakdownMap[type]) expBreakdownMap[type] = 0
+             expBreakdownMap[type] += Number(e.amount || 0)
+          })
+          const expenseBreakdown = Object.entries(expBreakdownMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
+
+          // Top Parties
+          const partySalesMap = {}
+          salesData?.forEach(s => {
+             const pName = s.parties?.name || 'Unknown'
+             if(!partySalesMap[pName]) partySalesMap[pName] = 0
+             partySalesMap[pName] += Number(s.total_amount || 0)
+          })
+          const topParties = Object.entries(partySalesMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total).slice(0, 5)
+
+          // Recent Sales
+          const recentSales = (salesData || [])
+            .sort((a,b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date))
+            .slice(0, 5)
+            .map(s => ({
+              id: s.id,
+              party_name: s.parties?.name || 'Unknown',
+              invoice_no: s.invoice_no,
+              date: s.date,
+              total_amount: s.total_amount
+            }))
+
+          return { 
+            totalSales, 
+            totalExpenses, 
+            netBalance, 
+            totalReceivables, 
+            couponsIssued,
+            monthlySalesExpenses,
+            expenseBreakdown,
+            topParties,
+            recentSales
+          }
         }
         case 'settings:get': {
           const { data } = await supabase.from('settings').select('*')
