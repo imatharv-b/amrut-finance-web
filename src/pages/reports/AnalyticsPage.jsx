@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, 
   ResponsiveContainer 
 } from 'recharts'
-import { LineChart, PieChart as PieChartIcon, AlertTriangle, TrendingUp, DollarSign, Package, Printer } from 'lucide-react'
+import { LineChart, PieChart as PieChartIcon, AlertTriangle, TrendingUp, DollarSign, Package, Printer, Search, Users, Clock } from 'lucide-react'
 import Modal from '../../components/Modal'
 import DataTable from '../../components/DataTable'
 import { formatDate } from '../../lib/dateUtils'
@@ -48,6 +48,8 @@ export default function AnalyticsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [productSales, setProductSales] = useState([])
   const [sortBy, setSortBy] = useState('date')
+  const [viewMode, setViewMode] = useState('timeline') // 'timeline' or 'summary'
+  const [searchQuery, setSearchQuery] = useState('')
   const [modalLoading, setModalLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -56,6 +58,8 @@ export default function AnalyticsPage() {
     setSelectedProduct(productName);
     setIsModalOpen(true);
     setModalLoading(true);
+    setViewMode('timeline');
+    setSearchQuery('');
     try {
       const salesData = await window.db.invoke('analytics:getProductSales', activeSeason.id, productName);
       setProductSales(salesData || []);
@@ -73,38 +77,111 @@ export default function AnalyticsPage() {
     return new Date(b.date) - new Date(a.date);
   });
 
-  const handlePrintProductSales = async () => {
-    const tableRows = sortedProductSales.map(row => `
-      <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${formatDate(row.date)}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${row.invoice_no || '-'}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${row.party_name || '-'}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">${row.qty}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">${formatCurrency(row.amount)}</td>
-      </tr>
-    `).join('');
+  const filteredProductSales = sortedProductSales.filter(s => 
+    (s.party_name || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <h2 style="text-align: center; color: #1e293b; margin-bottom: 5px;">Sales Report</h2>
-        <h3 style="text-align: center; color: #475569; margin-top: 0; margin-bottom: 20px;">Product: ${selectedProduct}</h3>
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-          <thead>
-            <tr style="background-color: #f8fafc; color: #475569;">
-              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Date</th>
-              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Invoice No</th>
-              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Party Name</th>
-              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1;">Qty</th>
-              <th style="padding: 10px 8px; border-bottom: 2px solid #cbd5e1; text-align: right;">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tableRows}
-            ${sortedProductSales.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding: 20px;">No sales recorded for this product.</td></tr>' : ''}
-          </tbody>
-        </table>
-      </div>
-    `;
+  const partySummaryMap = {};
+  productSales.forEach(sale => {
+    const party = sale.party_name || 'Unknown';
+    if (!partySummaryMap[party]) {
+      partySummaryMap[party] = { party_name: party, qty: 0, amount: 0 };
+    }
+    partySummaryMap[party].qty += Number(sale.qty || 0);
+    partySummaryMap[party].amount += Number(sale.amount || 0);
+  });
+
+  const partySummaryData = Object.values(partySummaryMap)
+    .sort((a, b) => b.qty - a.qty)
+    .filter(s => s.party_name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const handlePrintProductSales = async () => {
+    let html = '';
+
+    if (viewMode === 'timeline') {
+      const tableRows = filteredProductSales.map(row => `
+        <tr>
+          <td style="padding: 12px 8px; border-bottom: 1px solid #e2e8f0; color: #334155;">${formatDate(row.date)}</td>
+          <td style="padding: 12px 8px; border-bottom: 1px solid #e2e8f0; color: #475569;">${row.invoice_no || '-'}</td>
+          <td style="padding: 12px 8px; border-bottom: 1px solid #e2e8f0; font-weight: 500; color: #1e293b;">${row.party_name || '-'}</td>
+          <td style="padding: 12px 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a;">${row.qty}</td>
+          <td style="padding: 12px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: #10b981;">${formatCurrency(row.amount)}</td>
+        </tr>
+      `).join('');
+
+      html = `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px;">
+          <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px;">
+            <h1 style="color: #0f172a; margin: 0 0 8px 0; font-size: 28px; font-weight: 800;">Product Intelligence Report</h1>
+            <h2 style="color: #64748b; margin: 0; font-size: 18px; font-weight: 500;">Timeline View: <span style="color: #3b82f6;">${selectedProduct}</span></h2>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+            <thead>
+              <tr style="background-color: #f8fafc;">
+                <th style="padding: 12px 8px; border-bottom: 2px solid #cbd5e1; color: #64748b; font-weight: 600;">Date</th>
+                <th style="padding: 12px 8px; border-bottom: 2px solid #cbd5e1; color: #64748b; font-weight: 600;">Invoice No</th>
+                <th style="padding: 12px 8px; border-bottom: 2px solid #cbd5e1; color: #64748b; font-weight: 600;">Party Name</th>
+                <th style="padding: 12px 8px; border-bottom: 2px solid #cbd5e1; color: #64748b; font-weight: 600;">Qty</th>
+                <th style="padding: 12px 8px; border-bottom: 2px solid #cbd5e1; text-align: right; color: #64748b; font-weight: 600;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+              ${filteredProductSales.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding: 30px; color: #94a3b8;">No data available.</td></tr>' : ''}
+            </tbody>
+          </table>
+          <div style="margin-top: 40px; font-size: 12px; color: #94a3b8; text-align: center;">
+            Generated from Amrut Finance Advanced Analytics Hub
+          </div>
+        </div>
+      `;
+    } else {
+      const totalQty = partySummaryData.reduce((sum, row) => sum + row.qty, 0);
+      const totalAmt = partySummaryData.reduce((sum, row) => sum + row.amount, 0);
+      
+      const tableRows = partySummaryData.map(row => `
+        <tr>
+          <td style="padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e293b;">${row.party_name}</td>
+          <td style="padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #4f46e5;">${row.qty}</td>
+          <td style="padding: 14px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: #10b981;">${formatCurrency(row.amount)}</td>
+        </tr>
+      `).join('');
+
+      html = `
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px;">
+          <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px;">
+            <h1 style="color: #0f172a; margin: 0 0 8px 0; font-size: 28px; font-weight: 800;">Party Intelligence Summary</h1>
+            <h2 style="color: #64748b; margin: 0; font-size: 18px; font-weight: 500;">Product: <span style="color: #3b82f6;">${selectedProduct}</span></h2>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 15px;">
+            <thead>
+              <tr style="background-color: #f8fafc;">
+                <th style="padding: 14px 12px; border-bottom: 2px solid #cbd5e1; color: #64748b; font-weight: 700;">Party Name</th>
+                <th style="padding: 14px 12px; border-bottom: 2px solid #cbd5e1; color: #64748b; font-weight: 700;">Total Bags Bought</th>
+                <th style="padding: 14px 12px; border-bottom: 2px solid #cbd5e1; text-align: right; color: #64748b; font-weight: 700;">Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+              ${partySummaryData.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding: 30px; color: #94a3b8;">No data available.</td></tr>' : ''}
+            </tbody>
+            ${partySummaryData.length > 0 ? `
+            <tfoot>
+              <tr style="background-color: #f1f5f9;">
+                <td style="padding: 16px 12px; font-weight: 800; color: #0f172a;">GRAND TOTAL</td>
+                <td style="padding: 16px 12px; font-weight: 800; color: #4f46e5;">${totalQty}</td>
+                <td style="padding: 16px 12px; text-align: right; font-weight: 800; color: #10b981;">${formatCurrency(totalAmt)}</td>
+              </tr>
+            </tfoot>
+            ` : ''}
+          </table>
+          <div style="margin-top: 40px; font-size: 12px; color: #94a3b8; text-align: center;">
+            Generated from Amrut Finance Advanced Analytics Hub
+          </div>
+        </div>
+      `;
+    }
+
     try {
       await printHTML(html);
     } catch (err) {
@@ -118,6 +195,12 @@ export default function AnalyticsPage() {
     { key: 'party_name', label: 'Party Name' },
     { key: 'qty', label: 'Qty', render: (val) => <span className="font-semibold">{val}</span> },
     { key: 'amount', label: 'Amount', render: (val) => <span className="font-semibold text-emerald-600">{formatCurrency(val)}</span> }
+  ];
+
+  const summaryColumns = [
+    { key: 'party_name', label: 'Party Name', render: (val) => <span className="font-semibold text-slate-800">{val}</span> },
+    { key: 'qty', label: 'Total Bags Bought', render: (val) => <span className="font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">{val}</span> },
+    { key: 'amount', label: 'Total Value', render: (val) => <span className="font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">{formatCurrency(val)}</span> }
   ];
 
   useEffect(() => {
@@ -333,37 +416,81 @@ export default function AnalyticsPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={`Sales Details - ${selectedProduct}`}
+        title={`Intelligence - ${selectedProduct}`}
         size="4xl"
       >
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-600">Sort by:</span>
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-slate-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="date">Date (Newest First)</option>
-              <option value="party">Party Name (A-Z)</option>
-            </select>
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* View Toggle */}
+            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'timeline' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <Clock className="w-4 h-4" /> Timeline View
+              </button>
+              <button
+                onClick={() => setViewMode('summary')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all ${viewMode === 'summary' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <Users className="w-4 h-4" /> Party Summary
+              </button>
+            </div>
+
+            {/* Actions: Search & Print */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text"
+                  placeholder="Search party..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-4 py-2 w-64 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                />
+              </div>
+
+              {viewMode === 'timeline' && (
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={sortBy} 
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="border border-slate-200 rounded-lg text-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="date">Sort by Date</option>
+                    <option value="party">Sort A-Z</option>
+                  </select>
+                </div>
+              )}
+
+              <button 
+                onClick={handlePrintProductSales}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-bold transition-all shadow-sm"
+              >
+                <Printer className="w-4 h-4" /> Print Report
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={handlePrintProductSales}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Printer className="w-4 h-4" />
-            Print
-          </button>
         </div>
-        <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
-          <DataTable
-            columns={productColumns}
-            data={sortedProductSales}
-            loading={modalLoading}
-            emptyMessage="No sales recorded for this product."
-            searchable={false}
-          />
+
+        <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+          {viewMode === 'timeline' ? (
+            <DataTable
+              columns={productColumns}
+              data={filteredProductSales}
+              loading={modalLoading}
+              emptyMessage="No sales recorded matching your search."
+              searchable={false}
+            />
+          ) : (
+            <DataTable
+              columns={summaryColumns}
+              data={filteredSummary}
+              loading={modalLoading}
+              emptyMessage="No parties found matching your search."
+              searchable={false}
+            />
+          )}
         </div>
       </Modal>
     </div>
