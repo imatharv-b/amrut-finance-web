@@ -20,13 +20,15 @@ export default function AllSalesPage() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [saleDetails, setSaleDetails] = useState(null);
   const [firmSettings, setFirmSettings] = useState({});
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   useEffect(() => {
     if (activeSeason) {
       loadSales();
       loadSettings();
     }
-  }, [activeSeason]);
+  }, [activeSeason, fromDate, toDate]);
 
   const loadSettings = async () => {
     try {
@@ -40,7 +42,11 @@ export default function AllSalesPage() {
   const loadSales = async () => {
     setLoading(true);
     try {
-      const data = await window.db.invoke('sales:getAll', { season_id: activeSeason.id });
+      const data = await window.db.invoke('sales:getAll', { 
+        season_id: activeSeason.id,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined
+      });
       setSales(data || []);
     } catch (err) {
       toast.error('Failed to load sales');
@@ -140,6 +146,26 @@ export default function AllSalesPage() {
           <p className="text-slate-500">
             {activeSeason?.name} | Total Sales: <span className="text-slate-800 font-semibold">₹{totalSales.toFixed(2)}</span> | Balance Due: <span className="text-red-600 font-semibold">₹{totalBalance.toFixed(2)}</span>
           </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="text-xs text-slate-500 font-medium mb-1">From Date</span>
+            <input 
+              type="date" 
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-slate-500 font-medium mb-1">To Date</span>
+            <input 
+              type="date" 
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
         </div>
       </div>
 

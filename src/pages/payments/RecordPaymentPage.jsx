@@ -16,6 +16,8 @@ export default function RecordPaymentPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -30,13 +32,13 @@ export default function RecordPaymentPage() {
 
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [fromDate, toDate]);
 
   const loadInitialData = async () => {
     setLoading(true);
     try {
       const [paymentsData, partiesData, couponsData] = await Promise.all([
-        window.db.invoke('payments:getAll'),
+        window.db.invoke('payments:getAll', { fromDate: fromDate || undefined, toDate: toDate || undefined }),
         window.db.invoke('parties:getAll'),
         window.db.invoke('coupons:getAll')
       ]);
@@ -52,7 +54,7 @@ export default function RecordPaymentPage() {
 
   const loadPayments = async () => {
     try {
-      const data = await window.db.invoke('payments:getAll');
+      const data = await window.db.invoke('payments:getAll', { fromDate: fromDate || undefined, toDate: toDate || undefined });
       setPayments(data || []);
       // Also silently reload parties to update balances in the dropdown
       const partiesData = await window.db.invoke('parties:getAll');
@@ -97,10 +99,10 @@ export default function RecordPaymentPage() {
   const handleDelete = async () => {
     try {
       await window.db.invoke('payments:delete', selectedPayment.id);
-      toast.success('Payment deleted successfully');
+      toast.success('Receipt deleted successfully');
       loadPayments();
     } catch (err) {
-      toast.error('Failed to delete payment');
+      toast.error('Failed to delete receipt');
     } finally {
       setIsConfirmOpen(false);
       setSelectedPayment(null);
@@ -124,15 +126,15 @@ export default function RecordPaymentPage() {
       const dataToSave = { ...formData, amount: Number(formData.amount) };
       if (selectedPayment) {
         await window.db.invoke('payments:update', { id: selectedPayment.id, ...dataToSave });
-        toast.success('Payment updated successfully');
+        toast.success('Receipt updated successfully');
       } else {
         await window.db.invoke('payments:add', dataToSave);
-        toast.success('Payment recorded successfully');
+        toast.success('Receipt recorded successfully');
       }
       setIsModalOpen(false);
       loadPayments();
     } catch (err) {
-      toast.error('Failed to save payment');
+      toast.error('Failed to save receipt');
     }
   };
 
@@ -167,16 +169,38 @@ export default function RecordPaymentPage() {
     <div className="p-6 h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Payments Received</h1>
-          <p className="text-slate-500">Record payments received from parties</p>
+          <h1 className="text-2xl font-bold text-slate-800">Receipts</h1>
+          <p className="text-slate-500">Record receipts from parties</p>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center"
-        >
-          <CreditCard className="w-4 h-4 mr-2" />
-          Record Payment
-        </button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <span className="text-xs text-slate-500 font-medium mb-1">From Date</span>
+              <input 
+                type="date" 
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-slate-500 font-medium mb-1">To Date</span>
+              <input 
+                type="date" 
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => openModal()}
+            className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center h-[38px] mt-[20px]"
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            Record Receipt
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden bg-white rounded-xl shadow-sm border border-slate-200">

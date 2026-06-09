@@ -300,6 +300,8 @@ export const api = {
           if (filters?.season_id) {
             // Note: Currently expenses don't have season_id in schema, skipping filter or join if needed
           }
+          if (filters?.fromDate) q = q.gte('date', filters.fromDate)
+          if (filters?.toDate) q = q.lte('date', filters.toDate)
           const { data, error } = await q
           if (error) throw error
           return data.map(d => ({...d, type_name: d.expense_types?.name, party_name: d.parties?.name}))
@@ -319,7 +321,11 @@ export const api = {
 
         // =================== PAYMENTS ===================
         case 'payments:getAll': {
-          const { data, error } = await withCompany(supabase.from('payments').select('*, parties(name)')).order('date', { ascending: false })
+          const [filters] = args || [{}]
+          let q = withCompany(supabase.from('payments').select('*, parties(name)')).order('date', { ascending: false })
+          if (filters?.fromDate) q = q.gte('date', filters.fromDate)
+          if (filters?.toDate) q = q.lte('date', filters.toDate)
+          const { data, error } = await q
           if (error) throw error
           return data.map(d => ({...d, party_name: d.parties?.name}))
         }
@@ -347,6 +353,8 @@ export const api = {
           const [filters] = args || [{}]
           let q = withCompany(supabase.from('sales_with_details').select('*')).order('date', { ascending: false }).order('id', { ascending: false })
           if (filters?.season_id) q = q.eq('season_id', filters.season_id)
+          if (filters?.fromDate) q = q.gte('date', filters.fromDate)
+          if (filters?.toDate) q = q.lte('date', filters.toDate)
           const { data, error } = await q
           if (error) throw error
           return data
