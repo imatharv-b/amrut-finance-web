@@ -70,15 +70,21 @@ export default function NewExpensePage() {
 
     setLoading(true);
     try {
-      await window.db.invoke('expenses:add', {
+      const payload = {
         ...formData,
-        season_id: activeSeason.id,
         amount: Number(formData.amount)
-      });
+      };
+      // Clean up empty foreign keys that might cause DB type errors
+      if (!payload.party_id) delete payload.party_id;
+      
+      // The database schema for expenses does not currently include season_id,
+      // so we should not include it in the insert payload to prevent schema cache errors.
+
+      await window.db.invoke('expenses:add', payload);
       toast.success('Expense recorded successfully');
       navigate('/expenses/all');
     } catch (err) {
-      toast.error('Failed to save expense');
+      toast.error(err.message || 'Failed to save expense');
     } finally {
       setLoading(false);
     }
