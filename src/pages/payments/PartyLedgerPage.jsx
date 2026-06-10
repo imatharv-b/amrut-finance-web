@@ -235,6 +235,18 @@ export default function PartyLedgerPage() {
                       </td>
                     </tr>
                   )}
+                  {ledgerData.entries.length > 0 && (() => {
+                    const totalDebit = ledgerData.entries.reduce((sum, e) => sum + (e.debit || 0), 0);
+                    const totalCredit = ledgerData.entries.reduce((sum, e) => sum + (e.credit || 0), 0);
+                    return (
+                      <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                        <td colSpan="4" className="px-6 py-4 text-right text-slate-800 uppercase tracking-wider text-xs">Total for Period:</td>
+                        <td className="px-6 py-4 text-right text-red-700">{totalDebit.toFixed(2)}</td>
+                        <td className="px-6 py-4 text-right text-green-700">{totalCredit.toFixed(2)}</td>
+                        <td className="px-6 py-4"></td>
+                      </tr>
+                    );
+                  })()}
                 </tbody>
               </table>
             </div>
