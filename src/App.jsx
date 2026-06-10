@@ -31,7 +31,9 @@ const ReportsPage = React.lazy(() => import('./pages/reports/ReportsPage'))
 const SeasonsPage = React.lazy(() => import('./pages/settings/SeasonsPage'))
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'))
 const AnalyticsPage = React.lazy(() => import('./pages/reports/AnalyticsPage'))
-
+const WorkersPage = React.lazy(() => import('./pages/workers/WorkersPage'))
+const AttendancePage = React.lazy(() => import('./pages/workers/AttendancePage'))
+const WorkerLedgerPage = React.lazy(() => import('./pages/workers/WorkerLedgerPage'))
 // ── Page Loading Fallback ────────────────────────────────────────────
 function PageFallback() {
   return (
@@ -124,6 +126,10 @@ function AppWithCompany() {
                   <Route path="/reports" element={<ReportsPage />} />
                   <Route path="/seasons" element={<SeasonsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
+
+                  <Route path="/workers/all" element={<WorkersPage />} />
+                  <Route path="/workers/attendance" element={<AttendancePage />} />
+                  <Route path="/workers/ledger" element={<WorkerLedgerPage />} />
                 </Routes>
               </Suspense>
             </main>

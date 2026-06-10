@@ -12,6 +12,7 @@ export default function NewExpensePage() {
   
   const [expenseTypes, setExpenseTypes] = useState([]);
   const [parties, setParties] = useState([]);
+  const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -21,7 +22,8 @@ export default function NewExpensePage() {
     paid_to: '',
     payment_mode: 'Cash',
     description: '',
-    party_id: ''
+    party_id: '',
+    worker_id: ''
   });
   const [errors, setErrors] = useState({});
 
@@ -31,12 +33,14 @@ export default function NewExpensePage() {
 
   const loadInitialData = async () => {
     try {
-      const [typesData, partiesData] = await Promise.all([
+      const [typesData, partiesData, workersData] = await Promise.all([
         window.db.invoke('expenseTypes:getAll'),
-        window.db.invoke('parties:getAll')
+        window.db.invoke('parties:getAll'),
+        window.db.invoke('workers:getAll')
       ]);
       setExpenseTypes(typesData || []);
       setParties(partiesData.map(p => ({ value: p.id, label: p.name, sublabel: p.village })));
+      setWorkers((workersData || []).map(w => ({ value: w.id, label: w.name, sublabel: w.salary_type })));
     } catch (err) {
       toast.error('Failed to load initial data');
     }
@@ -52,6 +56,11 @@ export default function NewExpensePage() {
     if (selectedType && (selectedType.name === 'Bad Debt' || selectedType.name === 'Advance to Party')) {
       if (!formData.party_id) {
         newErrors.party_id = 'Party selection is required for this expense type';
+      }
+    }
+    if (selectedType && (selectedType.name === 'Worker Salary' || selectedType.name === 'Worker Advance')) {
+      if (!formData.worker_id) {
+        newErrors.worker_id = 'Worker selection is required for this expense type';
       }
     }
     
@@ -76,6 +85,7 @@ export default function NewExpensePage() {
       };
       // Clean up empty foreign keys that might cause DB type errors
       if (!payload.party_id) delete payload.party_id;
+      if (!payload.worker_id) delete payload.worker_id;
       
       // The database schema for expenses does not currently include season_id,
       // so we should not include it in the insert payload to prevent schema cache errors.
@@ -138,6 +148,18 @@ export default function NewExpensePage() {
                         value={formData.party_id}
                         onChange={v => setFormData({ ...formData, party_id: v })}
                         placeholder="Search and select party..."
+                      />
+                    </FormField>
+                  );
+                }
+                if (selectedType && (selectedType.name === 'Worker Salary' || selectedType.name === 'Worker Advance')) {
+                  return (
+                    <FormField label="Select Worker" required error={errors.worker_id}>
+                      <SearchableSelect
+                        options={workers}
+                        value={formData.worker_id}
+                        onChange={v => setFormData({ ...formData, worker_id: v })}
+                        placeholder="Search and select worker..."
                       />
                     </FormField>
                   );

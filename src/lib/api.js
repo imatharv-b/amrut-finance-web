@@ -308,8 +308,29 @@ export const api = {
         }
         case 'expenses:add': {
           const [expData] = args
+          
+          const workerId = expData.worker_id;
+          const expenseTypeId = expData.expense_type_id;
+          // remove worker_id so it doesn't fail schema validation on expenses table
+          delete expData.worker_id;
+
           const { data, error } = await supabase.from('expenses').insert(injectCompany(expData)).select().single()
           if (error) throw error
+          
+          if (workerId) {
+             const { data: typeData } = await supabase.from('expense_types').select('name').eq('id', expenseTypeId).single()
+             const desc = typeData ? typeData.name : 'Advance / Salary Paid'
+             
+             await supabase.from('worker_ledger').insert(injectCompany({
+                worker_id: workerId,
+                date: data.date,
+                type: 'Debit',
+                amount: data.amount,
+                description: `${desc} - ${data.description || ''}`.trim(),
+                related_expense_id: data.id
+             }))
+          }
+          
           return data
         }
         case 'expenses:delete': {
@@ -746,6 +767,85 @@ export const api = {
              topProductsByVol,
              topRisks
           }
+        }
+
+        // =================== WORKERS ===================
+        case 'workers:getAll': {
+          const { data, error } = await withCompany(supabase.from('workers').select('*')).order('name')
+          if (error) throw error
+          return data
+        }
+        case 'workers:add': {
+          const [workerData] = args
+          const { data, error } = await supabase.from('workers').insert(injectCompany(workerData)).select().single()
+          if (error) throw error
+          return data
+        }
+        case 'workers:update': {
+          const [id, workerData] = args
+          const { data, error } = await supabase.from('workers').update(workerData).eq('id', id).select().single()
+          if (error) throw error
+          return data
+        }
+
+        // =================== WORKER ATTENDANCE ===================
+        case 'attendance:getByDate': {
+          const [date] = args
+          const { data, error } = await withCompany(supabase.from('worker_attendance').select('*, workers(name, salary_type, salary_amount)')).eq('date', date)
+          if (error) throw error
+          return data
+        }
+        case 'attendance:mark': {
+          const [attendanceData] = args
+          // using upsert to handle updates if already exists for that date
+          const { data, error } = await supabase.from('worker_attendance').upsert(injectCompany(attendanceData), { onConflict: 'worker_id, date' }).select().single()
+          if (error) throw error
+          return data
+        }
+        case 'attendance:approve': {
+          const [date] = args
+          
+          // 1. Get all unapproved attendance for this date
+          let query = supabase.from('worker_attendance').select('*, workers(*)').eq('date', date).eq('approved', false)
+          const { data: records, error: fetchErr } = await withCompany(query)
+          if (fetchErr) throw fetchErr
+          
+          if (!records || records.length === 0) return { success: true, count: 0 }
+          
+          const ledgerEntries = []
+          const recordIds = []
+          
+          for (const rec of records) {
+            recordIds.push(rec.id)
+            if (rec.workers.salary_type === 'Daily' && (rec.status === 'Present' || rec.status === 'Half Day')) {
+               const amount = rec.status === 'Present' ? rec.workers.salary_amount : (rec.workers.salary_amount / 2)
+               ledgerEntries.push(injectCompany({
+                 worker_id: rec.worker_id,
+                 date: rec.date,
+                 type: 'Credit',
+                 amount: amount,
+                 description: `Salary for ${rec.status} on ${rec.date}`
+               }))
+            }
+          }
+          
+          if (ledgerEntries.length > 0) {
+            const { error: ledgerErr } = await supabase.from('worker_ledger').insert(ledgerEntries)
+            if (ledgerErr) throw ledgerErr
+          }
+          
+          const { error: updateErr } = await supabase.from('worker_attendance').update({ approved: true }).in('id', recordIds)
+          if (updateErr) throw updateErr
+          
+          return { success: true, count: records.length }
+        }
+
+        // =================== WORKER LEDGER ===================
+        case 'workerLedger:getByWorker': {
+          const [workerId] = args
+          const { data, error } = await supabase.from('worker_ledger').select('*').eq('worker_id', workerId).order('date', { ascending: false })
+          if (error) throw error
+          return data
         }
 
         default:

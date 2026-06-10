@@ -19,7 +19,8 @@ import {
   Leaf,
   Calendar,
   RotateCcw,
-  LogOut
+  LogOut,
+  Briefcase
 } from 'lucide-react'
 import { SeasonContext } from '../context/SeasonContext'
 import { supabase } from '../lib/supabase'
@@ -64,6 +65,15 @@ const navigation = [
     children: [
       { label: 'Scheme Setup', icon: Target, path: '/schemes/setup' },
       { label: 'Coupon Issuance', icon: Ticket, path: '/schemes/coupons' }
+    ]
+  },
+  {
+    label: 'Workers',
+    icon: Briefcase,
+    children: [
+      { label: 'All Workers', icon: Users, path: '/workers/all' },
+      { label: 'Attendance', icon: Calendar, path: '/workers/attendance' },
+      { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger' }
     ]
   },
   {
