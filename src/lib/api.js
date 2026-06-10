@@ -284,13 +284,13 @@ export const api = {
 
         // =================== EXPENSES ===================
         case 'expenseTypes:getAll': {
-          const { data, error } = await supabase.from('expense_types').select('*').order('name')
+          const { data, error } = await withCompany(supabase.from('expense_types').select('*')).order('name')
           if (error) throw error
           return data
         }
         case 'expenseTypes:add': {
           const [typeData] = args
-          const { data, error } = await supabase.from('expense_types').insert(typeData).select().single()
+          const { data, error } = await supabase.from('expense_types').insert(injectCompany(typeData)).select().single()
           if (error) throw error
           return data
         }

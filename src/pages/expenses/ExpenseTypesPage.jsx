@@ -45,7 +45,7 @@ export default function ExpenseTypesPage() {
       setIsAdding(false);
       loadExpenseTypes();
     } catch (err) {
-      toast.error('Failed to add expense type');
+      toast.error(err.message || 'Failed to add expense type');
     }
   };
 
