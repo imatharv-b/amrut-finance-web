@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Printer, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { CalendarDays, Printer, ChevronLeft, ChevronRight, Check, X, IndianRupee } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Modal from '../../components/Modal';
+import FormField from '../../components/FormField';
 
 export default function WeeklySummaryPage() {
   const [baseDate, setBaseDate] = useState(() => new Date());
@@ -11,6 +13,14 @@ export default function WeeklySummaryPage() {
   const [summaryData, setSummaryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [firmSettings, setFirmSettings] = useState({});
+  const [expenseTypes, setExpenseTypes] = useState([]);
+  
+  // Pay Modal State
+  const [payWorker, setPayWorker] = useState(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [payDate, setPayDate] = useState(new Date().toISOString().split('T')[0]);
+  const [payDescription, setPayDescription] = useState('');
+  const [payLoading, setPayLoading] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -61,6 +71,8 @@ export default function WeeklySummaryPage() {
     try {
       const s = await window.db.invoke('settings:get');
       setFirmSettings(s || {});
+      const types = await window.db.invoke('expenseTypes:getAll');
+      setExpenseTypes(types || []);
     } catch (e) {
       console.error('Failed to load settings', e);
     }
@@ -76,6 +88,41 @@ export default function WeeklySummaryPage() {
       toast.error('Failed to load summary');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePaySubmit = async (e) => {
+    e.preventDefault();
+    if (!payWorker || !payAmount || payAmount <= 0) return;
+    
+    setPayLoading(true);
+    try {
+      // Determine if it's an advance or regular salary based on amount and earned.
+      // Or just default to 'Worker Salary' / 'Worker Advance'.
+      // Try to find "Worker Salary" expense type
+      let typeId = null;
+      let expType = expenseTypes.find(t => t.name.toLowerCase() === 'worker salary');
+      if (!expType) expType = expenseTypes.find(t => t.name.toLowerCase() === 'worker advance');
+      if (expType) typeId = expType.id;
+      
+      const payload = {
+        date: payDate,
+        amount: Number(payAmount),
+        expense_type_id: typeId,
+        worker_id: payWorker.id,
+        description: payDescription || 'Wage Register Payment'
+      };
+      
+      await window.db.invoke('expenses:add', payload);
+      toast.success('Payment recorded successfully');
+      setPayWorker(null);
+      setPayAmount('');
+      setPayDescription('');
+      loadSummary(); // Refresh data
+    } catch (err) {
+      toast.error(err.message || 'Failed to record payment');
+    } finally {
+      setPayLoading(false);
     }
   };
 
@@ -295,10 +342,23 @@ export default function WeeklySummaryPage() {
                         <div className="text-[10px] md:text-xs font-bold text-emerald-600/70 uppercase">Earned</div>
                         <div className="font-bold text-emerald-700">{formatCurrency(worker.earned)}</div>
                       </div>
-                      <div className="flex-1 md:flex-none text-center px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
+                      <div className="flex-1 md:flex-none text-center px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100 flex flex-col items-center justify-center">
                         <div className="text-[10px] md:text-xs font-bold text-indigo-600/70 uppercase">Paid</div>
                         <div className="font-bold text-indigo-700">{formatCurrency(worker.paidAmount)}</div>
                       </div>
+                      <button 
+                        onClick={() => {
+                          setPayWorker(worker);
+                          setPayAmount('');
+                          setPayDate(new Date().toISOString().split('T')[0]);
+                          setPayDescription('');
+                        }}
+                        className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition shadow-sm h-full font-medium text-sm"
+                        style={{ minHeight: '52px' }}
+                      >
+                        <IndianRupee className="w-4 h-4 mr-1.5" />
+                        Pay
+                      </button>
                     </div>
                   </div>
                 );
@@ -307,6 +367,83 @@ export default function WeeklySummaryPage() {
           )}
         </div>
       </div>
+
+      {/* Pay Modal */}
+      <Modal
+        isOpen={!!payWorker}
+        onClose={() => setPayWorker(null)}
+        title={`Pay ${payWorker?.name}`}
+      >
+        <form onSubmit={handlePaySubmit} className="space-y-4">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 flex justify-between items-center">
+            <div>
+              <p className="text-sm text-slate-500">Total Earned</p>
+              <p className="text-lg font-bold text-slate-800">{formatCurrency(payWorker?.earned)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-slate-500">Already Paid</p>
+              <p className="text-lg font-bold text-slate-800">{formatCurrency(payWorker?.paidAmount)}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Payment Date">
+              <input
+                type="date"
+                required
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                value={payDate}
+                onChange={e => setPayDate(e.target.value)}
+              />
+            </FormField>
+            
+            <FormField label="Amount (₹)">
+              <input
+                type="number"
+                required
+                min="1"
+                step="0.01"
+                placeholder="Enter amount"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                value={payAmount}
+                onChange={e => setPayAmount(e.target.value)}
+              />
+            </FormField>
+          </div>
+
+          <FormField label="Description (Optional)">
+            <input
+              type="text"
+              placeholder="e.g. Salary, Advance, Bonus"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              value={payDescription}
+              onChange={e => setPayDescription(e.target.value)}
+            />
+          </FormField>
+
+          <div className="flex justify-end pt-4 space-x-3">
+            <button
+              type="button"
+              onClick={() => setPayWorker(null)}
+              className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium"
+              disabled={payLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={payLoading || !payAmount}
+              className="px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 font-medium disabled:opacity-50 flex items-center shadow-sm"
+            >
+              {payLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+              ) : <Check className="w-5 h-5 mr-2" />}
+              Record Payment
+            </button>
+          </div>
+        </form>
+      </Modal>
+
     </div>
   );
 }
