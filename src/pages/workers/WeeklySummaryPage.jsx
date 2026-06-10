@@ -107,7 +107,7 @@ export default function WeeklySummaryPage() {
                 <td>${index + 1}</td>
                 <td>${w.name}</td>
                 <td>${w.salary_type}</td>
-                <td class="text-right">${w.salary_amount}</td>
+                <td class="text-right">${w.taking_salary}</td>
                 <td class="text-right">${w.totalDays}</td>
                 <td class="text-right">${w.earned}</td>
                 <td class="text-right">${w.paidAmount}</td>
@@ -200,7 +200,7 @@ export default function WeeklySummaryPage() {
                   <tr key={worker.id} className="hover:bg-slate-50 transition">
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-800">{worker.name}</div>
-                      <div className="text-xs text-slate-500">{worker.salary_type} @ {worker.salary_amount}/day</div>
+                      <div className="text-xs text-slate-500">{worker.salary_type} @ {worker.taking_salary}/day</div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className="font-medium text-slate-800">{worker.totalDays}</span>

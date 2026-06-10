@@ -8,7 +8,7 @@ export default function WorkersPage() {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [formData, setFormData] = useState({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', opening_balance: '0' });
+  const [formData, setFormData] = useState({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -31,6 +31,7 @@ export default function WorkersPage() {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.salary_amount || formData.salary_amount <= 0) newErrors.salary_amount = 'Valid amount is required';
+    if (!formData.taking_salary || formData.taking_salary <= 0) newErrors.taking_salary = 'Valid taking salary is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -43,10 +44,11 @@ export default function WorkersPage() {
       await window.db.invoke('workers:add', {
         ...formData,
         salary_amount: Number(formData.salary_amount),
+        taking_salary: Number(formData.taking_salary),
         opening_balance: Number(formData.opening_balance || 0)
       });
       toast.success('Worker added successfully');
-      setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', opening_balance: '0' });
+      setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
       setIsAdding(false);
       loadWorkers();
     } catch (err) {
@@ -68,7 +70,8 @@ export default function WorkersPage() {
         {val}
       </span>
     )},
-    { key: 'salary_amount', label: 'Amount/Rate', render: (val) => <span className="font-medium text-emerald-600">{formatCurrency(val)}</span> },
+    { key: 'salary_amount', label: 'Ledger Rate', render: (val) => <span className="font-medium text-emerald-600">{formatCurrency(val)}</span> },
+    { key: 'taking_salary', label: 'Taking Salary', render: (val) => <span className="font-medium text-blue-600">{formatCurrency(val)}</span> },
     { key: 'opening_balance', label: 'Opening Bal.', render: (val) => <span className="text-slate-600">{formatCurrency(val)}</span> }
   ];
 
@@ -134,11 +137,22 @@ export default function WorkersPage() {
                 </FormField>
               </div>
               <div className="col-span-12 md:col-span-2">
-                <FormField label="Amount/Rate (₹)" required error={errors.salary_amount}>
+                <FormField label="Ledger Rate (₹)" required error={errors.salary_amount}>
                   <input
                     type="number"
                     value={formData.salary_amount}
                     onChange={e => setFormData({ ...formData, salary_amount: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    placeholder="0.00"
+                  />
+                </FormField>
+              </div>
+              <div className="col-span-12 md:col-span-2">
+                <FormField label="Taking Salary (₹)" required error={errors.taking_salary}>
+                  <input
+                    type="number"
+                    value={formData.taking_salary}
+                    onChange={e => setFormData({ ...formData, taking_salary: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="0.00"
                   />
@@ -156,7 +170,7 @@ export default function WorkersPage() {
                   />
                 </FormField>
               </div>
-              <div className="col-span-12 md:col-span-8 flex flex-col justify-end mt-2">
+              <div className="col-span-12 md:col-span-10 flex flex-col justify-end mt-2">
                 <button type="submit" className="self-end px-6 py-2.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition">
                   Save Worker
                 </button>

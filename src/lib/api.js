@@ -811,7 +811,7 @@ export const api = {
              const presentDays = workerAtt.filter(a => a.status === 'Present').length;
              const halfDays = workerAtt.filter(a => a.status === 'Half Day').length;
              const totalDays = presentDays + (halfDays * 0.5);
-             const earned = w.salary_type === 'Daily' ? totalDays * w.salary_amount : 0; // simplified
+             const earned = w.salary_type === 'Daily' ? totalDays * w.taking_salary : 0; // Use taking_salary for weekly register
              
              const workerLedgers = ledgers.filter(l => l.worker_id === w.id);
              const paidAmount = workerLedgers.reduce((sum, l) => sum + Number(l.amount), 0);
