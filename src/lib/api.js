@@ -352,6 +352,18 @@ export const api = {
           if (error) throw error
           return data
         }
+        case 'expenseTypes:update': {
+          const [id, updateData] = args
+          const { data, error } = await supabase.from('expense_types').update(updateData).eq('id', id).select().single()
+          if (error) throw error
+          return data
+        }
+        case 'expenseTypes:delete': {
+          const [id] = args
+          const { error } = await supabase.from('expense_types').delete().eq('id', id)
+          if (error) throw error
+          return true
+        }
         case 'expenses:getAll': {
           const [filters] = args || [{}]
           let q = withCompany(supabase.from('expenses').select('*, expense_types(name), parties(name)')).order('date', { ascending: false })

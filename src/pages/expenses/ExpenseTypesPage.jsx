@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Settings2, PlusCircle } from 'lucide-react';
+import { Settings2, PlusCircle, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 export default function ExpenseTypesPage() {
   const [expenseTypes, setExpenseTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '' });
   const [errors, setErrors] = useState({});
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState(null);
 
   useEffect(() => {
     loadExpenseTypes();
@@ -39,18 +43,53 @@ export default function ExpenseTypesPage() {
     if (!validate()) return;
 
     try {
-      await window.db.invoke('expenseTypes:add', { name: formData.name.trim() });
-      toast.success('Expense type added successfully');
+      if (editingId) {
+        await window.db.invoke('expenseTypes:update', editingId, { name: formData.name.trim() });
+        toast.success('Expense type updated successfully');
+      } else {
+        await window.db.invoke('expenseTypes:add', { name: formData.name.trim() });
+        toast.success('Expense type added successfully');
+      }
       setFormData({ name: '' });
       setIsAdding(false);
+      setEditingId(null);
       loadExpenseTypes();
     } catch (err) {
-      toast.error(err.message || 'Failed to add expense type');
+      toast.error(err.message || 'Failed to save expense type');
+    }
+  };
+
+  const handleEdit = (type) => {
+    setFormData({ name: type.name });
+    setEditingId(type.id);
+    setIsAdding(true);
+  };
+
+  const confirmDelete = (type) => {
+    setSelectedType(type);
+    setIsConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await window.db.invoke('expenseTypes:delete', selectedType.id);
+      toast.success('Expense type deleted successfully');
+      loadExpenseTypes();
+    } catch (err) {
+      toast.error('Failed to delete expense type. It might be in use.');
+    } finally {
+      setIsConfirmOpen(false);
+      setSelectedType(null);
     }
   };
 
   const columns = [
     { key: 'name', label: 'Expense Type', sortable: true, render: (val) => <span className="font-medium text-slate-700">{val}</span> }
+  ];
+
+  const actions = [
+    { label: 'Edit', icon: Edit2, onClick: handleEdit },
+    { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ];
 
   return (
@@ -62,7 +101,14 @@ export default function ExpenseTypesPage() {
             <p className="text-slate-500">Manage categories for your expenses</p>
           </div>
           <button
-            onClick={() => setIsAdding(!isAdding)}
+            onClick={() => {
+              setIsAdding(!isAdding);
+              if (isAdding) {
+                setEditingId(null);
+                setFormData({ name: '' });
+                setErrors({});
+              }
+            }}
             className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center"
           >
             <PlusCircle className="w-4 h-4 mr-2" />
@@ -72,7 +118,7 @@ export default function ExpenseTypesPage() {
 
         {isAdding && (
           <div className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Add New Expense Type</h3>
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">{editingId ? 'Edit Expense Type' : 'Add New Expense Type'}</h3>
             <form onSubmit={handleSave} className="grid grid-cols-12 gap-4">
               <div className="col-span-12 md:col-span-10">
                 <FormField label="Name" required error={errors.name}>
@@ -106,9 +152,19 @@ export default function ExpenseTypesPage() {
             loading={loading}
             emptyMessage="No expense types found"
             emptyIcon={Settings2}
-            // actions={null} // Preset types shouldn't be deleted easily
+            actions={actions}
           />
         </div>
+
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          onConfirm={handleDelete}
+          onCancel={() => setIsConfirmOpen(false)}
+          title="Delete Expense Type"
+          message={`Are you sure you want to delete "${selectedType?.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          variant="danger"
+        />
       </div>
     </div>
   );
