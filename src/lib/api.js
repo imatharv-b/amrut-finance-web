@@ -788,6 +788,47 @@ export const api = {
           return data
         }
 
+        case 'workers:getSummary': {
+          const [fromDate, toDate] = args;
+          
+          // 1. Get all workers
+          const { data: workers, error: wErr } = await withCompany(supabase.from('workers').select('*')).order('name');
+          if (wErr) throw wErr;
+          
+          // 2. Get attendance in range
+          let attQuery = supabase.from('worker_attendance').select('*').gte('date', fromDate).lte('date', toDate);
+          const { data: attendance, error: aErr } = await withCompany(attQuery);
+          if (aErr) throw aErr;
+          
+          // 3. Get ledger debits (payments/advances) in range
+          let ledQuery = supabase.from('worker_ledger').select('*').eq('type', 'Debit').gte('date', fromDate).lte('date', toDate);
+          const { data: ledgers, error: lErr } = await withCompany(ledQuery);
+          if (lErr) throw lErr;
+          
+          // 4. Calculate summary per worker
+          const summary = workers.map(w => {
+             const workerAtt = attendance.filter(a => a.worker_id === w.id && a.approved);
+             const presentDays = workerAtt.filter(a => a.status === 'Present').length;
+             const halfDays = workerAtt.filter(a => a.status === 'Half Day').length;
+             const totalDays = presentDays + (halfDays * 0.5);
+             const earned = w.salary_type === 'Daily' ? totalDays * w.salary_amount : 0; // simplified
+             
+             const workerLedgers = ledgers.filter(l => l.worker_id === w.id);
+             const paidAmount = workerLedgers.reduce((sum, l) => sum + Number(l.amount), 0);
+             
+             return {
+                ...w,
+                presentDays,
+                halfDays,
+                totalDays,
+                earned,
+                paidAmount
+             };
+          });
+          
+          return summary;
+        }
+
         // =================== WORKER ATTENDANCE ===================
         case 'attendance:getByDate': {
           const [date] = args

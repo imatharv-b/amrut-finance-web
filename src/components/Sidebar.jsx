@@ -73,7 +73,8 @@ const navigation = [
     children: [
       { label: 'All Workers', icon: Users, path: '/workers/all' },
       { label: 'Attendance', icon: Calendar, path: '/workers/attendance' },
-      { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger' }
+      { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger' },
+      { label: 'Wage Register', icon: FileText, path: '/workers/summary' }
     ]
   },
   {

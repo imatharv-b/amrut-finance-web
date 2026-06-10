@@ -34,6 +34,7 @@ const AnalyticsPage = React.lazy(() => import('./pages/reports/AnalyticsPage'))
 const WorkersPage = React.lazy(() => import('./pages/workers/WorkersPage'))
 const AttendancePage = React.lazy(() => import('./pages/workers/AttendancePage'))
 const WorkerLedgerPage = React.lazy(() => import('./pages/workers/WorkerLedgerPage'))
+const WeeklySummaryPage = React.lazy(() => import('./pages/workers/WeeklySummaryPage'))
 // ── Page Loading Fallback ────────────────────────────────────────────
 function PageFallback() {
   return (
@@ -130,6 +131,7 @@ function AppWithCompany() {
                   <Route path="/workers/all" element={<WorkersPage />} />
                   <Route path="/workers/attendance" element={<AttendancePage />} />
                   <Route path="/workers/ledger" element={<WorkerLedgerPage />} />
+                  <Route path="/workers/summary" element={<WeeklySummaryPage />} />
                 </Routes>
               </Suspense>
             </main>
