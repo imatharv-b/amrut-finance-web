@@ -791,8 +791,8 @@ export const api = {
         case 'workers:getSummary': {
           const [fromDate, toDate] = args;
           
-          // 1. Get all workers
-          const { data: workers, error: wErr } = await withCompany(supabase.from('workers').select('*')).order('name');
+          // 1. Get all daily/commission workers (exclude Monthly)
+          const { data: workers, error: wErr } = await withCompany(supabase.from('workers').select('*').neq('salary_type', 'Monthly')).order('name');
           if (wErr) throw wErr;
           
           // 2. Get attendance in range
@@ -833,6 +833,19 @@ export const api = {
         case 'attendance:getByDate': {
           const [date] = args
           const { data, error } = await withCompany(supabase.from('worker_attendance').select('*, workers(name, salary_type, salary_amount)')).eq('date', date)
+          if (error) throw error
+          return data
+        }
+        case 'attendance:getByMonth': {
+          const [year, month] = args; // month is 1-12
+          const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+          const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
+          
+          const { data, error } = await withCompany(
+             supabase.from('worker_attendance').select('*, workers(name, salary_type, salary_amount)')
+                     .gte('date', startDate)
+                     .lte('date', endDate)
+          )
           if (error) throw error
           return data
         }
