@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, PlusCircle, Search } from 'lucide-react';
+import { Briefcase, PlusCircle, Search, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
@@ -8,6 +8,7 @@ export default function WorkersPage() {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
   const [errors, setErrors] = useState({});
 
@@ -41,15 +42,26 @@ export default function WorkersPage() {
     if (!validate()) return;
 
     try {
-      await window.db.invoke('workers:add', {
-        ...formData,
-        salary_amount: Number(formData.salary_amount),
-        taking_salary: Number(formData.taking_salary),
-        opening_balance: Number(formData.opening_balance || 0)
-      });
-      toast.success('Worker added successfully');
+      if (editingId) {
+        await window.db.invoke('workers:update', editingId, {
+          ...formData,
+          salary_amount: Number(formData.salary_amount),
+          taking_salary: Number(formData.taking_salary),
+          opening_balance: Number(formData.opening_balance || 0)
+        });
+        toast.success('Worker updated successfully');
+      } else {
+        await window.db.invoke('workers:add', {
+          ...formData,
+          salary_amount: Number(formData.salary_amount),
+          taking_salary: Number(formData.taking_salary),
+          opening_balance: Number(formData.opening_balance || 0)
+        });
+        toast.success('Worker added successfully');
+      }
       setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
       setIsAdding(false);
+      setEditingId(null);
       loadWorkers();
     } catch (err) {
       toast.error(err.message || 'Failed to add worker');
@@ -57,6 +69,20 @@ export default function WorkersPage() {
   };
 
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
+
+  const handleEditClick = (worker) => {
+    setFormData({
+      name: worker.name,
+      phone: worker.phone || '',
+      salary_type: worker.salary_type,
+      salary_amount: worker.salary_amount,
+      taking_salary: worker.taking_salary,
+      opening_balance: worker.opening_balance
+    });
+    setEditingId(worker.id);
+    setIsAdding(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const columns = [
     { key: 'name', label: 'Name', sortable: true, render: (val) => <span className="font-semibold text-slate-800">{val}</span> },
@@ -72,7 +98,20 @@ export default function WorkersPage() {
     )},
     { key: 'salary_amount', label: 'Ledger Rate', render: (val) => <span className="font-medium text-emerald-600">{formatCurrency(val)}</span> },
     { key: 'taking_salary', label: 'Taking Salary', render: (val) => <span className="font-medium text-blue-600">{formatCurrency(val)}</span> },
-    { key: 'opening_balance', label: 'Opening Bal.', render: (val) => <span className="text-slate-600">{formatCurrency(val)}</span> }
+    { key: 'opening_balance', label: 'Opening Bal.', render: (val) => <span className="text-slate-600">{formatCurrency(val)}</span> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (_, worker) => (
+        <button
+          onClick={() => handleEditClick(worker)}
+          className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition"
+          title="Edit Worker"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+      )
+    }
   ];
 
   return (
@@ -89,7 +128,15 @@ export default function WorkersPage() {
             </div>
           </div>
           <button
-            onClick={() => setIsAdding(!isAdding)}
+            onClick={() => {
+              if (isAdding) {
+                setIsAdding(false);
+                setEditingId(null);
+                setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
+              } else {
+                setIsAdding(true);
+              }
+            }}
             className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center"
           >
             <PlusCircle className="w-4 h-4 mr-2" />
@@ -99,7 +146,7 @@ export default function WorkersPage() {
 
         {isAdding && (
           <div className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Add New Worker</h3>
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">{editingId ? 'Edit Worker' : 'Add New Worker'}</h3>
             <form onSubmit={handleSave} className="grid grid-cols-12 gap-4">
               <div className="col-span-12 md:col-span-4">
                 <FormField label="Full Name" required error={errors.name}>
@@ -172,7 +219,7 @@ export default function WorkersPage() {
               </div>
               <div className="col-span-12 md:col-span-10 flex flex-col justify-end mt-2">
                 <button type="submit" className="self-end px-6 py-2.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition">
-                  Save Worker
+                  {editingId ? 'Update Worker' : 'Save Worker'}
                 </button>
               </div>
             </form>
