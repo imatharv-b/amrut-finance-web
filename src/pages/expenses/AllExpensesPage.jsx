@@ -61,8 +61,8 @@ export default function AllExpensesPage() {
       render: (val) => formatDate(val)
     },
     { 
-      key: 'expense_type_name', label: 'Type', sortable: true,
-      render: (val) => <span className="font-medium text-slate-700">{val}</span>
+      key: 'type_name', label: 'Type', sortable: true,
+      render: (val) => <span className="font-medium text-slate-700">{val || 'General'}</span>
     },
     { key: 'amount', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-semibold">₹{val.toFixed(2)}</span> },
     { key: 'paid_to', label: 'Paid To', sortable: true },

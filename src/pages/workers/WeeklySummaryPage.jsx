@@ -110,6 +110,8 @@ export default function WeeklySummaryPage() {
         amount: Number(payAmount),
         expense_type_id: typeId,
         worker_id: payWorker.id,
+        paid_to: payWorker.name,
+        payment_mode: 'Cash',
         description: payDescription || 'Wage Register Payment'
       };
       
