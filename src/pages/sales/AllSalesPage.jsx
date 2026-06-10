@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { SeasonContext } from '../../context/SeasonContext';
+import { useCompany } from '../../context/CompanyContext';
 import { generateInvoiceHTML } from '../../components/print/InvoicePrint';
 import { printHTML } from '../../lib/printUtils';
 import { formatDate } from '../../lib/dateUtils';
@@ -13,6 +14,7 @@ import { formatDate } from '../../lib/dateUtils';
 export default function AllSalesPage() {
   const navigate = useNavigate();
   const { activeSeason } = useContext(SeasonContext);
+  const { userRole } = useCompany();
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -130,10 +132,13 @@ export default function AllSalesPage() {
 
   const actions = [
     { label: 'View', icon: Eye, onClick: openView },
-    { label: 'Edit', icon: Edit, onClick: (sale) => navigate(`/sales/edit/${sale.id}`) },
-    { label: 'Print', icon: Printer, onClick: handlePrint },
-    { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
+    { label: 'Print', icon: Printer, onClick: handlePrint }
   ];
+
+  if (userRole !== 'data_entry') {
+    actions.splice(1, 0, { label: 'Edit', icon: Edit, onClick: (sale) => navigate(`/sales/edit/${sale.id}`) });
+    actions.push({ label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' });
+  }
 
   const totalSales = sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
   const totalBalance = sales.reduce((acc, s) => acc + (s.balance != null ? Number(s.balance) : (Number(s.total_amount || 0) - Number(s.amount_paid || 0))), 0);

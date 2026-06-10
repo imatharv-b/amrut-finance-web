@@ -6,6 +6,7 @@ import Modal from '../../components/Modal'
 import FormField from '../../components/FormField'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { SeasonContext } from '../../context/SeasonContext'
+import { useCompany } from '../../context/CompanyContext'
 
 const UNITS = ['Bottle', 'Ltr', 'Kg', 'Box', 'Jar', 'Bag']
 const CATEGORIES = ['Fertilizer', 'Pesticide', 'Biostimulant']
@@ -27,6 +28,7 @@ const emptyBatch = {
 
 export default function ProductsPage() {
   const { activeSeason } = useContext(SeasonContext)
+  const { userRole } = useCompany()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -309,16 +311,18 @@ export default function ProductsPage() {
               <h4 className="text-sm font-semibold text-slate-700">
                 Batches for {row.name}
               </h4>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  openBatchModal(row.id)
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-xs font-medium transition"
-              >
-                <Plus size={14} />
-                Add Batch
-              </button>
+              {userRole !== 'data_entry' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openBatchModal(row.id)
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-xs font-medium transition"
+                >
+                  <Plus size={14} />
+                  Add Batch
+                </button>
+              )}
             </div>
 
             {batchesLoading ? (
@@ -363,13 +367,15 @@ export default function ProductsPage() {
             {products.length} product{products.length !== 1 ? 's' : ''} registered
           </p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition"
-        >
-          <Plus size={18} />
-          Add Product
-        </button>
+        {userRole !== 'data_entry' && (
+          <button
+            onClick={openAddModal}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition"
+          >
+            <Plus size={18} />
+            Add Product
+          </button>
+        )}
       </div>
 
       {/* Data Table */}
@@ -381,7 +387,7 @@ export default function ProductsPage() {
         loading={loading}
         emptyMessage="No products found. Add your first product to get started."
         emptyIcon={Package}
-        actions={(row) => (
+          actions={(row) => userRole !== 'data_entry' ? (
           <>
             <button
               onClick={(e) => { e.stopPropagation(); openEditModal(row); }}
@@ -398,7 +404,7 @@ export default function ProductsPage() {
               <Trash2 size={16} />
             </button>
           </>
-        )}
+        ) : null}
         onRowClick={handleRowClick}
         renderExpandedRow={renderExpandedRow}
       />

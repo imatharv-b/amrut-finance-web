@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FormField from '../../components/FormField';
 import { useNavigate } from 'react-router-dom';
+import { useCompany } from '../../context/CompanyContext';
 
 const parseCSV = (text) => {
   const lines = [];
@@ -50,6 +51,7 @@ const parseCSV = (text) => {
 
 export default function PartiesPage() {
   const navigate = useNavigate();
+  const { userRole } = useCompany();
   const fileInputRef = useRef(null);
   const [parties, setParties] = useState([]);
   const [associates, setAssociates] = useState([]);
@@ -310,10 +312,10 @@ export default function PartiesPage() {
     }
   ];
 
-  const actions = [
+  const actions = userRole !== 'data_entry' ? [
     { label: 'Edit', icon: Edit, onClick: openModal },
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
-  ];
+  ] : [];
 
   const totalOutstanding = parties.reduce((acc, p) => acc + (Number(p.balance || 0) > 0 ? Number(p.balance || 0) : 0), 0);
 
@@ -332,20 +334,24 @@ export default function PartiesPage() {
             accept=".csv"
             className="hidden"
           />
-          <button
-            onClick={handleImportClick}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg font-medium transition flex items-center shadow-sm"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import CSV
-          </button>
-          <button
-            onClick={() => openModal()}
-            className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center shadow-sm"
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Add Party
-          </button>
+          {userRole !== 'data_entry' && (
+            <>
+              <button
+                onClick={handleImportClick}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg font-medium transition flex items-center shadow-sm"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import CSV
+              </button>
+              <button
+                onClick={() => openModal()}
+                className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center shadow-sm"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Add Party
+              </button>
+            </>
+          )}
         </div>
       </div>
 
