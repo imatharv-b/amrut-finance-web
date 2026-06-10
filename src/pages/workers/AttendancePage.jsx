@@ -132,6 +132,23 @@ export default function AttendancePage() {
     }
   };
 
+  const handleUnapprove = async () => {
+    if (!window.confirm("Editing this day will temporarily remove the salary credits from the workers' ledgers. You must click 'Approve & Credit' again when finished. Continue?")) {
+       return;
+    }
+    setSaving(true);
+    try {
+       await window.db.invoke('attendance:unapprove', date);
+       toast.success('Ledger credits reversed. You can now edit attendance.');
+       setIsApproved(false);
+       loadDailyData(); // Refresh to ensure UI matches DB
+    } catch (err) {
+       toast.error(err.message || 'Failed to unlock attendance');
+    } finally {
+       setSaving(false);
+    }
+  };
+
   const changeDate = (days) => {
     const d = new Date(date);
     d.setDate(d.getDate() + days);
@@ -224,9 +241,14 @@ export default function AttendancePage() {
         {/* Action Bar */}
         <div className="flex flex-col sm:flex-row justify-end mb-4 gap-3">
           {isApproved ? (
-            <span className="px-6 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl font-bold flex items-center justify-center shadow-sm">
-              <CheckCheck className="w-5 h-5 mr-2" /> Approved
-            </span>
+            <>
+              <button onClick={handleUnapprove} disabled={saving} className="w-full sm:w-auto px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-700 rounded-xl font-semibold transition shadow-sm disabled:opacity-50 text-center">
+                Edit Attendance
+              </button>
+              <span className="px-6 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl font-bold flex items-center justify-center shadow-sm">
+                <CheckCheck className="w-5 h-5 mr-2" /> Approved
+              </span>
+            </>
           ) : (
             <>
               <button onClick={handleSave} disabled={saving} className="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-semibold transition shadow-sm disabled:opacity-50 text-center">

@@ -897,8 +897,32 @@ export const api = {
           
           const { error: updateErr } = await supabase.from('worker_attendance').update({ approved: true }).in('id', recordIds)
           if (updateErr) throw updateErr
-          
           return { success: true, count: records.length }
+        }
+        case 'attendance:unapprove': {
+          const [date] = args
+          
+          // 1. Delete automatic ledger entries for this date
+          // The description we used was: `Salary for ${rec.status} on ${rec.date}`
+          // We can delete all Credits on this date where description starts with "Salary for"
+          const { error: ledgerErr } = await withCompany(
+            supabase.from('worker_ledger')
+                    .delete()
+                    .eq('date', date)
+                    .eq('type', 'Credit')
+                    .like('description', 'Salary for%')
+          )
+          if (ledgerErr) throw ledgerErr
+          
+          // 2. Set all attendance for this date back to approved: false
+          const { error: updateErr } = await withCompany(
+            supabase.from('worker_attendance')
+                    .update({ approved: false })
+                    .eq('date', date)
+          )
+          if (updateErr) throw updateErr
+          
+          return { success: true }
         }
 
         // =================== WORKER LEDGER ===================
