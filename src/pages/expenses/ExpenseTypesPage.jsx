@@ -83,14 +83,45 @@ export default function ExpenseTypesPage() {
     }
   };
 
+  const PROTECTED_TYPES = [
+    'Office Expense', 
+    'Transport', 
+    'Salary', 
+    'Worker Salary', 
+    'Worker Advance', 
+    'Marketing', 
+    'Bad Debt', 
+    'Advance to Party', 
+    'Other'
+  ];
+
   const columns = [
     { key: 'name', label: 'Expense Type', sortable: true, render: (val) => <span className="font-medium text-slate-700">{val}</span> }
   ];
 
-  const actions = [
-    { label: 'Edit', icon: Edit2, onClick: handleEdit },
-    { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
-  ];
+  const actions = (row) => {
+    if (PROTECTED_TYPES.includes(row.name)) {
+      return <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-1 rounded">System Default</span>;
+    }
+    return (
+      <>
+        <button
+          onClick={(e) => { e.stopPropagation(); handleEdit(row) }}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-slate-100 transition"
+          title="Edit"
+        >
+          <Edit2 size={16} />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); confirmDelete(row) }}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+          title="Delete"
+        >
+          <Trash2 size={16} />
+        </button>
+      </>
+    );
+  };
 
   return (
     <div className="p-6 h-full flex flex-col items-center">
