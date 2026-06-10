@@ -352,7 +352,7 @@ export default function ReportsPage() {
                       <tr key={expense.id} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-3 text-slate-500">{index + 1}</td>
                         <td className="px-6 py-3 text-slate-800">{expense.date}</td>
-                        <td className="px-6 py-3 font-medium text-slate-800">{expense.expense_type_name}</td>
+                        <td className="px-6 py-3 font-medium text-slate-800">{expense.type_name || 'General'}</td>
                         <td className="px-6 py-3 text-slate-600">{expense.party_name || expense.paid_to || '-'}</td>
                         <td className="px-6 py-3 text-slate-500">{expense.description || '-'}</td>
                         <td className="px-6 py-3 text-slate-600">{expense.payment_mode}</td>

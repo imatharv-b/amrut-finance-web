@@ -358,8 +358,9 @@ export const api = {
           if (filters?.season_id) {
             // Note: Currently expenses don't have season_id in schema, skipping filter or join if needed
           }
-          if (filters?.fromDate) q = q.gte('date', filters.fromDate)
-          if (filters?.toDate) q = q.lte('date', filters.toDate)
+          if (filters?.fromDate || filters?.from_date) q = q.gte('date', filters.fromDate || filters.from_date)
+          if (filters?.toDate || filters?.to_date) q = q.lte('date', filters.toDate || filters.to_date)
+          if (filters?.expense_type_id) q = q.eq('expense_type_id', filters.expense_type_id)
           const { data, error } = await q
           if (error) throw error
           return data.map(d => ({...d, type_name: d.expense_types?.name, party_name: d.parties?.name}))
