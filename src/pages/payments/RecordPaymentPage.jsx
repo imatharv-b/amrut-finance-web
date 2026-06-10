@@ -216,7 +216,7 @@ export default function RecordPaymentPage() {
         />
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedPayment ? 'Edit Payment' : 'Record Payment'} size="md">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedPayment ? 'Edit Receipt' : 'Record Receipt'} size="md">
         <form onSubmit={handleSave} className="space-y-4">
           <FormField label="Date" required error={errors.date}>
             <input
@@ -242,7 +242,7 @@ export default function RecordPaymentPage() {
               onChange={e => setFormData({ ...formData, payment_type: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white font-medium"
             >
-              <option value="Payment from Party">Payment from Party</option>
+              <option value="Receipt from Party">Receipt from Party</option>
               <option value="Cash Discount">Cash Discount</option>
               <option value="Coupon Gift Amount">Coupon Gift Amount</option>
               <option value="Others">Others</option>
@@ -316,7 +316,7 @@ export default function RecordPaymentPage() {
               type="submit"
               className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition"
             >
-              Save Payment
+              Save Receipt
             </button>
           </div>
         </form>
