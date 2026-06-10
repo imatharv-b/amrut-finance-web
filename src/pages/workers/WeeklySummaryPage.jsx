@@ -353,11 +353,12 @@ export default function WeeklySummaryPage() {
                           setPayDate(new Date().toISOString().split('T')[0]);
                           setPayDescription('');
                         }}
-                        className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition shadow-sm h-full font-medium text-sm"
+                        disabled={worker.paidAmount > 0}
+                        className={`flex-1 md:flex-none flex items-center justify-center px-4 py-2 rounded-xl transition shadow-sm h-full font-medium text-sm ${worker.paidAmount > 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-900 text-white'}`}
                         style={{ minHeight: '52px' }}
                       >
                         <IndianRupee className="w-4 h-4 mr-1.5" />
-                        Pay
+                        {worker.paidAmount > 0 ? 'Paid' : 'Pay'}
                       </button>
                     </div>
                   </div>
