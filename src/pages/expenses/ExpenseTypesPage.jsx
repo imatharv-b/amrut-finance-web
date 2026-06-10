@@ -8,7 +8,7 @@ export default function ExpenseTypesPage() {
   const [expenseTypes, setExpenseTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [formData, setFormData] = useState({ name: '' });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -39,9 +39,9 @@ export default function ExpenseTypesPage() {
     if (!validate()) return;
 
     try {
-      await window.db.invoke('expenseTypes:add', formData);
+      await window.db.invoke('expenseTypes:add', { name: formData.name.trim() });
       toast.success('Expense type added successfully');
-      setFormData({ name: '', description: '' });
+      setFormData({ name: '' });
       setIsAdding(false);
       loadExpenseTypes();
     } catch (err) {
@@ -50,8 +50,7 @@ export default function ExpenseTypesPage() {
   };
 
   const columns = [
-    { key: 'name', label: 'Expense Type', sortable: true, render: (val) => <span className="font-medium text-slate-700">{val}</span> },
-    { key: 'description', label: 'Description', render: (val) => <span className="text-slate-500">{val || '-'}</span> }
+    { key: 'name', label: 'Expense Type', sortable: true, render: (val) => <span className="font-medium text-slate-700">{val}</span> }
   ];
 
   return (
@@ -75,25 +74,14 @@ export default function ExpenseTypesPage() {
           <div className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-slate-200">
             <h3 className="text-lg font-semibold text-slate-800 mb-4">Add New Expense Type</h3>
             <form onSubmit={handleSave} className="grid grid-cols-12 gap-4">
-              <div className="col-span-12 md:col-span-4">
+              <div className="col-span-12 md:col-span-10">
                 <FormField label="Name" required error={errors.name}>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                    placeholder="e.g. Refreshments"
-                  />
-                </FormField>
-              </div>
-              <div className="col-span-12 md:col-span-6">
-                <FormField label="Description">
-                  <input
-                    type="text"
-                    value={formData.description}
-                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                    placeholder="Brief description..."
+                    placeholder="e.g. Refreshments, Transportation, Office Supplies..."
                   />
                 </FormField>
               </div>
