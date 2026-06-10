@@ -816,13 +816,20 @@ export const api = {
              const workerLedgers = ledgers.filter(l => l.worker_id === w.id);
              const paidAmount = workerLedgers.reduce((sum, l) => sum + Number(l.amount), 0);
              
+             // Build records map
+             const records = {};
+             workerAtt.forEach(a => {
+               records[a.date] = a.status;
+             });
+             
              return {
                 ...w,
                 presentDays,
                 halfDays,
                 totalDays,
                 earned,
-                paidAmount
+                paidAmount,
+                records
              };
           });
           

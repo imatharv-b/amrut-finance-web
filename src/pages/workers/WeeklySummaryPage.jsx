@@ -1,23 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Printer, Download } from 'lucide-react';
+import { CalendarDays, Printer, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { printHTML } from '../../lib/printUtils';
 
 export default function WeeklySummaryPage() {
-  const [fromDate, setFromDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return d.toISOString().split('T')[0];
-  });
-  const [toDate, setToDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [baseDate, setBaseDate] = useState(() => new Date());
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [weekDays, setWeekDays] = useState([]);
   
   const [summaryData, setSummaryData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [firmSettings, setFirmSettings] = useState({});
 
   useEffect(() => {
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    // Calculate Friday to Thursday based on baseDate
+    const d = new Date(baseDate);
+    const day = d.getDay();
+    // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    // Diff to previous Friday:
+    let diffToFriday = day >= 5 ? day - 5 : day + 2;
+    
+    const start = new Date(d);
+    start.setDate(d.getDate() - diffToFriday);
+    
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+    
+    setFromDate(startStr);
+    setToDate(endStr);
+    
+    // Generate the 7 days
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const current = new Date(start);
+      current.setDate(start.getDate() + i);
+      days.push({
+        dateStr: current.toISOString().split('T')[0],
+        dateNum: current.getDate(),
+        dayName: current.toLocaleDateString('en-US', { weekday: 'short' }), // Fri, Sat, etc.
+        isSunday: current.getDay() === 0
+      });
+    }
+    setWeekDays(days);
+  }, [baseDate]);
 
   useEffect(() => {
     if (fromDate && toDate) {
@@ -38,8 +70,6 @@ export default function WeeklySummaryPage() {
     setLoading(true);
     try {
       const data = await window.db.invoke('workers:getSummary', fromDate, toDate);
-      // Filter out workers who had 0 days and 0 paid amount if needed, but showing all might be better.
-      // Let's only show workers who have at least some activity (days > 0 or paid > 0)
       const activeWorkers = data.filter(w => w.totalDays > 0 || w.paidAmount > 0);
       setSummaryData(activeWorkers);
     } catch (err) {
@@ -49,11 +79,17 @@ export default function WeeklySummaryPage() {
     }
   };
 
+  const changeWeek = (days) => {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + days);
+    setBaseDate(d);
+  };
+
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
   
   const formatDateStr = (dStr) => {
     if (!dStr) return '';
-    return new Date(dStr).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date(dStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const handlePrint = async () => {
@@ -64,57 +100,81 @@ export default function WeeklySummaryPage() {
     const totalEarned = summaryData.reduce((sum, w) => sum + w.earned, 0);
     const totalPaid = summaryData.reduce((sum, w) => sum + w.paidAmount, 0);
 
-    const html = `
+    let html = `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Wage Register</title>
         <style>
-          body { font-family: 'Arial', sans-serif; padding: 20px; color: #1e293b; }
+          body { font-family: 'Arial', sans-serif; padding: 20px; color: #1e293b; font-size: 12px; }
           .header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 20px; }
-          .header h1 { margin: 0 0 5px 0; font-size: 24px; }
-          .header p { margin: 0; color: #475569; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
-          th { background-color: #f8fafc; font-weight: bold; }
+          .header h1 { margin: 0 0 5px 0; font-size: 20px; }
+          .header p { margin: 0; color: #475569; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
+          th { background-color: #f8fafc; font-weight: bold; font-size: 11px; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
           .font-bold { font-weight: bold; }
           .totals { background-color: #f1f5f9; }
+          .day-col { width: 25px; text-align: center; font-size: 10px; }
+          .text-emerald { color: #10b981; }
+          .text-amber { color: #f59e0b; }
+          .text-red { color: #ef4444; }
         </style>
       </head>
       <body>
         <div class="header">
           <h1>${firmSettings?.firm_name || 'Amrut Finance'}</h1>
-          <p>Wage Register & Attendance Summary</p>
-          <p><strong>Period:</strong> ${formatDateStr(fromDate)} to ${formatDateStr(toDate)}</p>
+          <p>Weekly Wage Register</p>
+          <p><strong>Period:</strong> ${formatDateStr(fromDate)} to ${formatDateStr(toDate)} (Friday - Thursday)</p>
         </div>
         <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Worker Name</th>
-              <th>Type</th>
-              <th class="text-right">Rate</th>
-              <th class="text-right">Days</th>
-              <th class="text-right">Earned</th>
-              <th class="text-right">Paid/Advance</th>
+              <th rowspan="2" style="width: 20px;">#</th>
+              <th rowspan="2">Worker Name</th>
+              <th rowspan="2">Rate</th>
+              <th colspan="7" class="text-center">Attendance</th>
+              <th rowspan="2" class="text-right">Total Days</th>
+              <th rowspan="2" class="text-right">Earned</th>
+              <th rowspan="2" class="text-right">Paid/Advance</th>
+            </tr>
+            <tr>
+              ${weekDays.map(d => `<th class="day-col">${d.dayName}<br/>${d.dateNum}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-            ${summaryData.map((w, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${w.name}</td>
-                <td>${w.salary_type}</td>
-                <td class="text-right">${w.taking_salary}</td>
-                <td class="text-right">${w.totalDays}</td>
-                <td class="text-right">${w.earned}</td>
-                <td class="text-right">${w.paidAmount}</td>
-              </tr>
-            `).join('')}
+    `;
+
+    summaryData.forEach((w, index) => {
+      html += `
+        <tr>
+          <td class="text-center">${index + 1}</td>
+          <td><strong>${w.name}</strong></td>
+          <td>${w.taking_salary}</td>
+      `;
+      
+      weekDays.forEach(d => {
+        const status = w.records && w.records[d.dateStr];
+        let mark = '-';
+        if (status === 'Present') mark = '<span class="text-emerald">P</span>';
+        else if (status === 'Half Day') mark = '<span class="text-amber">½</span>';
+        else if (status === 'Absent') mark = '<span class="text-red">A</span>';
+        html += `<td class="day-col">${mark}</td>`;
+      });
+
+      html += `
+          <td class="text-right">${w.totalDays}</td>
+          <td class="text-right">${w.earned}</td>
+          <td class="text-right">${w.paidAmount}</td>
+        </tr>
+      `;
+    });
+
+    html += `
             <tr class="totals">
-              <td colspan="4" class="text-right font-bold">Totals</td>
+              <td colspan="10" class="text-right font-bold">Totals</td>
               <td class="text-right font-bold">${totalDays}</td>
               <td class="text-right font-bold">${totalEarned}</td>
               <td class="text-right font-bold">${totalPaid}</td>
@@ -129,7 +189,6 @@ export default function WeeklySummaryPage() {
     printWindow.document.write(html);
     printWindow.document.close();
     
-    // Auto print
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
@@ -137,101 +196,116 @@ export default function WeeklySummaryPage() {
   };
 
   return (
-    <div className="p-6 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Wage Register</h1>
-          <p className="text-slate-500">Weekly attendance and payment summary</p>
+    <div className="p-6 h-full flex flex-col bg-slate-50/50">
+      <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Wage Register</h1>
+            <p className="text-slate-500">Weekly attendance and payment summary</p>
+          </div>
+          <button
+            onClick={handlePrint}
+            disabled={summaryData.length === 0}
+            className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-medium transition flex items-center shadow-sm disabled:opacity-50"
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            Print Register
+          </button>
         </div>
-        <button
-          onClick={handlePrint}
-          disabled={summaryData.length === 0}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium transition flex items-center disabled:opacity-50"
-        >
-          <Printer className="w-4 h-4 mr-2" />
-          Print Register
-        </button>
-      </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex items-end gap-4">
-        <div className="w-48">
-          <label className="block text-sm font-medium text-slate-700 mb-1">From Date</label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-          />
+        {/* Week Navigator */}
+        <div className="flex items-center space-x-4 mb-8">
+          <button onClick={() => changeWeek(-7)} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
+          <div className="flex flex-col text-center px-4">
+            <span className="font-bold text-xl text-slate-800">
+              {formatDateStr(fromDate)} - {formatDateStr(toDate)}
+            </span>
+            <span className="text-sm font-medium text-slate-500 mt-1">Friday - Thursday</span>
+          </div>
+          <button onClick={() => changeWeek(7)} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronRight className="w-5 h-5 text-slate-600" /></button>
         </div>
-        <div className="w-48">
-          <label className="block text-sm font-medium text-slate-700 mb-1">To Date</label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-          />
-        </div>
-      </div>
 
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-          </div>
-        ) : summaryData.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-500">
-            <CalendarDays className="w-12 h-12 mb-4 text-slate-300" />
-            <p className="text-lg">No worker activity found for this period</p>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-white shadow-sm z-10">
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm font-semibold uppercase tracking-wider">
-                  <th className="px-6 py-4">Worker Name</th>
-                  <th className="px-6 py-4 text-center">Days Worked</th>
-                  <th className="px-6 py-4 text-right">Earned (₹)</th>
-                  <th className="px-6 py-4 text-right">Paid/Advance (₹)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {summaryData.map(worker => (
-                  <tr key={worker.id} className="hover:bg-slate-50 transition">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-800">{worker.name}</div>
-                      <div className="text-xs text-slate-500">{worker.salary_type} @ {worker.taking_salary}/day</div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-medium text-slate-800">{worker.totalDays}</span>
-                      {worker.halfDays > 0 && <span className="text-xs text-slate-500 ml-1">({worker.presentDays}F + {worker.halfDays}H)</span>}
-                    </td>
-                    <td className="px-6 py-4 text-right font-medium text-emerald-600">
-                      {formatCurrency(worker.earned)}
-                    </td>
-                    <td className="px-6 py-4 text-right font-medium text-indigo-600">
-                      {formatCurrency(worker.paidAmount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="sticky bottom-0 bg-slate-50 border-t border-slate-200">
-                <tr>
-                  <td className="px-6 py-4 font-bold text-slate-800 text-right">Totals</td>
-                  <td className="px-6 py-4 font-bold text-slate-800 text-center">
-                    {summaryData.reduce((sum, w) => sum + w.totalDays, 0)}
-                  </td>
-                  <td className="px-6 py-4 font-bold text-emerald-600 text-right">
-                    {formatCurrency(summaryData.reduce((sum, w) => sum + w.earned, 0))}
-                  </td>
-                  <td className="px-6 py-4 font-bold text-indigo-600 text-right">
-                    {formatCurrency(summaryData.reduce((sum, w) => sum + w.paidAmount, 0))}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        )}
+        {/* Calendar Cards */}
+        <div className="flex-1 overflow-auto pb-20">
+          {loading ? (
+            <div className="flex justify-center mt-20">
+              <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+            </div>
+          ) : summaryData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center mt-20 text-slate-500 bg-white p-12 rounded-2xl border border-slate-200">
+              <CalendarDays className="w-12 h-12 mb-4 text-slate-300" />
+              <p className="text-lg font-medium">No worker activity found for this week</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {summaryData.map(worker => {
+                return (
+                  <div key={worker.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {/* Worker Info */}
+                    <div className="flex items-center space-x-4 min-w-[250px]">
+                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xl">
+                        {worker.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg leading-tight">{worker.name}</h3>
+                        <p className="text-sm text-slate-500 font-medium">Rate: {formatCurrency(worker.taking_salary)}</p>
+                      </div>
+                    </div>
+
+                    {/* 7-Day Week Calendar */}
+                    <div className="flex space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      {weekDays.map(d => {
+                        const status = worker.records && worker.records[d.dateStr];
+                        let bgClass = 'bg-white border-slate-200 text-slate-400';
+                        
+                        if (status === 'Present') {
+                          bgClass = 'bg-emerald-500 border-emerald-500 text-white shadow-sm';
+                        } else if (status === 'Half Day') {
+                          bgClass = 'bg-amber-400 border-amber-400 text-white shadow-sm';
+                        } else if (status === 'Absent') {
+                          bgClass = 'bg-red-500 border-red-500 text-white shadow-sm';
+                        } else if (d.isSunday && !status) {
+                          bgClass = 'bg-rose-50 border-rose-100 text-rose-300';
+                        } else if (new Date(d.dateStr) <= new Date() && !status) {
+                          bgClass = 'bg-slate-200 border-slate-200 text-slate-500'; // Past, no data
+                        }
+                        
+                        return (
+                          <div key={d.dateNum} className="flex flex-col items-center">
+                            <span className="text-[10px] font-bold text-slate-400 mb-1">{d.dayName}</span>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border ${bgClass}`}>
+                              {status === 'Present' ? <Check className="w-4 h-4"/> : 
+                               status === 'Half Day' ? '½' : 
+                               status === 'Absent' ? <X className="w-4 h-4"/> : 
+                               d.isSunday ? 'S' : '-'}
+                            </div>
+                            <span className="text-[10px] font-semibold text-slate-400 mt-1">{d.dateNum}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Summary Pills */}
+                    <div className="flex items-center space-x-3 mt-4 md:mt-0">
+                      <div className="text-center px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="text-xs font-bold text-slate-400 uppercase">Days</div>
+                        <div className="font-bold text-slate-700">{worker.totalDays}</div>
+                      </div>
+                      <div className="text-center px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <div className="text-xs font-bold text-emerald-600/70 uppercase">Earned</div>
+                        <div className="font-bold text-emerald-700">{formatCurrency(worker.earned)}</div>
+                      </div>
+                      <div className="text-center px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <div className="text-xs font-bold text-indigo-600/70 uppercase">Paid</div>
+                        <div className="font-bold text-indigo-700">{formatCurrency(worker.paidAmount)}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
