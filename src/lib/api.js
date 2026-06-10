@@ -597,8 +597,16 @@ export const api = {
           const [seasonId] = args || []
           
           // Fetch relevant data
+          const { data: seasonData } = await supabase.from('seasons').select('*').eq('id', seasonId).single()
+          
           const { data: salesData } = await withCompany(supabase.from('sales').select('*, parties(name)')).eq('season_id', seasonId)
-          const { data: expData } = await withCompany(supabase.from('expenses').select('*, expense_types(name)'))
+          
+          let expQuery = withCompany(supabase.from('expenses').select('*, expense_types(name)'))
+          if (seasonData) {
+            expQuery = expQuery.gte('date', seasonData.start_date).lte('date', seasonData.end_date)
+          }
+          const { data: expData } = await expQuery
+          
           const { data: allCoupons } = await withCompany(supabase.from('scheme_coupons').select('*, schemes(season_id), parties(name)'))
           const couponsData = allCoupons?.filter(c => c.schemes?.season_id === seasonId) || []
           
