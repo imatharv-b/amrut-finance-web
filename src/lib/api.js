@@ -599,7 +599,7 @@ export const api = {
           // Fetch relevant data
           const { data: salesData } = await withCompany(supabase.from('sales').select('*, parties(name)')).eq('season_id', seasonId)
           const { data: expData } = await withCompany(supabase.from('expenses').select('*, expense_types(name)'))
-          const { data: allCoupons } = await withCompany(supabase.from('scheme_coupons').select('*, schemes(season_id)'))
+          const { data: allCoupons } = await withCompany(supabase.from('scheme_coupons').select('*, schemes(season_id), parties(name)'))
           const couponsData = allCoupons?.filter(c => c.schemes?.season_id === seasonId) || []
           
           // For outstanding, we need all parties, all sales (all time), all payments, all returns
@@ -616,6 +616,7 @@ export const api = {
 
           // Compute Outstanding (Total Receivables > 0)
           let totalReceivables = 0
+          const outstandingList = []
           if (partiesData) {
             partiesData.forEach(p => {
                let bal = Number(p.opening_balance || 0)
@@ -635,9 +636,14 @@ export const api = {
                  if (e.expense_types?.name === 'Bad Debt') bal -= Number(e.amount || 0)
                })
                
-               if (bal > 0) totalReceivables += bal
+               if (bal > 0) {
+                 totalReceivables += bal
+                 outstandingList.push({ id: p.id, name: p.name, balance: bal })
+               }
             })
           }
+          // Sort outstanding list by largest balance first
+          outstandingList.sort((a,b) => b.balance - a.balance)
 
           // Monthly Sales & Expenses
           const monthlyMap = {}
@@ -665,14 +671,14 @@ export const api = {
           })
           const expenseBreakdown = Object.entries(expBreakdownMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
 
-          // Top Parties
           const partySalesMap = {}
           salesData?.forEach(s => {
              const pName = s.parties?.name || 'Unknown'
              if(!partySalesMap[pName]) partySalesMap[pName] = 0
              partySalesMap[pName] += Number(s.total_amount || 0)
           })
-          const topParties = Object.entries(partySalesMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total).slice(0, 5)
+          const salesList = Object.entries(partySalesMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
+          const topParties = salesList.slice(0, 5)
 
           // Recent Sales
           const recentSales = (salesData || [])
@@ -695,7 +701,10 @@ export const api = {
             monthlySalesExpenses,
             expenseBreakdown,
             topParties,
-            recentSales
+            recentSales,
+            outstandingList,
+            salesList,
+            couponsList: couponsData
           }
         }
         case 'settings:get': {

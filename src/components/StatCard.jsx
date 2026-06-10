@@ -28,11 +28,14 @@ const colorMap = {
   }
 };
 
-export default function StatCard({ title, value, icon: Icon, color = 'green', subtitle }) {
+export default function StatCard({ title, value, icon: Icon, color = 'green', subtitle, onClick }) {
   const styles = colorMap[color] || colorMap.green;
 
   return (
-    <div className={`p-6 rounded-2xl ${styles.bg} border border-white/50 shadow-sm hover:shadow-md transition duration-200 glass-card`}>
+    <div 
+      onClick={onClick}
+      className={`p-6 rounded-2xl ${styles.bg} border border-white/50 shadow-sm transition-all duration-200 glass-card ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]' : ''}`}
+    >
       <div className="flex items-center">
         <div className={`p-3 rounded-xl ${styles.iconBg} ${styles.iconColor} mr-4`}>
           {Icon && <Icon className="w-6 h-6" />}

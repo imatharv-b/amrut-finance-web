@@ -3,6 +3,8 @@ import { SeasonContext } from '../context/SeasonContext'
 import StatCard from '../components/StatCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
+import Modal from '../components/Modal'
+import DataTable from '../components/DataTable'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -55,6 +57,7 @@ export default function Dashboard() {
   const { activeSeason } = useContext(SeasonContext)
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [activeModal, setActiveModal] = useState(null) // 'sales', 'expenses', 'outstanding', 'coupons'
 
   useEffect(() => {
     if (!activeSeason) {
@@ -104,11 +107,11 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { title: 'Total Sales', value: formatCurrency(stats.totalSales), icon: IndianRupee, color: 'green' },
-    { title: 'Total Expenses', value: formatCurrency(stats.totalExpenses), icon: Receipt, color: 'red' },
-    { title: 'Net Balance', value: formatCurrency(stats.netBalance), icon: TrendingUp, color: 'blue' },
-    { title: 'Outstanding', value: formatCurrency(stats.totalReceivables), icon: AlertCircle, color: 'amber' },
-    { title: 'Coupons Issued', value: stats.couponsIssued?.toString() || '0', icon: Ticket, color: 'purple' },
+    { title: 'Total Sales', value: formatCurrency(stats.totalSales), icon: IndianRupee, color: 'green', onClick: () => setActiveModal('sales') },
+    { title: 'Total Expenses', value: formatCurrency(stats.totalExpenses), icon: Receipt, color: 'red', onClick: () => setActiveModal('expenses') },
+    { title: 'Net Balance', value: formatCurrency(stats.netBalance), icon: TrendingUp, color: 'blue', onClick: null }, // Net balance is a computed stat, no specific list
+    { title: 'Outstanding', value: formatCurrency(stats.totalReceivables), icon: AlertCircle, color: 'amber', onClick: () => setActiveModal('outstanding') },
+    { title: 'Coupons Issued', value: stats.couponsIssued?.toString() || '0', icon: Ticket, color: 'purple', onClick: () => setActiveModal('coupons') },
   ]
 
   return (
@@ -143,6 +146,7 @@ export default function Dashboard() {
               value={card.value}
               icon={card.icon}
               color={card.color}
+              onClick={card.onClick}
             />
           </div>
         ))}
@@ -348,6 +352,62 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Detail Modals */}
+      
+      {/* Sales Modal */}
+      <Modal isOpen={activeModal === 'sales'} onClose={() => setActiveModal(null)} title="Total Sales Breakdown" size="lg">
+        <div className="max-h-[60vh] overflow-y-auto">
+          <DataTable 
+            columns={[
+              { key: 'name', label: 'Party Name', sortable: true },
+              { key: 'total', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-green-600">₹{Number(val || 0).toFixed(2)}</span> }
+            ]}
+            data={stats.salesList || []}
+          />
+        </div>
+      </Modal>
+
+      {/* Expenses Modal */}
+      <Modal isOpen={activeModal === 'expenses'} onClose={() => setActiveModal(null)} title="Expense Breakdown" size="md">
+        <div className="max-h-[60vh] overflow-y-auto">
+          <DataTable 
+            columns={[
+              { key: 'name', label: 'Category', sortable: true },
+              { key: 'total', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-red-600">₹{Number(val || 0).toFixed(2)}</span> }
+            ]}
+            data={stats.expenseBreakdown || []}
+          />
+        </div>
+      </Modal>
+
+      {/* Outstanding Modal */}
+      <Modal isOpen={activeModal === 'outstanding'} onClose={() => setActiveModal(null)} title="Outstanding Balances" size="lg">
+        <div className="max-h-[60vh] overflow-y-auto">
+          <DataTable 
+            columns={[
+              { key: 'name', label: 'Party Name', sortable: true },
+              { key: 'balance', label: 'Outstanding (₹)', sortable: true, render: (val) => <span className="font-bold text-amber-600">₹{Number(val || 0).toFixed(2)}</span> }
+            ]}
+            data={stats.outstandingList || []}
+          />
+        </div>
+      </Modal>
+
+      {/* Coupons Modal */}
+      <Modal isOpen={activeModal === 'coupons'} onClose={() => setActiveModal(null)} title="Coupons Issued" size="lg">
+        <div className="max-h-[60vh] overflow-y-auto">
+          <DataTable 
+            columns={[
+              { key: 'coupon_no', label: 'Coupon No', sortable: true },
+              { key: 'party_id', label: 'Party Name', sortable: true, render: (_, row) => row.parties?.name || 'Unknown' },
+              { key: 'amount', label: 'Gift Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-purple-600">₹{Number(val || 0).toFixed(2)}</span> }
+            ]}
+            data={stats.couponsList || []}
+          />
+        </div>
+      </Modal>
+
     </div>
   )
 }
