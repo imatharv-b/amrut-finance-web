@@ -93,8 +93,22 @@ export const api = {
 
         // =================== PARTIES ===================
         case 'parties:getAll': {
-          const { data, error } = await withCompany(supabase.from('parties_with_balance').select('*')).order('name')
+          // Fetch ALL parties to ensure workers without transactions appear
+          const { data: allParties, error } = await withCompany(supabase.from('parties').select('*')).order('name')
           if (error) throw error
+          
+          // Fetch balances from the view and map them
+          const { data: viewParties } = await withCompany(supabase.from('parties_with_balance').select('id, balance'))
+          const balanceMap = {}
+          if (viewParties) {
+             viewParties.forEach(vp => { balanceMap[vp.id] = Number(vp.balance || 0); })
+          }
+          
+          allParties.forEach(p => {
+             p.balance = balanceMap[p.id] !== undefined ? balanceMap[p.id] : Number(p.opening_balance || 0);
+          })
+
+          const data = allParties;
           
           // Merge worker_ledger balances for workers
           const { data: workers } = await supabase.from('workers').select('id, party_id')
