@@ -12,7 +12,7 @@ import {
 } from 'recharts'
 import {
   IndianRupee, Receipt, TrendingUp, AlertCircle, Ticket,
-  LayoutDashboard, Crown, ArrowUpRight, FileText
+  LayoutDashboard, Crown, ArrowUpRight, FileText, Wallet
 } from 'lucide-react'
 
 const formatCurrency = (num) => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(num || 0))
@@ -109,9 +109,10 @@ export default function Dashboard() {
   const statCards = [
     { title: 'Total Sales', value: formatCurrency(stats.totalSales), icon: IndianRupee, color: 'green', onClick: () => setActiveModal('sales') },
     { title: 'Total Expenses', value: formatCurrency(stats.totalExpenses), icon: Receipt, color: 'red', onClick: () => setActiveModal('expenses') },
-    { title: 'Net Balance', value: formatCurrency(stats.netBalance), icon: TrendingUp, color: 'blue', onClick: null }, // Net balance is a computed stat, no specific list
+    { title: 'Total Receipts', value: formatCurrency(stats.totalReceipts), icon: Wallet, color: 'blue', onClick: () => setActiveModal('receipts') },
+    { title: 'Net Balance', value: formatCurrency(stats.netBalance), icon: TrendingUp, color: 'purple', onClick: null }, // Net balance is a computed stat, no specific list
     { title: 'Outstanding', value: formatCurrency(stats.totalReceivables), icon: AlertCircle, color: 'amber', onClick: () => setActiveModal('outstanding') },
-    { title: 'Coupons Issued', value: stats.couponsIssued?.toString() || '0', icon: Ticket, color: 'purple', onClick: () => setActiveModal('coupons') },
+    { title: 'Coupons Issued', value: stats.couponsIssued?.toString() || '0', icon: Ticket, color: 'green', onClick: () => setActiveModal('coupons') },
   ]
 
   return (
@@ -134,7 +135,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {statCards.map((card, index) => (
           <div
             key={card.title}
@@ -404,6 +405,19 @@ export default function Dashboard() {
               { key: 'amount', label: 'Gift Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-purple-600">₹{Number(val || 0).toFixed(2)}</span> }
             ]}
             data={stats.couponsList || []}
+          />
+        </div>
+      </Modal>
+
+      {/* Receipts Modal */}
+      <Modal isOpen={activeModal === 'receipts'} onClose={() => setActiveModal(null)} title="Total Receipts Breakdown" size="lg">
+        <div className="max-h-[60vh] overflow-y-auto">
+          <DataTable 
+            columns={[
+              { key: 'name', label: 'Party Name', sortable: true },
+              { key: 'total', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-blue-600">₹{Number(val || 0).toFixed(2)}</span> }
+            ]}
+            data={stats.receiptsList || []}
           />
         </div>
       </Modal>

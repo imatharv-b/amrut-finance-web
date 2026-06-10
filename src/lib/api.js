@@ -613,14 +613,30 @@ export const api = {
           // For outstanding, we need all parties, all sales (all time), all payments, all returns
           const { data: partiesData } = await withCompany(supabase.from('parties').select('id, name, opening_balance'))
           const { data: allSales } = await withCompany(supabase.from('sales').select('total_amount, party_id'))
-          const { data: allPayments } = await withCompany(supabase.from('payments').select('amount, party_id'))
+          const { data: allPayments } = await withCompany(supabase.from('payments').select('amount, party_id, date, parties(name)'))
           const { data: allReturns } = await withCompany(supabase.from('sale_returns').select('total_amount, party_id'))
 
-          // Basic totals
           const totalSales = salesData?.reduce((sum, s) => sum + Number(s.total_amount || 0), 0) || 0
           const totalExpenses = expData?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0
           const netBalance = totalSales - totalExpenses
           const couponsIssued = couponsData.length
+          
+          let seasonPayments = allPayments || []
+          if (seasonData) {
+             seasonPayments = seasonPayments.filter(p => {
+               const pDate = p.date ? p.date.substring(0, 10) : ''
+               return pDate >= seasonData.start_date && pDate <= seasonData.end_date
+             })
+          }
+          const totalReceipts = seasonPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+
+          const partyReceiptsMap = {}
+          seasonPayments.forEach(p => {
+             const pName = p.parties?.name || 'Unknown'
+             if(!partyReceiptsMap[pName]) partyReceiptsMap[pName] = 0
+             partyReceiptsMap[pName] += Number(p.amount || 0)
+          })
+          const receiptsList = Object.entries(partyReceiptsMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
 
           // Compute Outstanding (Total Receivables > 0)
           let totalReceivables = 0
@@ -703,6 +719,7 @@ export const api = {
           return { 
             totalSales, 
             totalExpenses, 
+            totalReceipts,
             netBalance, 
             totalReceivables, 
             couponsIssued,
@@ -712,6 +729,7 @@ export const api = {
             recentSales,
             outstandingList,
             salesList,
+            receiptsList,
             couponsList: couponsData
           }
         }
