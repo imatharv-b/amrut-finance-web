@@ -95,6 +95,31 @@ export const api = {
         case 'parties:getAll': {
           const { data, error } = await withCompany(supabase.from('parties_with_balance').select('*')).order('name')
           if (error) throw error
+          
+          // Merge worker_ledger balances for workers
+          const { data: workers } = await supabase.from('workers').select('id, party_id')
+          if (workers && workers.length > 0) {
+            const { data: workerLedgers } = await supabase.from('worker_ledger').select('worker_id, type, amount')
+            if (workerLedgers) {
+              const workerBalances = {}
+              for (const w of workers) {
+                if (!w.party_id) continue;
+                let bal = 0;
+                const wl = workerLedgers.filter(l => l.worker_id === w.id);
+                wl.forEach(l => {
+                  if (l.type === 'Debit') bal += Number(l.amount);
+                  if (l.type === 'Credit') bal -= Number(l.amount);
+                });
+                workerBalances[w.party_id] = bal;
+              }
+              data.forEach(p => {
+                if (workerBalances[p.id] !== undefined) {
+                  p.balance = Number(p.balance || 0) + workerBalances[p.id];
+                }
+              });
+            }
+          }
+          
           return data
         }
         case 'parties:add': {
@@ -189,6 +214,25 @@ export const api = {
                 items: r.sale_return_items?.map(i => ({ name: i.products?.name, qty: i.qty, unit: i.unit, rate: i.rate, amount: i.amount })) || []
              });
           });
+
+          // Also include worker_ledger entries if this party is a worker
+          const { data: worker } = await supabase.from('workers').select('id').eq('party_id', partyId).maybeSingle();
+          if (worker && worker.id) {
+            const { data: workerLedger } = await supabase.from('worker_ledger').select('*').eq('worker_id', worker.id);
+            workerLedger?.forEach(wl => {
+              rawEntries.push({
+                entry_date: wl.date,
+                ref: `Worker Ledger`,
+                vch_no: 'Jrnl',
+                debit: wl.type === 'Debit' ? Number(wl.amount) : 0,
+                credit: wl.type === 'Credit' ? Number(wl.amount) : 0,
+                entry_type: 'worker_ledger',
+                particulars: wl.description,
+                narration: '',
+                items: []
+              });
+            });
+          }
 
           rawEntries.sort((a, b) => a.entry_date.localeCompare(b.entry_date) || a.entry_type.localeCompare(b.entry_type));
 
@@ -777,17 +821,55 @@ export const api = {
         }
         case 'workers:add': {
           const [workerData] = args
-          const { data, error } = await supabase.from('workers').insert(injectCompany(workerData)).select().single()
+          const companyData = injectCompany(workerData)
+          
+          // 1. Create Party for this worker first
+          const { data: party, error: pErr } = await supabase.from('parties').insert({
+            company_id: companyData.company_id,
+            name: workerData.name,
+            mobile: workerData.phone || '',
+            party_type: 'Worker',
+            opening_balance: 0
+          }).select().single()
+          
+          if (pErr) throw pErr
+          
+          // 2. Create Worker and link party_id
+          const { data, error } = await supabase.from('workers').insert({
+            ...companyData,
+            party_id: party.id
+          }).select().single()
+          
           if (error) throw error
           return data
         }
         case 'workers:update': {
-          const [id, workerData] = args
-          const { data, error } = await supabase.from('workers').update(workerData).eq('id', id).select().single()
+          const [workerData] = args
+          const { data, error } = await supabase.from('workers').update(workerData).eq('id', workerData.id).select().single()
           if (error) throw error
+          
+          // Sync party name and phone if party_id exists
+          if (data && data.party_id) {
+            await supabase.from('parties').update({
+              name: workerData.name,
+              mobile: workerData.phone || ''
+            }).eq('id', data.party_id)
+          }
+          
           return data
         }
-
+        case 'workers:delete': {
+          const [id] = args
+          // Get the worker first to find party_id
+          const { data: worker } = await supabase.from('workers').select('party_id').eq('id', id).single()
+          
+          const { error } = await supabase.from('workers').delete().eq('id', id)
+          if (error) throw error
+          
+          // Optionally delete the linked party, though it might be safer to keep it for history
+          // Or just let the user delete the party manually if desired. We will leave the party intact to preserve ledger history.
+          return true
+        }
         case 'workers:getSummary': {
           const [fromDate, toDate] = args;
           

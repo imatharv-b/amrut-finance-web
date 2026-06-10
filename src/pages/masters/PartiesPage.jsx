@@ -261,7 +261,17 @@ export default function PartiesPage() {
         expandedRows.has(row.id) ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />
       )
     },
-    { key: 'name', label: 'Name', sortable: true },
+    { 
+      key: 'name', label: 'Name', sortable: true,
+      render: (val, row) => (
+        <div className="flex items-center space-x-2">
+          <span>{val}</span>
+          {row.party_type === 'Worker' && (
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full border border-blue-200">Worker</span>
+          )}
+        </div>
+      )
+    },
     { key: 'owner_name', label: 'Owner Name', sortable: true },
     { key: 'village', label: 'Village', sortable: true },
     { key: 'district', label: 'District', sortable: true },
