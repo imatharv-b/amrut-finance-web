@@ -222,17 +222,17 @@ export default function AttendancePage() {
         </div>
 
         {/* Action Bar */}
-        <div className="flex justify-end mb-4 space-x-3">
+        <div className="flex flex-col sm:flex-row justify-end mb-4 gap-3">
           {isApproved ? (
-            <span className="px-6 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl font-bold flex items-center shadow-sm">
+            <span className="px-6 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl font-bold flex items-center justify-center shadow-sm">
               <CheckCheck className="w-5 h-5 mr-2" /> Approved
             </span>
           ) : (
             <>
-              <button onClick={handleSave} disabled={saving} className="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-semibold transition shadow-sm disabled:opacity-50">
+              <button onClick={handleSave} disabled={saving} className="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-semibold transition shadow-sm disabled:opacity-50 text-center">
                 Save Draft
               </button>
-              <button onClick={handleApprove} disabled={saving || Object.keys(attendance).length === 0} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold transition shadow-sm disabled:opacity-50 flex items-center">
+              <button onClick={handleApprove} disabled={saving || Object.keys(attendance).length === 0} className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold transition shadow-sm disabled:opacity-50 flex items-center justify-center">
                 <CheckCheck className="w-4 h-4 mr-2" /> Approve & Credit
               </button>
             </>
@@ -245,7 +245,7 @@ export default function AttendancePage() {
             const status = attendance[worker.id];
             
             // Dynamic styling based on status
-            let cardClasses = "flex items-center justify-between p-4 rounded-2xl border shadow-sm transition ";
+            let cardClasses = "flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-2xl border shadow-sm transition gap-4 ";
             if (status === 'Present') cardClasses += "bg-emerald-50/30 border-emerald-200";
             else if (status === 'Absent') cardClasses += "bg-red-50/30 border-red-200";
             else if (status === 'Half Day') cardClasses += "bg-amber-50/30 border-amber-200";
@@ -274,11 +274,11 @@ export default function AttendancePage() {
                   </div>
                 </div>
 
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => handleStatusChange(worker.id, 'Present')}
                     disabled={isApproved}
-                    className={`px-4 py-2 rounded-xl font-bold flex items-center transition ${
+                    className={`flex-1 md:flex-none justify-center px-4 py-2 rounded-xl font-bold flex items-center transition ${
                       status === 'Present' 
                         ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
                         : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
@@ -289,7 +289,7 @@ export default function AttendancePage() {
                   <button 
                     onClick={() => handleStatusChange(worker.id, 'Half Day')}
                     disabled={isApproved}
-                    className={`px-4 py-2 rounded-xl font-bold flex items-center transition ${
+                    className={`flex-1 md:flex-none justify-center px-4 py-2 rounded-xl font-bold flex items-center transition ${
                       status === 'Half Day' 
                         ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' 
                         : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
@@ -300,7 +300,7 @@ export default function AttendancePage() {
                   <button 
                     onClick={() => handleStatusChange(worker.id, 'Absent')}
                     disabled={isApproved}
-                    className={`px-4 py-2 rounded-xl font-bold flex items-center transition ${
+                    className={`flex-1 md:flex-none justify-center px-4 py-2 rounded-xl font-bold flex items-center transition ${
                       status === 'Absent' 
                         ? 'bg-red-500 text-white shadow-md shadow-red-500/20' 
                         : 'bg-red-100 text-red-700 hover:bg-red-200'
@@ -327,10 +327,10 @@ export default function AttendancePage() {
     return (
       <div className="w-full flex flex-col">
         {/* Month Navigator */}
-        <div className="flex items-center space-x-4 mb-8">
+        <div className="flex items-center justify-center space-x-4 mb-8">
           <button onClick={() => shiftMonth(-1)} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
-          <span className="font-bold text-xl text-slate-800">
-            {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          <span className="font-bold text-lg md:text-xl text-slate-800 text-center min-w-[120px]">
+            {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
           </span>
           <button onClick={() => shiftMonth(1)} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronRight className="w-5 h-5 text-slate-600" /></button>
         </div>
@@ -358,19 +358,19 @@ export default function AttendancePage() {
 
             return (
               <div key={worker.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-sm flex-shrink-0">
                       {worker.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-800 text-lg leading-tight">{worker.name}</h3>
-                      <p className="text-sm text-slate-400 font-medium">{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                      <p className="text-sm text-slate-400 font-medium">{currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</p>
                     </div>
                   </div>
                   
                   {/* Pills */}
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-bold border border-emerald-100 flex items-center">
                       <span className="text-emerald-500 mr-1.5">{presentCount}</span> Present
                     </span>
@@ -447,10 +447,10 @@ export default function AttendancePage() {
         </div>
 
         {/* Custom Tabs */}
-        <div className="flex space-x-2 bg-slate-200/60 p-1.5 rounded-xl w-fit mb-8 shadow-inner">
+        <div className="flex space-x-2 bg-slate-200/60 p-1.5 rounded-xl w-full md:w-fit mb-8 shadow-inner overflow-x-auto">
           <button 
             onClick={() => setTab('daily')}
-            className={`px-5 py-2.5 rounded-lg font-bold flex items-center transition ${
+            className={`flex-1 md:flex-none justify-center px-4 md:px-5 py-2.5 rounded-lg font-bold flex items-center transition whitespace-nowrap ${
               tab === 'daily' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -458,7 +458,7 @@ export default function AttendancePage() {
           </button>
           <button 
             onClick={() => setTab('monthly')}
-            className={`px-5 py-2.5 rounded-lg font-bold flex items-center transition ${
+            className={`flex-1 md:flex-none justify-center px-4 md:px-5 py-2.5 rounded-lg font-bold flex items-center transition whitespace-nowrap ${
               tab === 'monthly' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
             }`}
           >

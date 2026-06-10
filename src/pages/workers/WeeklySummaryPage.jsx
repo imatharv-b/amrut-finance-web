@@ -198,7 +198,7 @@ export default function WeeklySummaryPage() {
   return (
     <div className="p-6 h-full flex flex-col bg-slate-50/50">
       <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Wage Register</h1>
             <p className="text-slate-500">Weekly attendance and payment summary</p>
@@ -214,15 +214,15 @@ export default function WeeklySummaryPage() {
         </div>
 
         {/* Week Navigator */}
-        <div className="flex items-center space-x-4 mb-8">
-          <button onClick={() => changeWeek(-7)} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
-          <div className="flex flex-col text-center px-4">
-            <span className="font-bold text-xl text-slate-800">
+        <div className="flex items-center justify-center space-x-2 md:space-x-4 mb-8">
+          <button onClick={() => changeWeek(-7)} className="p-2 md:p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
+          <div className="flex flex-col text-center px-2 md:px-4">
+            <span className="font-bold text-lg md:text-xl text-slate-800">
               {formatDateStr(fromDate)} - {formatDateStr(toDate)}
             </span>
             <span className="text-sm font-medium text-slate-500 mt-1">Friday - Thursday</span>
           </div>
-          <button onClick={() => changeWeek(7)} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronRight className="w-5 h-5 text-slate-600" /></button>
+          <button onClick={() => changeWeek(7)} className="p-2 md:p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm"><ChevronRight className="w-5 h-5 text-slate-600" /></button>
         </div>
 
         {/* Calendar Cards */}
@@ -253,7 +253,7 @@ export default function WeeklySummaryPage() {
                     </div>
 
                     {/* 7-Day Week Calendar */}
-                    <div className="flex space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <div className="flex space-x-1.5 md:space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-100 overflow-x-auto scrollbar-hide w-full md:w-auto">
                       {weekDays.map(d => {
                         const status = worker.records && worker.records[d.dateStr];
                         let bgClass = 'bg-white border-slate-200 text-slate-400';
@@ -286,17 +286,17 @@ export default function WeeklySummaryPage() {
                     </div>
 
                     {/* Summary Pills */}
-                    <div className="flex items-center space-x-3 mt-4 md:mt-0">
-                      <div className="text-center px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="text-xs font-bold text-slate-400 uppercase">Days</div>
+                    <div className="flex flex-wrap items-center gap-2 mt-4 md:mt-0 w-full md:w-auto">
+                      <div className="flex-1 md:flex-none text-center px-3 py-2 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Days</div>
                         <div className="font-bold text-slate-700">{worker.totalDays}</div>
                       </div>
-                      <div className="text-center px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
-                        <div className="text-xs font-bold text-emerald-600/70 uppercase">Earned</div>
+                      <div className="flex-1 md:flex-none text-center px-3 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <div className="text-[10px] md:text-xs font-bold text-emerald-600/70 uppercase">Earned</div>
                         <div className="font-bold text-emerald-700">{formatCurrency(worker.earned)}</div>
                       </div>
-                      <div className="text-center px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
-                        <div className="text-xs font-bold text-indigo-600/70 uppercase">Paid</div>
+                      <div className="flex-1 md:flex-none text-center px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <div className="text-[10px] md:text-xs font-bold text-indigo-600/70 uppercase">Paid</div>
                         <div className="font-bold text-indigo-700">{formatCurrency(worker.paidAmount)}</div>
                       </div>
                     </div>
