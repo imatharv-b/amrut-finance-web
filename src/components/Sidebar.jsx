@@ -24,26 +24,30 @@ import {
 } from 'lucide-react'
 import { SeasonContext } from '../context/SeasonContext'
 import { supabase } from '../lib/supabase'
+import { useCompany } from '../context/CompanyContext'
 
 // ── Navigation Structure ─────────────────────────────────────────────
-const navigation = [
+const NAVIGATION = [
   {
     label: 'Dashboard',
     icon: LayoutDashboard,
-    path: '/'
+    path: '/',
+    roles: ['admin'] // Only admin
   },
   {
     label: 'Masters',
     icon: Package,
+    roles: ['admin', 'data_entry'],
     children: [
       { label: 'Products & Batches', icon: Package, path: '/masters/products' },
       { label: 'Parties', icon: Users, path: '/masters/parties' },
-      { label: 'Associates', icon: UserCheck, path: '/masters/associates' }
+      { label: 'Associates', icon: UserCheck, path: '/masters/associates', roles: ['admin'] }
     ]
   },
   {
     label: 'Sales',
     icon: FileText,
+    roles: ['admin', 'data_entry'],
     children: [
       { label: 'New Sale', icon: PlusCircle, path: '/sales/new' },
       { label: 'All Sales', icon: FileText, path: '/sales/all' },
@@ -53,6 +57,7 @@ const navigation = [
   {
     label: 'Expenses',
     icon: Receipt,
+    roles: ['admin', 'data_entry'],
     children: [
       { label: 'New Expense', icon: PlusCircle, path: '/expenses/new' },
       { label: 'All Expenses', icon: Receipt, path: '/expenses/all' },
@@ -62,6 +67,7 @@ const navigation = [
   {
     label: 'Schemes',
     icon: Target,
+    roles: ['admin'],
     children: [
       { label: 'Scheme Setup', icon: Target, path: '/schemes/setup' },
       { label: 'Coupon Issuance', icon: Ticket, path: '/schemes/coupons' }
@@ -70,6 +76,7 @@ const navigation = [
   {
     label: 'Workers',
     icon: Briefcase,
+    roles: ['admin', 'data_entry'],
     children: [
       { label: 'All Workers', icon: Users, path: '/workers/all' },
       { label: 'Attendance', icon: Calendar, path: '/workers/attendance' },
@@ -80,6 +87,7 @@ const navigation = [
   {
     label: 'Receipts',
     icon: CreditCard,
+    roles: ['admin', 'data_entry'],
     children: [
       { label: 'Record Receipt', icon: CreditCard, path: '/payments/record' },
       { label: 'Party Ledger', icon: BookOpen, path: '/payments/ledger' }
@@ -88,6 +96,7 @@ const navigation = [
   {
     label: 'Reports & Analytics',
     icon: BarChart3,
+    roles: ['admin'],
     children: [
       { label: 'Advanced Analytics', icon: BarChart3, path: '/analytics' },
       { label: 'Standard Reports', icon: FileText, path: '/reports' }
@@ -96,28 +105,32 @@ const navigation = [
   {
     label: 'Seasons',
     icon: Calendar,
-    path: '/seasons'
+    path: '/seasons',
+    roles: ['admin']
   },
   {
     label: 'Settings',
     icon: Settings,
-    path: '/settings'
+    path: '/settings',
+    roles: ['admin']
   }
 ]
 
 // ── NavItem Component ────────────────────────────────────────────────
-function NavItem({ item }) {
+function NavItem({ item, userRole }) {
   const location = useLocation()
   const [isExpanded, setIsExpanded] = useState(false)
-  const hasChildren = item.children && item.children.length > 0
+  
+  const allowedChildren = item.children ? item.children.filter(child => !child.roles || child.roles.includes(userRole)) : [];
+  const hasChildren = allowedChildren.length > 0
 
   // Auto-expand if a child route is active
   useEffect(() => {
     if (hasChildren) {
-      const childActive = item.children.some((child) => location.pathname === child.path)
+      const childActive = allowedChildren.some((child) => location.pathname === child.path)
       if (childActive) setIsExpanded(true)
     }
-  }, [location.pathname, hasChildren, item.children])
+  }, [location.pathname, hasChildren, allowedChildren])
 
   if (hasChildren) {
     return (
@@ -147,18 +160,18 @@ function NavItem({ item }) {
           }`}
         >
           <div className="ml-4 mt-0.5 space-y-0.5 border-l border-primary-700/50 pl-0">
-            {item.children.map((child) => (
+            {allowedChildren.map((child) => (
               <NavLink
                 key={child.path}
                 to={child.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-all duration-200 ml-1
+                className={({ isActive }) => `
+                  block w-full text-left pl-7 pr-4 py-2 text-sm rounded-r-lg transition-all duration-200
                   ${
                     isActive
-                      ? 'bg-primary-800 text-white border-l-2 border-accent-500 -ml-[1px] pl-[15px] font-medium'
-                      : 'text-primary-300 hover:bg-primary-800/40 hover:text-white'
-                  }`
-                }
+                      ? 'bg-primary-800/40 text-white font-medium border-l-2 border-emerald-400'
+                      : 'text-primary-200/80 hover:bg-primary-800/30 hover:text-white border-l-2 border-transparent'
+                  }
+                `}
               >
                 <child.icon size={16} className="shrink-0 opacity-70" />
                 <span>{child.label}</span>
@@ -193,6 +206,7 @@ function NavItem({ item }) {
 // ── Sidebar Component ────────────────────────────────────────────────
 export default function Sidebar() {
   const { activeSeason } = useContext(SeasonContext)
+  const { userRole } = useCompany()
   const [userEmail, setUserEmail] = useState('')
 
   useEffect(() => {
@@ -206,6 +220,9 @@ export default function Sidebar() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
   }
+
+  const role = userRole || 'admin';
+  const allowedNav = NAVIGATION.filter(item => !item.roles || item.roles.includes(role))
 
   return (
     <aside className="w-[260px] shrink-0 bg-primary-900 text-white flex flex-col h-full overflow-hidden">
@@ -231,8 +248,8 @@ export default function Sidebar() {
 
       {/* ── Navigation ──────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5 scrollbar-thin">
-        {navigation.map((item) => (
-          <NavItem key={item.label} item={item} />
+        {allowedNav.map((item) => (
+          <NavItem key={item.label} item={item} userRole={role} />
         ))}
       </nav>
 

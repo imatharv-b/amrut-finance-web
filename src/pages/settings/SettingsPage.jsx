@@ -111,6 +111,56 @@ export default function SettingsPage() {
             </div>
           </form>
         </div>
+
+        <div className="mt-8 bg-red-50 rounded-2xl border border-red-200 p-8">
+          <h2 className="text-lg font-bold text-red-800 mb-2">Temporary Setup Action</h2>
+          <p className="text-red-600 mb-4 text-sm">
+            Click the button below to create the entry-level user "Dinesh C." (dinesh@bioamrut.com). 
+            <br/><strong>Note:</strong> You will be automatically logged in as Dinesh after creation. You must log out and log back in as admin.
+          </p>
+          <button
+            onClick={async () => {
+              const { supabase } = await import('../../lib/supabase');
+              toast.loading('Setting up user...', { id: 'setupUser' });
+              try {
+                let userId;
+                const { data: authData, error: authError } = await supabase.auth.signUp({ email: 'dinesh@bioamrut.com', password: 'Password123!' });
+                
+                if (authError) {
+                  if (authError.message.includes('already registered')) {
+                    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: 'dinesh@bioamrut.com', password: 'Password123!' });
+                    if (signInError) throw signInError;
+                    userId = signInData.user.id;
+                  } else {
+                    throw authError;
+                  }
+                } else {
+                  userId = authData.user.id;
+                }
+
+                if (userId) {
+                  const { data: companies } = await supabase.from('companies').select('id');
+                  if (companies) {
+                    for (const company of companies) {
+                      await supabase.from('company_users').upsert({
+                        company_id: company.id,
+                        user_id: userId,
+                        role: 'data_entry'
+                      }, { onConflict: 'company_id, user_id' });
+                    }
+                  }
+                  toast.success('Dinesh user created successfully! You are now logged in as Dinesh.', { id: 'setupUser' });
+                }
+              } catch (err) {
+                console.error(err);
+                toast.error('Failed to setup user: ' + err.message, { id: 'setupUser' });
+              }
+            }}
+            className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition shadow-sm"
+          >
+            Create Dinesh User
+          </button>
+        </div>
       </div>
     </div>
   );

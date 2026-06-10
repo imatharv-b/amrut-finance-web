@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, useRef, Suspense } from 'react'
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Sidebar from './components/Sidebar'
 import Titlebar from './components/Titlebar'
@@ -48,7 +48,7 @@ function PageFallback() {
 }
 
 function AppWithCompany() {
-  const { activeCompany, loading } = useCompany()
+  const { activeCompany, loading, userRole } = useCompany()
   const [activeSeason, setActiveSeason] = useState(null)
   const [allSeasons, setAllSeasons] = useState([])
   const hasMergedRef = useRef(false)
@@ -91,6 +91,8 @@ function AppWithCompany() {
   if (loading) return <PageFallback />
   if (!activeCompany) return <CompanySelectPage />
 
+  const role = userRole || 'admin';
+
   return (
     <SeasonContext.Provider value={{ activeSeason, setActiveSeason, allSeasons, refreshSeason }}>
       <HashRouter>
@@ -107,31 +109,42 @@ function AppWithCompany() {
             <main className="flex-1 overflow-y-auto bg-slate-50">
               <Suspense fallback={<PageFallback />}>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  {/* Public/Common Routes */}
                   <Route path="/masters/products" element={<ProductsPage />} />
                   <Route path="/masters/parties" element={<PartiesPage />} />
-                  <Route path="/masters/associates" element={<AssociatesPage />} />
                   <Route path="/sales/new" element={<NewSalePage />} />
                   <Route path="/sales/edit/:id" element={<EditSalePage />} />
                   <Route path="/sales/all" element={<AllSalesPage />} />
                   <Route path="/sales/return" element={<SaleReturnPage />} />
-
                   <Route path="/expenses/new" element={<NewExpensePage />} />
                   <Route path="/expenses/all" element={<AllExpensesPage />} />
                   <Route path="/expenses/types" element={<ExpenseTypesPage />} />
-                  <Route path="/schemes/setup" element={<SchemeSetupPage />} />
-                  <Route path="/schemes/coupons" element={<CouponIssuancePage />} />
                   <Route path="/payments/record" element={<RecordPaymentPage />} />
                   <Route path="/payments/ledger" element={<PartyLedgerPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/seasons" element={<SeasonsPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-
                   <Route path="/workers/all" element={<WorkersPage />} />
                   <Route path="/workers/attendance" element={<AttendancePage />} />
                   <Route path="/workers/ledger" element={<WorkerLedgerPage />} />
                   <Route path="/workers/summary" element={<WeeklySummaryPage />} />
+
+                  {/* Admin Only Routes */}
+                  {role === 'admin' ? (
+                    <>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/masters/associates" element={<AssociatesPage />} />
+                      <Route path="/schemes/setup" element={<SchemeSetupPage />} />
+                      <Route path="/schemes/coupons" element={<CouponIssuancePage />} />
+                      <Route path="/analytics" element={<AnalyticsPage />} />
+                      <Route path="/reports" element={<ReportsPage />} />
+                      <Route path="/seasons" element={<SeasonsPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                    </>
+                  ) : (
+                    <>
+                      {/* Data Entry user redirect from home to a default page */}
+                      <Route path="/" element={<Navigate to="/sales/new" replace />} />
+                      <Route path="*" element={<Navigate to="/sales/new" replace />} />
+                    </>
+                  )}
                 </Routes>
               </Suspense>
             </main>
