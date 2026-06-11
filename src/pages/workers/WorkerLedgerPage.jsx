@@ -164,6 +164,17 @@ export default function WorkerLedgerPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Summary Footer */}
+            {enrichedEntries.length > 0 && (
+              <div className="bg-slate-100 p-4 border-t border-slate-200 flex flex-row justify-between sm:justify-end items-center gap-6 shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <span className="text-slate-800 uppercase tracking-wider text-xs font-bold">Total for Period:</span>
+                <div className="flex gap-6 font-bold text-sm">
+                  <span className="text-red-700 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-normal uppercase">Debit</span>₹{enrichedEntries.reduce((sum, e) => sum + (e.type === 'Debit' ? e.amount : 0), 0).toFixed(2)}</span>
+                  <span className="text-emerald-700 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-normal uppercase">Credit</span>₹{enrichedEntries.reduce((sum, e) => sum + (e.type === 'Credit' ? e.amount : 0), 0).toFixed(2)}</span>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

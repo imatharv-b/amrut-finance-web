@@ -235,21 +235,20 @@ export default function PartyLedgerPage() {
                       </td>
                     </tr>
                   )}
-                  {ledgerData.entries.length > 0 && (() => {
-                    const totalDebit = ledgerData.entries.reduce((sum, e) => sum + (e.debit || 0), 0);
-                    const totalCredit = ledgerData.entries.reduce((sum, e) => sum + (e.credit || 0), 0);
-                    return (
-                      <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                        <td colSpan="4" className="px-6 py-4 text-right text-slate-800 uppercase tracking-wider text-xs">Total for Period:</td>
-                        <td className="px-6 py-4 text-right text-red-700">{totalDebit.toFixed(2)}</td>
-                        <td className="px-6 py-4 text-right text-green-700">{totalCredit.toFixed(2)}</td>
-                        <td className="px-6 py-4"></td>
-                      </tr>
-                    );
-                  })()}
                 </tbody>
               </table>
             </div>
+            
+            {/* Summary Footer */}
+            {ledgerData.entries.length > 0 && (
+              <div className="bg-slate-100 p-4 border-t border-slate-200 flex flex-row justify-between sm:justify-end items-center gap-6 shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <span className="text-slate-800 uppercase tracking-wider text-xs font-bold">Total for Period:</span>
+                <div className="flex gap-6 font-bold text-sm">
+                  <span className="text-red-700 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-normal uppercase">Debit</span>₹{ledgerData.entries.reduce((sum, e) => sum + (e.debit || 0), 0).toFixed(2)}</span>
+                  <span className="text-green-700 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-normal uppercase">Credit</span>₹{ledgerData.entries.reduce((sum, e) => sum + (e.credit || 0), 0).toFixed(2)}</span>
+                </div>
+              </div>
+            )}
           </>
         ) : null}
       </div>
