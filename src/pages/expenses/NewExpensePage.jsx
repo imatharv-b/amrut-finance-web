@@ -83,6 +83,14 @@ export default function NewExpensePage() {
         ...formData,
         amount: Number(formData.amount)
       };
+
+      // Auto-fill Paid To with worker name if blank
+      if (!payload.paid_to && payload.worker_id) {
+         const selectedWorker = workers.find(w => w.value === Number(payload.worker_id) || w.value === payload.worker_id);
+         if (selectedWorker) {
+            payload.paid_to = selectedWorker.label;
+         }
+      }
       // Clean up empty foreign keys that might cause DB type errors
       if (!payload.party_id) delete payload.party_id;
       if (!payload.worker_id) delete payload.worker_id;
