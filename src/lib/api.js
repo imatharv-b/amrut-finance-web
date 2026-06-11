@@ -406,9 +406,27 @@ export const api = {
         }
         case 'expenses:delete': {
           const [id] = args
+          
+          // First delete any linked worker ledger entries
+          await supabase.from('worker_ledger').delete().eq('related_expense_id', id)
+          
           const { error } = await supabase.from('expenses').delete().eq('id', id)
           if (error) throw error
           return true
+        }
+        case 'worker_ledger:cleanup_orphans': {
+          const { data: ledgerEntries } = await supabase.from('worker_ledger').select('id, related_expense_id').not('related_expense_id', 'is', null)
+          if (!ledgerEntries || ledgerEntries.length === 0) return 0;
+          
+          const expenseIds = ledgerEntries.map(e => e.related_expense_id)
+          const { data: expenses } = await supabase.from('expenses').select('id').in('id', expenseIds)
+          const existingExpenseIds = new Set((expenses || []).map(e => e.id))
+          
+          const orphanedIds = ledgerEntries.filter(e => !existingExpenseIds.has(e.related_expense_id)).map(e => e.id)
+          if (orphanedIds.length > 0) {
+            await supabase.from('worker_ledger').delete().in('id', orphanedIds)
+          }
+          return orphanedIds.length
         }
 
         // =================== PAYMENTS ===================
