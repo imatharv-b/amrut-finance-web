@@ -241,11 +241,17 @@ export default function PartyLedgerPage() {
             
             {/* Summary Footer */}
             {ledgerData.entries.length > 0 && (
-              <div className="bg-slate-100 p-4 border-t border-slate-200 flex flex-row justify-between sm:justify-end items-center gap-6 shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                <span className="text-slate-800 uppercase tracking-wider text-xs font-bold">Total for Period:</span>
-                <div className="flex gap-6 font-bold text-sm">
-                  <span className="text-red-700 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-normal uppercase">Debit</span>₹{ledgerData.entries.reduce((sum, e) => sum + (e.debit || 0), 0).toFixed(2)}</span>
-                  <span className="text-green-700 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-normal uppercase">Credit</span>₹{ledgerData.entries.reduce((sum, e) => sum + (e.credit || 0), 0).toFixed(2)}</span>
+              <div className="bg-slate-100 p-3 sm:p-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-2 sm:gap-6 shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <span className="text-slate-800 uppercase tracking-wider text-xs font-bold text-center w-full sm:w-auto">Total for Period:</span>
+                <div className="flex justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 font-bold text-sm px-2 sm:px-0">
+                  <span className="text-red-700 flex flex-col sm:items-end w-1/2 sm:w-auto text-left sm:text-right">
+                    <span className="text-[10px] text-slate-500 font-normal uppercase">Debit</span>
+                    ₹{ledgerData.entries.reduce((sum, e) => sum + (e.debit || 0), 0).toFixed(2)}
+                  </span>
+                  <span className="text-green-700 flex flex-col sm:items-end w-1/2 sm:w-auto text-right">
+                    <span className="text-[10px] text-slate-500 font-normal uppercase">Credit</span>
+                    ₹{ledgerData.entries.reduce((sum, e) => sum + (e.credit || 0), 0).toFixed(2)}
+                  </span>
                 </div>
               </div>
             )}

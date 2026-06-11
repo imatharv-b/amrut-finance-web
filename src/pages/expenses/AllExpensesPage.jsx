@@ -129,10 +129,10 @@ export default function AllExpensesPage() {
           
           {/* Summary Footer */}
           {expenses.length > 0 && (
-            <div className="bg-slate-100 p-4 border-t border-slate-200 flex flex-row justify-between sm:justify-end items-center gap-6 shrink-0 z-20 rounded-b-xl">
-              <span className="text-slate-800 uppercase tracking-wider text-xs font-bold">Total Expenses:</span>
-              <div className="flex gap-6 font-bold text-sm">
-                <span className="text-red-700 flex flex-col items-end">
+            <div className="bg-slate-100 p-3 sm:p-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-2 sm:gap-6 shrink-0 z-20 rounded-b-xl">
+              <span className="text-slate-800 uppercase tracking-wider text-xs font-bold text-center w-full sm:w-auto">Total Expenses:</span>
+              <div className="flex justify-center sm:justify-end w-full sm:w-auto font-bold text-sm">
+                <span className="text-red-700 flex flex-col items-center sm:items-end">
                   <span className="text-[10px] text-slate-500 font-normal uppercase">Amount</span>
                   ₹{totalExpenses.toFixed(2)}
                 </span>
