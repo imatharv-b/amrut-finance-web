@@ -114,17 +114,32 @@ export default function AllExpensesPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden bg-white rounded-xl shadow-sm border border-slate-200">
-        <DataTable
-          columns={columns}
-          data={expenses}
-          searchable
-          searchPlaceholder="Search expenses by type, paid to, description..."
-          loading={loading}
-          emptyMessage="No expenses found for this season"
-          emptyIcon={Receipt}
-          actions={actions}
-        />
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
+          <DataTable
+            columns={columns}
+            data={expenses}
+            searchable
+            searchPlaceholder="Search expenses by type, paid to, description..."
+            loading={loading}
+            emptyMessage="No expenses found for this season"
+            emptyIcon={Receipt}
+            actions={actions}
+          />
+          
+          {/* Summary Footer */}
+          {expenses.length > 0 && (
+            <div className="bg-slate-100 p-4 border-t border-slate-200 flex flex-row justify-between sm:justify-end items-center gap-6 shrink-0 z-20 rounded-b-xl">
+              <span className="text-slate-800 uppercase tracking-wider text-xs font-bold">Total Expenses:</span>
+              <div className="flex gap-6 font-bold text-sm">
+                <span className="text-red-700 flex flex-col items-end">
+                  <span className="text-[10px] text-slate-500 font-normal uppercase">Amount</span>
+                  ₹{totalExpenses.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <ConfirmDialog
