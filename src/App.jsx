@@ -7,6 +7,7 @@ import LoadingSpinner from './components/LoadingSpinner'
 
 import { SeasonContext } from './context/SeasonContext'
 import { CompanyProvider, useCompany } from './context/CompanyContext'
+import { MobileMenuProvider } from './context/MobileMenuContext'
 import { supabase } from './lib/supabase'
 import LoginPage from './pages/auth/LoginPage'
 import CompanySelectPage from './pages/auth/CompanySelectPage'
@@ -95,9 +96,10 @@ function AppWithCompany() {
 
   return (
     <SeasonContext.Provider value={{ activeSeason, setActiveSeason, allSeasons, refreshSeason }}>
-      <HashRouter>
-        <div className="flex flex-col h-screen bg-slate-50 overflow-hidden">
-          {/* Titlebar */}
+      <MobileMenuProvider>
+        <HashRouter>
+          <div className="flex flex-col h-screen bg-slate-50 overflow-hidden relative">
+            {/* Titlebar */}
           <Titlebar />
 
           {/* Main Layout */}
@@ -150,6 +152,8 @@ function AppWithCompany() {
             </main>
           </div>
         </div>
+        </HashRouter>
+      </MobileMenuProvider>
 
         <Toaster
           position="top-right"

@@ -134,7 +134,7 @@ export default function DataTable({
                       key={col.key}
                       style={col.width ? { width: col.width } : undefined}
                       className={`
-                        px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider
+                        px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap
                         ${col.sortable ? 'cursor-pointer hover:text-slate-700 select-none' : ''}
                       `}
                       onClick={() => col.sortable && handleSort(col.key)}
@@ -146,7 +146,7 @@ export default function DataTable({
                     </th>
                   ))}
                   {actions && (
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider w-[100px]">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap w-[100px]">
                       Actions
                     </th>
                   )}
@@ -164,12 +164,12 @@ export default function DataTable({
                     `}
                   >
                     {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-3 text-sm text-slate-700">
+                      <td key={col.key} className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
                         {col.render ? col.render(row[col.key], row) : row[col.key]}
                       </td>
                     ))}
                     {actions && (
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           {typeof actions === 'function' ? actions(row) : (
                             Array.isArray(actions) && actions.map((act, i) => (

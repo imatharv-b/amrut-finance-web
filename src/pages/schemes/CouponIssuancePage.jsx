@@ -130,7 +130,7 @@ export default function CouponIssuancePage() {
 
   return (
     <div className="p-6 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Coupon Issuance</h1>
           <p className="text-slate-500">Track scheme coupons for {activeSeason?.name}</p>

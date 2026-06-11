@@ -321,7 +321,7 @@ export default function PartiesPage() {
 
   return (
     <div className="p-6 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Parties</h1>
           <p className="text-slate-500">Total Parties: {parties.length} | Total Outstanding: <span className="text-red-600 font-semibold">₹{totalOutstanding.toFixed(2)}</span></p>
@@ -412,7 +412,7 @@ export default function PartiesPage() {
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedParty ? 'Edit Party' : 'Add Party'} size="lg">
-        <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Party Name" required error={errors.name} className="col-span-2">
             <input
               type="text"

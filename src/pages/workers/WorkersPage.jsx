@@ -117,7 +117,7 @@ export default function WorkersPage() {
   return (
     <div className="p-6 h-full flex flex-col items-center">
       <div className="w-full max-w-5xl flex-1 flex flex-col">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex items-center">
             <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl mr-4">
               <Briefcase className="w-6 h-6" />

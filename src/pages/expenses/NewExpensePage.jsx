@@ -115,7 +115,7 @@ export default function NewExpensePage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           <form onSubmit={handleSave} className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Date" required error={errors.date}>
                 <input
                   type="date"
@@ -168,7 +168,7 @@ export default function NewExpensePage() {
               })()}
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Amount (₹)" required error={errors.amount}>
                 <input
                   type="number"

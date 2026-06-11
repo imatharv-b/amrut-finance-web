@@ -25,6 +25,7 @@ import {
 import { SeasonContext } from '../context/SeasonContext'
 import { supabase } from '../lib/supabase'
 import { useCompany } from '../context/CompanyContext'
+import { MobileMenuContext } from '../context/MobileMenuContext'
 
 // ── Navigation Structure ─────────────────────────────────────────────
 const NAVIGATION = [
@@ -119,6 +120,7 @@ const NAVIGATION = [
 // ── NavItem Component ────────────────────────────────────────────────
 function NavItem({ item, userRole }) {
   const location = useLocation()
+  const { setIsOpen } = useContext(MobileMenuContext)
   const [isExpanded, setIsExpanded] = useState(false)
   
   const allowedChildren = item.children ? item.children.filter(child => !child.roles || child.roles.includes(userRole)) : [];
@@ -164,6 +166,7 @@ function NavItem({ item, userRole }) {
               <NavLink
                 key={child.path}
                 to={child.path}
+                onClick={() => setIsOpen(false)}
                 className={({ isActive }) => `
                   block w-full text-left pl-7 pr-4 py-2 text-sm rounded-r-lg transition-all duration-200
                   ${
@@ -187,6 +190,7 @@ function NavItem({ item, userRole }) {
     <NavLink
       to={item.path}
       end={item.path === '/'}
+      onClick={() => setIsOpen(false)}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg mb-0.5
         transition-all duration-200
@@ -207,6 +211,7 @@ function NavItem({ item, userRole }) {
 export default function Sidebar() {
   const { activeSeason } = useContext(SeasonContext)
   const { userRole } = useCompany()
+  const { isOpen, setIsOpen } = useContext(MobileMenuContext)
   const [userEmail, setUserEmail] = useState('')
 
   useEffect(() => {
@@ -225,8 +230,22 @@ export default function Sidebar() {
   const allowedNav = NAVIGATION.filter(item => !item.roles || item.roles.includes(role))
 
   return (
-    <aside className="w-[260px] shrink-0 bg-primary-900 text-white flex flex-col h-full overflow-hidden">
-      {/* ── Logo Area ───────────────────────────────────────────── */}
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside 
+        className={`fixed md:relative z-50 w-[260px] shrink-0 bg-primary-900 text-white flex flex-col h-[calc(100vh-3rem)] md:h-full top-12 md:top-0 overflow-hidden transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
+        {/* ── Logo Area ───────────────────────────────────────────── */}
       <div className="px-5 py-5 border-b border-primary-800/60">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center shadow-lg shadow-accent-500/20">
@@ -279,5 +298,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   )
 }

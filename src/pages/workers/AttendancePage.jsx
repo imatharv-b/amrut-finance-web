@@ -207,7 +207,7 @@ export default function AttendancePage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mb-3">
               <Users className="w-5 h-5 text-slate-600" />

@@ -143,7 +143,7 @@ export default function ReportsPage() {
 
   return (
     <div className="p-6 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Reports</h1>
           <p className="text-slate-500">View and print various analytics reports</p>
@@ -283,7 +283,7 @@ export default function ReportsPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 p-6 border-b border-slate-200 bg-slate-50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border-b border-slate-200 bg-slate-50">
               <div>
                 <p className="text-sm text-slate-500">Season</p>
                 <p className="text-lg font-bold text-slate-800">{selectedSeasonObj?.name}</p>

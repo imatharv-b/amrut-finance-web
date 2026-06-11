@@ -79,7 +79,7 @@ export default function SettingsPage() {
               />
             </FormField>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="GSTIN">
                 <input
                   type="text"

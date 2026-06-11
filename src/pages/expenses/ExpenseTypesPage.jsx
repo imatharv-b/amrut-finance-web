@@ -126,7 +126,7 @@ export default function ExpenseTypesPage() {
   return (
     <div className="p-6 h-full flex flex-col items-center">
       <div className="w-full max-w-4xl flex-1 flex flex-col">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Expense Types</h1>
             <p className="text-slate-500">Manage categories for your expenses</p>

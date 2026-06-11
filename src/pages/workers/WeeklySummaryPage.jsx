@@ -389,7 +389,7 @@ export default function WeeklySummaryPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Payment Date">
               <input
                 type="date"

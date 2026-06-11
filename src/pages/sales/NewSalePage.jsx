@@ -218,13 +218,13 @@ export default function NewSalePage() {
 
   return (
     <div className="p-6 h-full flex flex-col overflow-y-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-slate-800">New Sale Entry</h1>
       </div>
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         {/* Header Details */}
-        <div className="col-span-12 lg:col-span-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-2 gap-4">
+        <div className="col-span-12 lg:col-span-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Party" required>
             <SearchableSelect
               options={parties}
@@ -340,7 +340,7 @@ export default function NewSalePage() {
 
       {/* Line Items Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
-        <div className="overflow-visible">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
               <tr>
