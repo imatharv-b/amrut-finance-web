@@ -152,8 +152,6 @@ function AppWithCompany() {
             </main>
           </div>
         </div>
-        </HashRouter>
-      </MobileMenuProvider>
 
         <Toaster
           position="top-right"
@@ -169,6 +167,7 @@ function AppWithCompany() {
           }}
         />
       </HashRouter>
+      </MobileMenuProvider>
     </SeasonContext.Provider>
   )
 }
