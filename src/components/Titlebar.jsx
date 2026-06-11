@@ -7,7 +7,7 @@ import { Building2, ArrowLeftRight, Menu } from 'lucide-react'
 export default function Titlebar() {
   const { activeSeason } = useContext(SeasonContext)
   const { activeCompany, companies, selectCompany } = useCompany()
-  const { isOpen, setIsOpen } = useContext(MobileMenuContext)
+  const { isOpen, setIsOpen, isDesktopOpen, setIsDesktopOpen } = useContext(MobileMenuContext)
 
   const handleSwitchCompany = () => {
     selectCompany(null)
@@ -21,8 +21,14 @@ export default function Titlebar() {
       {/* Left: App name */}
       <div className="flex items-center gap-2 min-w-0">
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-1 mr-1 text-primary-200 hover:text-white hover:bg-primary-800 rounded transition"
+          onClick={() => {
+            if (window.innerWidth >= 768) {
+              setIsDesktopOpen(!isDesktopOpen)
+            } else {
+              setIsOpen(!isOpen)
+            }
+          }}
+          className="p-1 mr-1 text-primary-200 hover:text-white hover:bg-primary-800 rounded transition"
         >
           <Menu size={20} />
         </button>

@@ -211,7 +211,7 @@ function NavItem({ item, userRole }) {
 export default function Sidebar() {
   const { activeSeason } = useContext(SeasonContext)
   const { userRole } = useCompany()
-  const { isOpen, setIsOpen } = useContext(MobileMenuContext)
+  const { isOpen, setIsOpen, isDesktopOpen } = useContext(MobileMenuContext)
   const [userEmail, setUserEmail] = useState('')
 
   useEffect(() => {
@@ -241,8 +241,9 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside 
-        className={`fixed md:relative z-50 w-[260px] shrink-0 bg-primary-900 text-white flex flex-col h-[calc(100vh-3rem)] md:h-full top-12 md:top-0 overflow-hidden transition-transform duration-300 ease-in-out
+        className={`fixed md:relative z-50 w-[260px] shrink-0 bg-primary-900 text-white flex flex-col h-[calc(100vh-3rem)] md:h-full top-12 md:top-0 overflow-hidden transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          ${!isDesktopOpen ? 'md:-ml-[260px]' : 'md:ml-0'}
         `}
       >
         {/* ── Logo Area ───────────────────────────────────────────── */}
