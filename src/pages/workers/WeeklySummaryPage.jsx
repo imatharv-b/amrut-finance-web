@@ -351,16 +351,16 @@ export default function WeeklySummaryPage() {
                       <button 
                         onClick={() => {
                           setPayWorker(worker);
-                          setPayAmount('');
-                          setPayDate(new Date().toISOString().split('T')[0]);
+                          setPayAmount(worker.earned - worker.paidAmount);
+                          setPayDate(toDate);
                           setPayDescription('');
                         }}
-                        disabled={worker.paidAmount > 0}
-                        className={`flex-1 md:flex-none flex items-center justify-center px-4 py-2 rounded-xl transition shadow-sm h-full font-medium text-sm ${worker.paidAmount > 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-900 text-white'}`}
+                        disabled={worker.paidAmount >= worker.earned}
+                        className={`flex-1 md:flex-none flex items-center justify-center px-4 py-2 rounded-xl transition shadow-sm h-full font-medium text-sm ${worker.paidAmount >= worker.earned ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-900 text-white'}`}
                         style={{ minHeight: '52px' }}
                       >
                         <IndianRupee className="w-4 h-4 mr-1.5" />
-                        {worker.paidAmount > 0 ? 'Paid' : 'Pay'}
+                        {worker.paidAmount >= worker.earned ? 'Paid' : 'Pay'}
                       </button>
                     </div>
                   </div>
