@@ -159,8 +159,80 @@ export default function PartyLedgerPage() {
               </div>
             </div>
 
-            {/* Ledger Table */}
-            <div className="flex-1 overflow-auto p-0">
+            {/* Ledger Cards (Mobile) */}
+            <div className="md:hidden flex-1 overflow-auto bg-slate-50/50 p-4 space-y-3">
+              {/* Opening Balance Card */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Opening Balance</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 mb-0.5">Balance</p>
+                  <span className="font-bold text-slate-800">
+                    {Number(ledgerData.openingBalanceForPeriod || 0) > 0 
+                      ? `${Number(ledgerData.openingBalanceForPeriod || 0).toFixed(2)} Dr` 
+                      : Number(ledgerData.openingBalanceForPeriod || 0) < 0 
+                        ? `${Math.abs(Number(ledgerData.openingBalanceForPeriod || 0)).toFixed(2)} Cr` 
+                        : '0.00'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Transactions */}
+              {ledgerData.entries.map((entry, index) => (
+                <div key={index} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2 relative">
+                  <div className="flex justify-between items-start border-b border-slate-100 pb-2 mb-1">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-0.5">{formatDate(entry.date)} • {entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}</p>
+                      <h4 className="font-semibold text-slate-800 leading-tight">{entry.particulars}</h4>
+                      {entry.vch_no && <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 mt-1.5 inline-block">Ref: {entry.vch_no}</span>}
+                    </div>
+                    <div className="text-right pl-2 shrink-0">
+                      <p className="text-xs text-slate-500 mb-0.5">Amount</p>
+                      {entry.debit > 0 ? (
+                        <span className="font-bold text-red-600">₹{entry.debit.toFixed(2)} Dr</span>
+                      ) : entry.credit > 0 ? (
+                        <span className="font-bold text-green-600">₹{entry.credit.toFixed(2)} Cr</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  
+                  {entry.narration && <p className="text-xs italic text-slate-500">{entry.narration}</p>}
+                  
+                  {entry.items && entry.items.length > 0 && (
+                    <div className="bg-slate-50 p-2 rounded-lg space-y-1 border border-slate-100">
+                      {entry.items.map((item, i) => (
+                        <div key={i} className="flex text-[11px] text-slate-600 justify-between items-center">
+                          <span className="font-medium truncate w-1/2" title={item.name}>{item.name}</span>
+                          <span className="text-slate-400">{Number(item.qty).toFixed(1)} {item.unit}</span>
+                          <span className="font-medium text-slate-700">₹{Number(item.amount).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center mt-1 pt-2 border-t border-slate-50 border-dashed">
+                    <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Balance</span>
+                    <span className="font-bold text-sm text-slate-800">
+                      {!isNaN(entry.balance) && entry.balance > 0 
+                        ? `${entry.balance.toFixed(2)} Dr` 
+                        : !isNaN(entry.balance) && entry.balance < 0 
+                          ? `${Math.abs(entry.balance).toFixed(2)} Cr` 
+                          : '0.00'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              
+              {ledgerData.entries.length === 0 && (
+                <div className="p-8 text-center text-slate-500 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  No transactions found for this party.
+                </div>
+              )}
+            </div>
+
+            {/* Ledger Table (Desktop) */}
+            <div className="hidden md:block flex-1 overflow-auto p-0">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-slate-100 text-slate-600 font-medium sticky top-0 z-10">
                   <tr>

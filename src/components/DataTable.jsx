@@ -14,7 +14,8 @@ export default function DataTable({
   searchPlaceholder = 'Search...',
   loading = false,
   emptyMessage = 'No data found',
-  emptyIcon: EmptyIcon = Inbox
+  emptyIcon: EmptyIcon = Inbox,
+  renderMobileCard
 }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
@@ -125,7 +126,17 @@ export default function DataTable({
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-auto">
+          {renderMobileCard && (
+            <div className="md:hidden flex flex-col gap-3 p-4 overflow-y-auto flex-1 bg-slate-50/50">
+              {paginatedData.map((row, idx) => (
+                <div key={row.id ?? idx} onClick={() => onRowClick?.(row)}>
+                  {renderMobileCard(row)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className={`flex-1 overflow-auto ${renderMobileCard ? 'hidden md:block' : ''}`}>
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">

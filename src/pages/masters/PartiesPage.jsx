@@ -366,6 +366,44 @@ export default function PartiesPage() {
           emptyIcon={Users}
           actions={actions}
           onRowClick={handleRowClick}
+          renderMobileCard={(row) => {
+            const outBalance = outstandingBalances[row.id] || 0;
+            return (
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-2 relative">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-slate-800">{row.name}</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">{row.village} {row.district ? `(${row.district})` : ''}</p>
+                  </div>
+                  {row.party_type === 'Worker' && (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full border border-blue-200">Worker</span>
+                  )}
+                </div>
+                
+                <div className="flex items-center justify-between mt-1">
+                  {row.mobile ? (
+                    <a href={`tel:${row.mobile}`} className="text-sm text-primary-600 hover:text-primary-800 font-medium" onClick={(e) => e.stopPropagation()}>
+                      📞 {row.mobile}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-slate-400">No Mobile</span>
+                  )}
+                  
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 mb-0.5">Outstanding</p>
+                    <span className={`font-bold ${outBalance > 0 ? 'text-red-600' : outBalance < 0 ? 'text-emerald-600' : 'text-slate-600'}`}>
+                      ₹ {Math.abs(outBalance).toFixed(2)} {outBalance > 0 ? 'Dr' : outBalance < 0 ? 'Cr' : ''}
+                    </span>
+                  </div>
+                </div>
+                {row.latest_remark && (
+                  <p className="text-xs text-slate-500 italic mt-1 line-clamp-1 border-t border-slate-100 pt-2">
+                    Note: {row.latest_remark}
+                  </p>
+                )}
+              </div>
+            );
+          }}
           renderExpandedRow={(row) => (
             <div className="p-4 bg-slate-50 border-t border-slate-200 ml-10">
               <div className="flex justify-between items-center mb-4">
