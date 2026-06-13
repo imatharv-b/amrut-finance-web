@@ -63,6 +63,13 @@ export default function SettingsPage() {
       const { supabase } = await import('../../lib/supabase');
       let userId;
       
+      const { data: sessionData } = await supabase.auth.getSession();
+      const adminSession = sessionData?.session;
+      
+      if (!adminSession) {
+        throw new Error('You must be logged in to create a user.');
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({ 
         email: newUser.email, 
         password: newUser.password 
@@ -83,19 +90,36 @@ export default function SettingsPage() {
         userId = authData.user.id;
       }
 
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: adminSession.access_token,
+        refresh_token: adminSession.refresh_token
+      });
+      
+      if (sessionError) {
+        throw new Error('Failed to restore Admin session. Please log out and log back in.');
+      }
+
       if (userId) {
-        await supabase.from('company_users').upsert({
+        const { error: upsertError } = await supabase.from('company_users').upsert({
           company_id: Number(newUser.company_id),
           user_id: userId,
           role: newUser.role
         }, { onConflict: 'company_id, user_id' });
         
-        toast.success(`User created! You are now logged in as ${newUser.email}. Please log out and log back in as admin.`, { id: 'createUser' });
+        if (upsertError) throw upsertError;
+        
+        toast.success(`User created successfully!`, { id: 'createUser' });
         setNewUser({ email: '', password: '', role: 'salesman', company_id: '' });
       }
     } catch (err) {
       console.error(err);
       toast.error('Failed to create user: ' + err.message, { id: 'createUser' });
+      
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session) window.location.reload();
+      } catch (e) {}
     }
   };
 
