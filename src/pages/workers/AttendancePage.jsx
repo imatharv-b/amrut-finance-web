@@ -301,8 +301,8 @@ export default function AttendancePage() {
                 </div>
 
                 {userRole === 'salesman' ? (
-                  <div className="flex w-full md:w-auto mt-2 md:mt-0">
-                    <span className={`px-4 py-2 rounded-xl font-bold flex items-center ${
+                  <div className="flex w-full md:w-auto mt-3 md:mt-0">
+                    <span className={`w-full justify-center px-4 py-2.5 rounded-xl font-bold flex items-center ${
                       status === 'Present' ? 'bg-emerald-100 text-emerald-700' :
                       status === 'Half Day' ? 'bg-amber-100 text-amber-700' :
                       status === 'Absent' ? 'bg-red-100 text-red-700' :
