@@ -134,6 +134,10 @@ function NavItem({ item, userRole }) {
     }
   }, [location.pathname, hasChildren, allowedChildren])
 
+  if (item.children && !hasChildren) {
+    return null;
+  }
+
   if (hasChildren) {
     return (
       <div className="mb-0.5">
