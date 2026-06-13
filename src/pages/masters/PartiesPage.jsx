@@ -312,8 +312,8 @@ export default function PartiesPage() {
     }
   ];
 
-  const actions = userRole !== 'data_entry' ? [
-    { label: 'Edit', icon: Edit, onClick: openModal },
+  const actions = userRole === 'admin' ? [
+    { label: 'Edit', icon: PenSquare, onClick: openModal },
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ] : [];
 
@@ -334,7 +334,7 @@ export default function PartiesPage() {
             accept=".csv"
             className="hidden"
           />
-          {userRole !== 'data_entry' && (
+          {userRole === 'admin' && (
             <>
               <button
                 onClick={handleImportClick}

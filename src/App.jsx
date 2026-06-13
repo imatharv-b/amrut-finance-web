@@ -140,6 +140,12 @@ function AppWithCompany() {
                       <Route path="/seasons" element={<SeasonsPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                     </>
+                  ) : role === 'salesman' ? (
+                    <>
+                      {/* Salesman user redirect from home to a default view */}
+                      <Route path="/" element={<Navigate to="/payments/ledger" replace />} />
+                      <Route path="*" element={<Navigate to="/payments/ledger" replace />} />
+                    </>
                   ) : (
                     <>
                       {/* Data Entry user redirect from home to a default page */}

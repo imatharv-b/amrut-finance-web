@@ -38,10 +38,10 @@ const NAVIGATION = [
   {
     label: 'Masters',
     icon: Package,
-    roles: ['admin', 'data_entry'],
+    roles: ['admin', 'data_entry', 'salesman'],
     children: [
-      { label: 'Products & Batches', icon: Package, path: '/masters/products' },
-      { label: 'Parties', icon: Users, path: '/masters/parties' },
+      { label: 'Products & Batches', icon: Package, path: '/masters/products', roles: ['admin', 'data_entry'] },
+      { label: 'Parties', icon: Users, path: '/masters/parties', roles: ['admin', 'data_entry', 'salesman'] },
       { label: 'Associates', icon: UserCheck, path: '/masters/associates', roles: ['admin'] }
     ]
   },
@@ -77,21 +77,21 @@ const NAVIGATION = [
   {
     label: 'Workers',
     icon: Briefcase,
-    roles: ['admin', 'data_entry'],
+    roles: ['admin', 'data_entry', 'salesman'],
     children: [
-      { label: 'All Workers', icon: Users, path: '/workers/all' },
-      { label: 'Attendance', icon: Calendar, path: '/workers/attendance' },
-      { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger' },
-      { label: 'Wage Register', icon: FileText, path: '/workers/summary' }
+      { label: 'All Workers', icon: Users, path: '/workers/all', roles: ['admin', 'data_entry'] },
+      { label: 'Attendance', icon: Calendar, path: '/workers/attendance', roles: ['admin', 'data_entry', 'salesman'] },
+      { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger', roles: ['admin', 'data_entry'] },
+      { label: 'Wage Register', icon: FileText, path: '/workers/summary', roles: ['admin', 'data_entry'] }
     ]
   },
   {
     label: 'Receipts',
     icon: CreditCard,
-    roles: ['admin', 'data_entry'],
+    roles: ['admin', 'data_entry', 'salesman'],
     children: [
-      { label: 'Record Receipt', icon: CreditCard, path: '/payments/record' },
-      { label: 'Party Ledger', icon: BookOpen, path: '/payments/ledger' }
+      { label: 'Record Receipt', icon: CreditCard, path: '/payments/record', roles: ['admin', 'data_entry'] },
+      { label: 'Party Ledger', icon: BookOpen, path: '/payments/ledger', roles: ['admin', 'data_entry', 'salesman'] }
     ]
   },
   {
