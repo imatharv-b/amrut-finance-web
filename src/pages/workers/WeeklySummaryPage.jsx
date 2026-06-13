@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Printer, ChevronLeft, ChevronRight, Check, X, IndianRupee } from 'lucide-react';
+import { CalendarDays, Printer, ChevronLeft, ChevronRight, Check, X, IndianRupee, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
+import { useCompany } from '../../context/CompanyContext';
 
 export default function WeeklySummaryPage() {
+  const { userRole } = useCompany();
+  const role = userRole || 'admin';
   const [baseDate, setBaseDate] = useState(() => new Date());
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -125,6 +128,18 @@ export default function WeeklySummaryPage() {
       toast.error(err.message || 'Failed to record payment');
     } finally {
       setPayLoading(false);
+    }
+  };
+
+  const handleResetPayment = async (workerId) => {
+    if (!window.confirm('Are you sure you want to completely reset all payments made to this worker for this week?')) return;
+    
+    try {
+      await window.db.invoke('workers:resetWeeklyPayment', workerId, fromDate, toDate);
+      toast.success('Payments reset for this week');
+      loadSummary();
+    } catch (err) {
+      toast.error(err.message || 'Failed to reset payments');
     }
   };
 
@@ -348,20 +363,31 @@ export default function WeeklySummaryPage() {
                         <div className="text-[10px] md:text-xs font-bold text-indigo-600/70 uppercase">Paid</div>
                         <div className="font-bold text-indigo-700">{formatCurrency(worker.paidAmount)}</div>
                       </div>
-                      <button 
-                        onClick={() => {
-                          setPayWorker(worker);
-                          setPayAmount(worker.earned - worker.paidAmount);
-                          setPayDate(toDate);
-                          setPayDescription('');
-                        }}
-                        disabled={worker.paidAmount >= worker.earned}
-                        className={`flex-1 md:flex-none flex items-center justify-center px-4 py-2 rounded-xl transition shadow-sm h-full font-medium text-sm ${worker.paidAmount >= worker.earned ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-900 text-white'}`}
-                        style={{ minHeight: '52px' }}
-                      >
-                        <IndianRupee className="w-4 h-4 mr-1.5" />
-                        {worker.paidAmount >= worker.earned ? 'Paid' : 'Pay'}
-                      </button>
+                      <div className="flex space-x-2 w-full md:w-auto h-full items-stretch">
+                        {role === 'admin' && worker.paidAmount > 0 && (
+                          <button
+                            onClick={() => handleResetPayment(worker.id)}
+                            className="flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition shadow-sm h-full border border-red-200"
+                            title="Reset Payment"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => {
+                            setPayWorker(worker);
+                            setPayAmount(worker.earned - worker.paidAmount);
+                            setPayDate(toDate);
+                            setPayDescription('');
+                          }}
+                          disabled={worker.paidAmount >= worker.earned}
+                          className={`flex-1 md:flex-none flex items-center justify-center px-4 py-2 rounded-xl transition shadow-sm h-full font-medium text-sm ${worker.paidAmount >= worker.earned ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-900 text-white'}`}
+                          style={{ minHeight: '52px' }}
+                        >
+                          <IndianRupee className="w-4 h-4 mr-1.5" />
+                          {worker.paidAmount >= worker.earned ? 'Paid' : 'Pay'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

@@ -985,7 +985,35 @@ export const api = {
           
           // Optionally delete the linked party, though it might be safer to keep it for history
           // Or just let the user delete the party manually if desired. We will leave the party intact to preserve ledger history.
-          return true
+          return true;
+        }
+        case 'workers:resetWeeklyPayment': {
+          const [workerId, fromDate, toDate] = args;
+          // Get ledger debits for this worker in the date range
+          const { data: ledgers, error: lErr } = await withCompany(
+            supabase.from('worker_ledger')
+            .select('id, related_expense_id')
+            .eq('worker_id', workerId)
+            .eq('type', 'Debit')
+            .gte('date', fromDate)
+            .lte('date', toDate)
+          );
+          if (lErr) throw lErr;
+
+          const expenseIds = ledgers.filter(l => l.related_expense_id).map(l => l.related_expense_id);
+          const ledgerIds = ledgers.map(l => l.id);
+
+          // 1. Delete worker_ledger entries directly linked
+          if (ledgerIds.length > 0) {
+            await supabase.from('worker_ledger').delete().in('id', ledgerIds);
+          }
+
+          // 2. Delete the associated expenses
+          if (expenseIds.length > 0) {
+            await supabase.from('expenses').delete().in('id', expenseIds);
+          }
+
+          return true;
         }
         case 'workers:getSummary': {
           const [fromDate, toDate] = args;
