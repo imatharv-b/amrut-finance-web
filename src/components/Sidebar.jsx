@@ -20,7 +20,8 @@ import {
   Calendar,
   RotateCcw,
   LogOut,
-  Briefcase
+  Briefcase,
+  CalendarDays
 } from 'lucide-react'
 import { SeasonContext } from '../context/SeasonContext'
 import { supabase } from '../lib/supabase'
