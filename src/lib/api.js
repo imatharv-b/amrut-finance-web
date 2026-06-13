@@ -234,6 +234,7 @@ export const api = {
           if (worker && worker.id) {
             const { data: workerLedger } = await supabase.from('worker_ledger').select('*').eq('worker_id', worker.id);
             workerLedger?.forEach(wl => {
+              if (wl.source_type === 'payment') return; // Avoid double counting
               rawEntries.push({
                 entry_date: wl.date,
                 ref: `Worker Ledger`,
@@ -443,18 +444,54 @@ export const api = {
           const [paymentData] = args
           const { data, error } = await supabase.from('payments').insert(injectCompany(paymentData)).select().single()
           if (error) throw error
+          
+          // Sync with worker ledger if party is a worker
+          const { data: worker } = await supabase.from('workers').select('id, company_id').eq('party_id', data.party_id).single()
+          if (worker) {
+            await supabase.from('worker_ledger').insert({
+              company_id: worker.company_id,
+              worker_id: worker.id,
+              date: data.date,
+              amount: data.amount,
+              type: data.payment_type === 'Payment from Party' ? 'Credit' : 'Debit',
+              description: `Receipt Ref: ${data.mode} ${data.remarks ? '- ' + data.remarks : ''}`.trim(),
+              source_type: 'payment',
+              source_id: data.id
+            })
+          }
+          
           return data
         }
         case 'payments:update': {
           const [paymentData] = args
-          const { data, error } = await supabase.from('payments').update(paymentData).eq('id', paymentData.id)
+          const { data, error } = await supabase.from('payments').update(paymentData).eq('id', paymentData.id).select().single()
           if (error) throw error
+          
+          // Sync with worker ledger
+          const { data: worker } = await supabase.from('workers').select('id, company_id').eq('party_id', data.party_id).single()
+          await supabase.from('worker_ledger').delete().match({ source_type: 'payment', source_id: data.id })
+          if (worker) {
+            await supabase.from('worker_ledger').insert({
+              company_id: worker.company_id,
+              worker_id: worker.id,
+              date: data.date,
+              amount: data.amount,
+              type: data.payment_type === 'Payment from Party' ? 'Credit' : 'Debit',
+              description: `Receipt Ref: ${data.mode} ${data.remarks ? '- ' + data.remarks : ''}`.trim(),
+              source_type: 'payment',
+              source_id: data.id
+            })
+          }
+          
           return data
         }
         case 'payments:delete': {
           const [id] = args
           const { error } = await supabase.from('payments').delete().eq('id', id)
           if (error) throw error
+          
+          await supabase.from('worker_ledger').delete().match({ source_type: 'payment', source_id: id })
+          
           return true
         }
 
@@ -996,6 +1033,91 @@ export const api = {
           });
           
           return summary;
+        }
+
+        case 'workers:getMonthlySalarySummary': {
+          const [year, month] = args; // month is 0-indexed (0 = Jan, 11 = Dec)
+          
+          // Calculate start and end of month
+          const startDate = new Date(year, month, 1);
+          const endDate = new Date(year, month + 1, 0); // Last day of month
+          const daysInMonth = endDate.getDate();
+          
+          // Find all non-Sundays in the month to check for absences
+          const nonSundays = [];
+          for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(year, month, d);
+            if (date.getDay() !== 0) { // 0 is Sunday
+              nonSundays.push(date.toISOString().split('T')[0]);
+            }
+          }
+          
+          const fromDateStr = startDate.toISOString().split('T')[0];
+          const toDateStr = endDate.toISOString().split('T')[0];
+          
+          // Get Monthly workers
+          const { data: workers, error: wErr } = await withCompany(supabase.from('workers').select('*').eq('salary_type', 'Monthly')).order('name');
+          if (wErr) throw wErr;
+          
+          // Get attendance for this month
+          const { data: attendance, error: aErr } = await withCompany(supabase.from('worker_attendance').select('*').gte('date', fromDateStr).lte('date', toDateStr));
+          if (aErr) throw aErr;
+          
+          // Build summary per worker
+          const summary = workers.map(w => {
+            const workerAtt = attendance.filter(a => a.worker_id === w.id && a.approved);
+            
+            let absentNonSundays = 0;
+            let halfDayNonSundays = 0;
+            
+            workerAtt.forEach(a => {
+              if (nonSundays.includes(a.date)) {
+                if (a.status === 'Absent') absentNonSundays++;
+                if (a.status === 'Half Day') halfDayNonSundays++;
+              }
+            });
+            
+            const monthlySalary = Number(w.salary_amount || 0);
+            const perDayAmount = monthlySalary / daysInMonth;
+            
+            const deductions = (absentNonSundays * perDayAmount) + (halfDayNonSundays * 0.5 * perDayAmount);
+            let netPayable = monthlySalary - deductions;
+            if (netPayable < 0) netPayable = 0;
+            
+            return {
+              ...w,
+              monthlyBase: monthlySalary,
+              daysInMonth,
+              absentDays: absentNonSundays,
+              halfDays: halfDayNonSundays,
+              perDayAmount,
+              deductions,
+              netPayable: Math.round(netPayable * 100) / 100
+            };
+          });
+          
+          return summary;
+        }
+
+        case 'workers:approveMonthlySalary': {
+          const [approvals, nextMonthDateStr, monthName] = args;
+          // approvals = [{ worker_id, company_id, amount, description }, ...]
+          
+          const inserts = approvals.map(app => ({
+            company_id: app.company_id,
+            worker_id: app.worker_id,
+            date: nextMonthDateStr, // usually 1st of next month
+            amount: app.amount,
+            type: 'Credit', // Credit because they EARNED it (increases our liability/their balance)
+            description: app.description || `Salary Credit for ${monthName}`,
+            source_type: 'monthly_salary'
+          }));
+          
+          if (inserts.length > 0) {
+            const { error } = await supabase.from('worker_ledger').insert(inserts);
+            if (error) throw error;
+          }
+          return true;
         }
 
         // =================== WORKER ATTENDANCE ===================
