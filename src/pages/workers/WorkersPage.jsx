@@ -9,7 +9,7 @@ export default function WorkersPage() {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
+  const [formData, setFormData] = useState({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0', opening_balance_date: '' });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -47,7 +47,8 @@ export default function WorkersPage() {
           ...formData,
           salary_amount: Number(formData.salary_amount),
           taking_salary: Number(formData.taking_salary),
-          opening_balance: Number(formData.opening_balance || 0)
+          opening_balance: Number(formData.opening_balance || 0),
+          opening_balance_date: formData.opening_balance_date || null
         });
         toast.success('Worker updated successfully');
       } else {
@@ -55,11 +56,12 @@ export default function WorkersPage() {
           ...formData,
           salary_amount: Number(formData.salary_amount),
           taking_salary: Number(formData.taking_salary),
-          opening_balance: Number(formData.opening_balance || 0)
+          opening_balance: Number(formData.opening_balance || 0),
+          opening_balance_date: formData.opening_balance_date || null
         });
         toast.success('Worker added successfully');
       }
-      setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
+      setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0', opening_balance_date: '' });
       setIsAdding(false);
       setEditingId(null);
       loadWorkers();
@@ -77,7 +79,8 @@ export default function WorkersPage() {
       salary_type: worker.salary_type,
       salary_amount: worker.salary_amount,
       taking_salary: worker.taking_salary,
-      opening_balance: worker.opening_balance
+      opening_balance: worker.opening_balance,
+      opening_balance_date: worker.opening_balance_date || ''
     });
     setEditingId(worker.id);
     setIsAdding(true);
@@ -132,7 +135,7 @@ export default function WorkersPage() {
               if (isAdding) {
                 setIsAdding(false);
                 setEditingId(null);
-                setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0' });
+                setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0', opening_balance_date: '' });
               } else {
                 setIsAdding(true);
               }
@@ -206,10 +209,11 @@ export default function WorkersPage() {
                 </FormField>
               </div>
               
-              <div className="col-span-12 md:col-span-4 mt-2">
+              <div className="col-span-12 sm:col-span-6 md:col-span-2">
                 <FormField label="Opening Balance (₹)">
                   <input
                     type="number"
+                    step="0.01"
                     value={formData.opening_balance}
                     onChange={e => setFormData({ ...formData, opening_balance: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -217,7 +221,17 @@ export default function WorkersPage() {
                   />
                 </FormField>
               </div>
-              <div className="col-span-12 md:col-span-10 flex flex-col justify-end mt-2">
+              <div className="col-span-12 sm:col-span-6 md:col-span-2">
+                <FormField label="Opening Bal. Date">
+                  <input
+                    type="date"
+                    value={formData.opening_balance_date}
+                    onChange={e => setFormData({ ...formData, opening_balance_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  />
+                </FormField>
+              </div>
+              <div className="col-span-12 md:col-span-8 flex flex-col justify-end mt-2">
                 <button type="submit" className="self-end px-6 py-2.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition">
                   {editingId ? 'Update Worker' : 'Save Worker'}
                 </button>

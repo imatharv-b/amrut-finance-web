@@ -924,8 +924,8 @@ export const api = {
           return data
         }
         case 'workers:update': {
-          const [workerData] = args
-          const { data, error } = await supabase.from('workers').update(workerData).eq('id', workerData.id).select().single()
+          const [id, workerData] = args
+          const { data, error } = await supabase.from('workers').update(workerData).eq('id', id).select().single()
           if (error) throw error
           
           // Sync party name and phone if party_id exists
