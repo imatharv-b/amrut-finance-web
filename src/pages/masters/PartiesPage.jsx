@@ -313,7 +313,7 @@ export default function PartiesPage() {
   ];
 
   const actions = userRole === 'admin' ? [
-    { label: 'Edit', icon: PenSquare, onClick: openModal },
+    { label: 'Edit', icon: Edit, onClick: openModal },
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ] : [];
 
@@ -367,7 +367,7 @@ export default function PartiesPage() {
           actions={actions}
           onRowClick={handleRowClick}
           renderMobileCard={(row) => {
-            const outBalance = outstandingBalances[row.id] || 0;
+            const outBalance = Number(row.balance || 0);
             return (
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-2 relative">
                 <div className="flex justify-between items-start">
