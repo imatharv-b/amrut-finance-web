@@ -560,6 +560,13 @@ export const api = {
           await supabase.from('sales').delete().eq('id', id)
           return true
         }
+        case 'sales:changeSeason': {
+          const [saleIds, newSeasonId] = args
+          const ids = Array.isArray(saleIds) ? saleIds : [saleIds]
+          const { error } = await supabase.from('sales').update({ season_id: newSeasonId }).in('id', ids)
+          if (error) throw error
+          return { moved: ids.length }
+        }
 
         // =================== SALE RETURNS ===================
         case 'saleReturns:getAll': {

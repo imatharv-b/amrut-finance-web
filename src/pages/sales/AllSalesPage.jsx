@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { FileText, Edit, Trash2, Eye, Printer, Download } from 'lucide-react';
+import { FileText, Edit, Trash2, Eye, Printer, Download, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import DataTable from '../../components/DataTable';
@@ -14,7 +14,7 @@ import { formatDate } from '../../lib/dateUtils';
 
 export default function AllSalesPage() {
   const navigate = useNavigate();
-  const { activeSeason } = useContext(SeasonContext);
+  const { activeSeason, allSeasons } = useContext(SeasonContext);
   const { userRole } = useCompany();
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,11 @@ export default function AllSalesPage() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [exportType, setExportType] = useState('both');
   const [exporting, setExporting] = useState(false);
+
+  // Change Season state
+  const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
+  const [seasonSale, setSeasonSale] = useState(null);
+  const [targetSeasonId, setTargetSeasonId] = useState('');
 
   useEffect(() => {
     if (activeSeason) {
@@ -249,8 +254,30 @@ export default function AllSalesPage() {
 
   if (userRole !== 'data_entry') {
     actions.splice(1, 0, { label: 'Edit', icon: Edit, onClick: (sale) => navigate(`/sales/edit/${sale.id}`) });
+    actions.push({ label: 'Move Season', icon: RefreshCw, onClick: (sale) => {
+      setSeasonSale(sale);
+      setTargetSeasonId('');
+      setIsSeasonModalOpen(true);
+    }});
     actions.push({ label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' });
   }
+
+  const handleChangeSeason = async () => {
+    if (!targetSeasonId) {
+      toast.error('Please select a target season');
+      return;
+    }
+    try {
+      await window.db.invoke('sales:changeSeason', seasonSale.id, targetSeasonId);
+      const targetSeason = allSeasons.find(s => s.id === targetSeasonId);
+      toast.success(`Invoice ${seasonSale.invoice_no} moved to ${targetSeason?.name || 'selected season'}`);
+      setIsSeasonModalOpen(false);
+      setSeasonSale(null);
+      loadSales();
+    } catch (err) {
+      toast.error(err.message || 'Failed to move sale');
+    }
+  };
 
   const totalSales = sales.reduce((acc, s) => acc + Number(s.total_amount || 0), 0);
   const totalBalance = sales.reduce((acc, s) => acc + (s.balance != null ? Number(s.balance) : (Number(s.total_amount || 0) - Number(s.amount_paid || 0))), 0);
@@ -454,6 +481,70 @@ export default function AllSalesPage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Move to Season Modal */}
+      <Modal isOpen={isSeasonModalOpen} onClose={() => setIsSeasonModalOpen(false)} title="Move Bill to Different Season">
+        {seasonSale && (
+          <div className="space-y-5">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <p className="text-sm text-blue-800 font-medium">
+                Moving invoice <span className="font-bold">{seasonSale.invoice_no}</span> ({seasonSale.party_name}) — ₹{Number(seasonSale.total_amount || 0).toFixed(2)}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">Current Season: <span className="font-semibold">{activeSeason?.name}</span></p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-3">Select target season:</p>
+              <div className="space-y-2 max-h-52 overflow-y-auto">
+                {allSeasons
+                  .filter(s => s.id !== activeSeason?.id)
+                  .map(season => (
+                    <button
+                      key={season.id}
+                      type="button"
+                      onClick={() => setTargetSeasonId(season.id)}
+                      className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between ${
+                        targetSeasonId === season.id
+                          ? 'bg-primary-50 border-primary-500 text-primary-800 shadow-md'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div>
+                        <span className="font-semibold">{season.name}</span>
+                        {season.is_active && (
+                          <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">ACTIVE</span>
+                        )}
+                      </div>
+                      {targetSeasonId === season.id && (
+                        <span className="text-primary-600 font-bold text-sm">✓ Selected</span>
+                      )}
+                    </button>
+                  ))}
+                {allSeasons.filter(s => s.id !== activeSeason?.id).length === 0 && (
+                  <p className="text-sm text-slate-500 text-center py-4">No other seasons available. Create a new season first.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200">
+              <button
+                onClick={() => setIsSeasonModalOpen(false)}
+                className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleChangeSeason}
+                disabled={!targetSeasonId}
+                className="px-5 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center shadow-sm disabled:opacity-50"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Move Bill
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog
