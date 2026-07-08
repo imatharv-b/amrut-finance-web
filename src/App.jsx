@@ -184,17 +184,25 @@ function AppWithCompany() {
 export default function App() {
   const [session, setSession] = useState(null)
   const [isInitializing, setIsInitializing] = useState(true)
+  const sessionTokenRef = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      sessionTokenRef.current = session?.access_token || null
       setSession(session)
       setIsInitializing(false)
     })
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      const newToken = newSession?.access_token || null
+      // Only update state if the session actually changed (sign-in/sign-out),
+      // not on routine token refreshes that happen when switching browser tabs
+      if (newToken !== sessionTokenRef.current) {
+        sessionTokenRef.current = newToken
+        setSession(newSession)
+      }
     })
 
     return () => subscription.unsubscribe()
