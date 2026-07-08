@@ -494,6 +494,13 @@ export const api = {
           
           return true
         }
+        case 'payments:changeSeason': {
+          const [paymentIds, newSeasonId] = args
+          const ids = Array.isArray(paymentIds) ? paymentIds : [paymentIds]
+          const { error } = await supabase.from('payments').update({ season_id: newSeasonId }).in('id', ids)
+          if (error) throw error
+          return { moved: ids.length }
+        }
 
         // =================== SALES ===================
         case 'sales:getAll': {

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { CreditCard, Trash2, Edit } from 'lucide-react';
+import React, { useState, useEffect, useContext } from 'react';
+import { CreditCard, Trash2, Edit, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
@@ -7,8 +7,12 @@ import FormField from '../../components/FormField';
 import SearchableSelect from '../../components/SearchableSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { formatDate } from '../../lib/dateUtils';
+import { SeasonContext } from '../../context/SeasonContext';
+import { useCompany } from '../../context/CompanyContext';
 
 export default function RecordPaymentPage() {
+  const { activeSeason, allSeasons } = useContext(SeasonContext);
+  const { userRole } = useCompany();
   const [payments, setPayments] = useState([]);
   const [parties, setParties] = useState([]);
   const [coupons, setCoupons] = useState([]);
@@ -18,6 +22,11 @@ export default function RecordPaymentPage() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  
+  // Change Season state
+  const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
+  const [seasonPayment, setSeasonPayment] = useState(null);
+  const [targetSeasonId, setTargetSeasonId] = useState('');
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -162,8 +171,30 @@ export default function RecordPaymentPage() {
 
   const actions = [
     { label: 'Edit', icon: Edit, onClick: openModal },
+    ...(userRole !== 'data_entry' ? [{ label: 'Move Season', icon: RefreshCw, onClick: (payment) => {
+      setSeasonPayment(payment);
+      setTargetSeasonId('');
+      setIsSeasonModalOpen(true);
+    }}] : []),
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ];
+
+  const handleChangeSeason = async () => {
+    if (!targetSeasonId) {
+      toast.error('Please select a target season');
+      return;
+    }
+    try {
+      await window.db.invoke('payments:changeSeason', seasonPayment.id, targetSeasonId);
+      const targetSeason = allSeasons.find(s => s.id === targetSeasonId);
+      toast.success(`Receipt of ₹${Number(seasonPayment.amount || 0).toFixed(2)} moved to ${targetSeason?.name || 'selected season'}`);
+      setIsSeasonModalOpen(false);
+      setSeasonPayment(null);
+      loadPayments();
+    } catch (err) {
+      toast.error(err.message || 'Failed to move receipt');
+    }
+  };
 
   return (
     <div className="p-6 h-full flex flex-col">
@@ -320,6 +351,65 @@ export default function RecordPaymentPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Move to Season Modal */}
+      <Modal isOpen={isSeasonModalOpen} onClose={() => setIsSeasonModalOpen(false)} title="Move Receipt to Different Season">
+        {seasonPayment && (
+          <div className="space-y-5">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <p className="text-sm text-blue-800 font-medium">
+                Moving receipt from <span className="font-bold">{seasonPayment.party_name}</span> — <span className="font-bold text-green-700">₹{Number(seasonPayment.amount || 0).toFixed(2)}</span>
+              </p>
+              <p className="text-xs text-blue-600 mt-1">Date: {formatDate(seasonPayment.date)} | Mode: {seasonPayment.mode}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-3">Select target season:</p>
+              <div className="space-y-2 max-h-52 overflow-y-auto">
+                {allSeasons.map(season => (
+                  <button
+                    key={season.id}
+                    type="button"
+                    onClick={() => setTargetSeasonId(season.id)}
+                    className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between ${
+                      targetSeasonId === season.id
+                        ? 'bg-primary-50 border-primary-500 text-primary-800 shadow-md'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-semibold">{season.name}</span>
+                      {season.is_active && (
+                        <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">ACTIVE</span>
+                      )}
+                    </div>
+                    {targetSeasonId === season.id && (
+                      <span className="text-primary-600 font-bold text-sm">✓ Selected</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200">
+              <button
+                onClick={() => setIsSeasonModalOpen(false)}
+                className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleChangeSeason}
+                disabled={!targetSeasonId}
+                className="px-5 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center shadow-sm disabled:opacity-50"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Move Receipt
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog
