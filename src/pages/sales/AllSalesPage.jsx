@@ -226,6 +226,7 @@ export default function AllSalesPage() {
         </span>
       )
     },
+    { key: 'discount', label: 'Discount (₹)', sortable: true, render: (val) => `₹${Number(val || 0).toFixed(2)}` },
     { key: 'total_amount', label: 'Total (₹)', sortable: true, render: (val) => `₹${Number(val || 0).toFixed(2)}` },
     { key: 'amount_paid', label: 'Paid (₹)', render: (val) => `₹${Number(val || 0).toFixed(2)}` },
     { 
