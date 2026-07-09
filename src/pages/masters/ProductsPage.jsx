@@ -10,7 +10,6 @@ import { useCompany } from '../../context/CompanyContext'
 
 const UNITS = ['Bottle', 'Ltr', 'Kg', 'Box', 'Jar', 'Bag', 'Pouch', 'Pcs', 'Can', 'Drum']
 const CATEGORIES = ['Fertilizer', 'Pesticide', 'Biostimulant']
-const TAX_CATEGORIES = ['Exempt', 'GST 5%', 'GST 12%', 'GST 18%', 'GST 28%']
 const PRODUCT_GROUPS = ['ORGANIC NUTRITION', 'BIO PESTICIDE', 'BIO STIMULANT', 'MICRONUTRIENT', 'PLANT GROWTH REGULATOR', 'SPECIALITY FERTILIZER', 'OTHER']
 
 const emptyProduct = {
@@ -26,12 +25,7 @@ const emptyProduct = {
   dealer_price: '',
   sales_price_main: '',
   sales_price_alt: '',
-  purchase_price_main: '',
-  purchase_price_alt: '',
-  min_sales_price: '',
-  tax_category: 'Exempt',
-  opening_stock_qty: '',
-  opening_stock_value: ''
+  min_sales_price: ''
 }
 
 const emptyBatch = {
@@ -131,12 +125,7 @@ export default function ProductsPage() {
       dealer_price: product.dealer_price ?? '',
       sales_price_main: product.sales_price_main ?? '',
       sales_price_alt: product.sales_price_alt ?? '',
-      purchase_price_main: product.purchase_price_main ?? '',
-      purchase_price_alt: product.purchase_price_alt ?? '',
-      min_sales_price: product.min_sales_price ?? '',
-      tax_category: product.tax_category || 'Exempt',
-      opening_stock_qty: product.opening_stock_qty ?? '',
-      opening_stock_value: product.opening_stock_value ?? ''
+      min_sales_price: product.min_sales_price ?? ''
     })
     setErrors({})
     setModalOpen(true)
@@ -178,12 +167,7 @@ export default function ProductsPage() {
         dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0,
         sales_price_main: form.sales_price_main ? parseFloat(form.sales_price_main) : 0,
         sales_price_alt: form.sales_price_alt ? parseFloat(form.sales_price_alt) : 0,
-        purchase_price_main: form.purchase_price_main ? parseFloat(form.purchase_price_main) : 0,
-        purchase_price_alt: form.purchase_price_alt ? parseFloat(form.purchase_price_alt) : 0,
-        min_sales_price: form.min_sales_price ? parseFloat(form.min_sales_price) : 0,
-        tax_category: form.tax_category,
-        opening_stock_qty: form.opening_stock_qty ? parseFloat(form.opening_stock_qty) : 0,
-        opening_stock_value: form.opening_stock_value ? parseFloat(form.opening_stock_value) : 0
+        min_sales_price: form.min_sales_price ? parseFloat(form.min_sales_price) : 0
       }
 
       if (editingProduct) {
@@ -356,15 +340,6 @@ export default function ProductsPage() {
       label: 'MRP (₹)',
       sortable: true,
       render: (val) => <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
-    },
-    {
-      key: 'tax_category',
-      label: 'Tax',
-      render: (val) => (
-        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-          val === 'Exempt' ? 'bg-gray-100 text-gray-600' : 'bg-blue-50 text-blue-700'
-        }`}>{val || 'Exempt'}</span>
-      )
     }
   ]
 
@@ -584,7 +559,7 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* ── Tax & HSN ── */}
+          {/* ── HSN Code ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="HSN/SAC Code">
               <input
@@ -594,15 +569,6 @@ export default function ProductsPage() {
                 placeholder="e.g. 31010099"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
               />
-            </FormField>
-            <FormField label="Tax Category">
-              <select
-                value={form.tax_category}
-                onChange={(e) => setForm({ ...form, tax_category: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white"
-              >
-                {TAX_CATEGORIES.map(tc => <option key={tc} value={tc}>{tc}</option>)}
-              </select>
             </FormField>
           </div>
 
@@ -625,26 +591,6 @@ export default function ProductsPage() {
                     type="number" min="0" step="0.01"
                     value={form.sales_price_alt}
                     onChange={(e) => setForm({ ...form, sales_price_alt: e.target.value })}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                  />
-                </FormField>
-              )}
-              <FormField label={`Purc. Price (${form.unit})`}>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={form.purchase_price_main}
-                  onChange={(e) => setForm({ ...form, purchase_price_main: e.target.value })}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                />
-              </FormField>
-              {form.alt_unit && (
-                <FormField label={`Purc. Price (${form.alt_unit})`}>
-                  <input
-                    type="number" min="0" step="0.01"
-                    value={form.purchase_price_alt}
-                    onChange={(e) => setForm({ ...form, purchase_price_alt: e.target.value })}
                     placeholder="0.00"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
                   />
@@ -673,31 +619,6 @@ export default function ProductsPage() {
                   type="number" min="0" step="0.01"
                   value={form.min_sales_price}
                   onChange={(e) => setForm({ ...form, min_sales_price: e.target.value })}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                />
-              </FormField>
-            </div>
-          </div>
-
-          {/* ── Opening Stock ── */}
-          <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100">
-            <h3 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3">Opening Stock</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label={`Op. Stock Qty (${form.unit})`}>
-                <input
-                  type="number" step="0.01"
-                  value={form.opening_stock_qty}
-                  onChange={(e) => setForm({ ...form, opening_stock_qty: e.target.value })}
-                  placeholder="0"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                />
-              </FormField>
-              <FormField label="Op. Stock Value (₹)">
-                <input
-                  type="number" step="0.01"
-                  value={form.opening_stock_value}
-                  onChange={(e) => setForm({ ...form, opening_stock_value: e.target.value })}
                   placeholder="0.00"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
                 />
