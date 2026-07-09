@@ -22,10 +22,7 @@ const emptyProduct = {
   alt_unit: '',
   conversion_factor: '',
   mrp: '',
-  dealer_price: '',
-  sales_price_main: '',
-  sales_price_alt: '',
-  min_sales_price: ''
+  dealer_price: ''
 }
 
 const emptyBatch = {
@@ -122,10 +119,7 @@ export default function ProductsPage() {
       alt_unit: product.alt_unit || '',
       conversion_factor: product.conversion_factor ?? '',
       mrp: product.mrp ?? '',
-      dealer_price: product.dealer_price ?? '',
-      sales_price_main: product.sales_price_main ?? '',
-      sales_price_alt: product.sales_price_alt ?? '',
-      min_sales_price: product.min_sales_price ?? ''
+      dealer_price: product.dealer_price ?? ''
     })
     setErrors({})
     setModalOpen(true)
@@ -164,10 +158,7 @@ export default function ProductsPage() {
         alt_unit: form.alt_unit || null,
         conversion_factor: form.conversion_factor ? parseFloat(form.conversion_factor) : 1,
         mrp: form.mrp ? parseFloat(form.mrp) : 0,
-        dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0,
-        sales_price_main: form.sales_price_main ? parseFloat(form.sales_price_main) : 0,
-        sales_price_alt: form.sales_price_alt ? parseFloat(form.sales_price_alt) : 0,
-        min_sales_price: form.min_sales_price ? parseFloat(form.min_sales_price) : 0
+        dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0
       }
 
       if (editingProduct) {
@@ -322,19 +313,7 @@ export default function ProductsPage() {
         </span>
       ) : <span className="text-slate-400">—</span>
     },
-    {
-      key: 'sales_price_main',
-      label: `Sales Price`,
-      sortable: true,
-      render: (val, row) => (
-        <div className="text-xs">
-          <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
-          {row.alt_unit && row.sales_price_alt ? (
-            <span className="text-slate-400 ml-1">/ {formatCurrency(row.sales_price_alt)}</span>
-          ) : null}
-        </div>
-      )
-    },
+
     {
       key: 'mrp',
       label: 'MRP (₹)',
@@ -582,26 +561,7 @@ export default function ProductsPage() {
           <div className="bg-green-50/50 rounded-xl p-4 border border-green-100">
             <h3 className="text-xs font-bold text-green-700 uppercase tracking-wider mb-3">Item Price Info</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <FormField label={`Sales Price (${form.unit})`}>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={form.sales_price_main}
-                  onChange={(e) => setForm({ ...form, sales_price_main: e.target.value })}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                />
-              </FormField>
-              {form.alt_unit && (
-                <FormField label={`Sales Price (${form.alt_unit})`}>
-                  <input
-                    type="number" min="0" step="0.01"
-                    value={form.sales_price_alt}
-                    onChange={(e) => setForm({ ...form, sales_price_alt: e.target.value })}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                  />
-                </FormField>
-              )}
+
               <FormField label={`MRP (${form.unit})`}>
                 <input
                   type="number" min="0" step="0.01"
@@ -616,15 +576,6 @@ export default function ProductsPage() {
                   type="number" min="0" step="0.01"
                   value={form.dealer_price}
                   onChange={(e) => setForm({ ...form, dealer_price: e.target.value })}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
-                />
-              </FormField>
-              <FormField label="Min Sales Price (₹)">
-                <input
-                  type="number" min="0" step="0.01"
-                  value={form.min_sales_price}
-                  onChange={(e) => setForm({ ...form, min_sales_price: e.target.value })}
                   placeholder="0.00"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
                 />
