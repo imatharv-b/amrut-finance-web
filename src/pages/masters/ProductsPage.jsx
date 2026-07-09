@@ -340,6 +340,12 @@ export default function ProductsPage() {
       label: 'MRP (₹)',
       sortable: true,
       render: (val) => <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
+    },
+    {
+      key: 'dealer_price',
+      label: 'Dealer Price (₹)',
+      sortable: true,
+      render: (val) => <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
     }
   ]
 
