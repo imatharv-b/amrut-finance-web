@@ -8,16 +8,30 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import { SeasonContext } from '../../context/SeasonContext'
 import { useCompany } from '../../context/CompanyContext'
 
-const UNITS = ['Bottle', 'Ltr', 'Kg', 'Box', 'Jar', 'Bag']
+const UNITS = ['Bottle', 'Ltr', 'Kg', 'Box', 'Jar', 'Bag', 'Pouch', 'Pcs', 'Can', 'Drum']
 const CATEGORIES = ['Fertilizer', 'Pesticide', 'Biostimulant']
+const TAX_CATEGORIES = ['Exempt', 'GST 5%', 'GST 12%', 'GST 18%', 'GST 28%']
+const PRODUCT_GROUPS = ['ORGANIC NUTRITION', 'BIO PESTICIDE', 'BIO STIMULANT', 'MICRONUTRIENT', 'PLANT GROWTH REGULATOR', 'SPECIALITY FERTILIZER', 'OTHER']
 
 const emptyProduct = {
   name: '',
+  print_name: '',
   category: 'Fertilizer',
+  product_group: '',
   hsn_code: '',
-  unit: 'Bottle',
+  unit: 'Box',
+  alt_unit: '',
+  conversion_factor: '',
   mrp: '',
-  dealer_price: ''
+  dealer_price: '',
+  sales_price_main: '',
+  sales_price_alt: '',
+  purchase_price_main: '',
+  purchase_price_alt: '',
+  min_sales_price: '',
+  tax_category: 'Exempt',
+  opening_stock_qty: '',
+  opening_stock_value: ''
 }
 
 const emptyBatch = {
@@ -106,11 +120,23 @@ export default function ProductsPage() {
     setEditingProduct(product)
     setForm({
       name: product.name || '',
+      print_name: product.print_name || '',
       category: product.category || 'Fertilizer',
+      product_group: product.product_group || '',
       hsn_code: product.hsn_code || '',
-      unit: product.unit || 'Bottle',
+      unit: product.unit || 'Box',
+      alt_unit: product.alt_unit || '',
+      conversion_factor: product.conversion_factor ?? '',
       mrp: product.mrp ?? '',
-      dealer_price: product.dealer_price ?? ''
+      dealer_price: product.dealer_price ?? '',
+      sales_price_main: product.sales_price_main ?? '',
+      sales_price_alt: product.sales_price_alt ?? '',
+      purchase_price_main: product.purchase_price_main ?? '',
+      purchase_price_alt: product.purchase_price_alt ?? '',
+      min_sales_price: product.min_sales_price ?? '',
+      tax_category: product.tax_category || 'Exempt',
+      opening_stock_qty: product.opening_stock_qty ?? '',
+      opening_stock_value: product.opening_stock_value ?? ''
     })
     setErrors({})
     setModalOpen(true)
@@ -141,11 +167,23 @@ export default function ProductsPage() {
       setSaving(true)
       const payload = {
         name: form.name.trim(),
+        print_name: form.print_name.trim() || form.name.trim(),
         category: form.category,
+        product_group: form.product_group,
         hsn_code: form.hsn_code.trim(),
         unit: form.unit,
+        alt_unit: form.alt_unit || null,
+        conversion_factor: form.conversion_factor ? parseFloat(form.conversion_factor) : 1,
         mrp: form.mrp ? parseFloat(form.mrp) : 0,
-        dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0
+        dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0,
+        sales_price_main: form.sales_price_main ? parseFloat(form.sales_price_main) : 0,
+        sales_price_alt: form.sales_price_alt ? parseFloat(form.sales_price_alt) : 0,
+        purchase_price_main: form.purchase_price_main ? parseFloat(form.purchase_price_main) : 0,
+        purchase_price_alt: form.purchase_price_alt ? parseFloat(form.purchase_price_alt) : 0,
+        min_sales_price: form.min_sales_price ? parseFloat(form.min_sales_price) : 0,
+        tax_category: form.tax_category,
+        opening_stock_qty: form.opening_stock_qty ? parseFloat(form.opening_stock_qty) : 0,
+        opening_stock_value: form.opening_stock_value ? parseFloat(form.opening_stock_value) : 0
       }
 
       if (editingProduct) {
@@ -283,8 +321,36 @@ export default function ProductsPage() {
         );
       }
     },
+    {
+      key: 'product_group',
+      label: 'Group',
+      sortable: true,
+      render: (val) => <span className="text-xs text-slate-600 font-medium">{val || '—'}</span>
+    },
     { key: 'hsn_code', label: 'HSN Code', sortable: true },
-    { key: 'unit', label: 'Unit', sortable: true },
+    { key: 'unit', label: 'Main Unit', sortable: true },
+    {
+      key: 'alt_unit',
+      label: 'Alt Unit',
+      render: (val, row) => val ? (
+        <span className="text-xs text-slate-600">
+          {val} <span className="text-slate-400">({row.conversion_factor || 1} {val}/{row.unit})</span>
+        </span>
+      ) : <span className="text-slate-400">—</span>
+    },
+    {
+      key: 'sales_price_main',
+      label: `Sales Price`,
+      sortable: true,
+      render: (val, row) => (
+        <div className="text-xs">
+          <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
+          {row.alt_unit && row.sales_price_alt ? (
+            <span className="text-slate-400 ml-1">/ {formatCurrency(row.sales_price_alt)}</span>
+          ) : null}
+        </div>
+      )
+    },
     {
       key: 'mrp',
       label: 'MRP (₹)',
@@ -292,10 +358,13 @@ export default function ProductsPage() {
       render: (val) => <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
     },
     {
-      key: 'dealer_price',
-      label: 'Dealer Price (₹)',
-      sortable: true,
-      render: (val) => <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
+      key: 'tax_category',
+      label: 'Tax',
+      render: (val) => (
+        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+          val === 'Exempt' ? 'bg-gray-100 text-gray-600' : 'bg-blue-50 text-blue-700'
+        }`}>{val || 'Exempt'}</span>
+      )
     }
   ]
 
@@ -414,85 +483,226 @@ export default function ProductsPage() {
         isOpen={modalOpen}
         onClose={closeModal}
         title={editingProduct ? 'Edit Product' : 'Add Product'}
-        size="md"
+        size="lg"
       >
-        <div className="space-y-4">
-          <FormField label="Product Name" required error={errors.name}>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Enter product name"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
-            />
-          </FormField>
-
-          <FormField label="Category" required error={errors.category}>
-            <div className="flex gap-4">
-              {CATEGORIES.map((cat) => (
-                <label key={cat} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="category"
-                    value={cat}
-                    checked={form.category === cat}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="w-4 h-4 text-primary-600 border-slate-300 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-slate-700">{cat}</span>
-                </label>
-              ))}
+        <div className="space-y-5">
+          {/* ── Basic Info ── */}
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="Product Name" required error={errors.name}>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. BLACK GOLD 500 ML"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+              <FormField label="Print Name">
+                <input
+                  type="text"
+                  value={form.print_name}
+                  onChange={(e) => setForm({ ...form, print_name: e.target.value })}
+                  placeholder="Same as product name if empty"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
             </div>
-          </FormField>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+              <FormField label="Category" required error={errors.category}>
+                <div className="flex gap-3 flex-wrap">
+                  {CATEGORIES.map((cat) => (
+                    <label key={cat} className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="category"
+                        value={cat}
+                        checked={form.category === cat}
+                        onChange={(e) => setForm({ ...form, category: e.target.value })}
+                        className="w-4 h-4 text-primary-600 border-slate-300 focus:ring-primary-500"
+                      />
+                      <span className="text-sm text-slate-700">{cat}</span>
+                    </label>
+                  ))}
+                </div>
+              </FormField>
+              <FormField label="Product Group">
+                <select
+                  value={form.product_group}
+                  onChange={(e) => setForm({ ...form, product_group: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white"
+                >
+                  <option value="">Select Group</option>
+                  {PRODUCT_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </FormField>
+            </div>
+          </div>
 
+          {/* ── Unit Details ── */}
+          <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
+            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">Unit Details</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <FormField label="Main Unit">
+                <select
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white"
+                >
+                  {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Alternate Unit">
+                <select
+                  value={form.alt_unit}
+                  onChange={(e) => setForm({ ...form, alt_unit: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white"
+                >
+                  <option value="">None</option>
+                  {UNITS.filter(u => u !== form.unit).map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Conversion Factor">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={form.conversion_factor}
+                  onChange={(e) => setForm({ ...form, conversion_factor: e.target.value })}
+                  placeholder="e.g. 20"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+              {form.alt_unit && form.conversion_factor && (
+                <div className="flex items-end pb-2">
+                  <span className="text-sm font-medium text-blue-700 bg-blue-100 px-3 py-2 rounded-lg">
+                    {form.conversion_factor} {form.alt_unit}/{form.unit}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Tax & HSN ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="HSN Code">
+            <FormField label="HSN/SAC Code">
               <input
                 type="text"
                 value={form.hsn_code}
                 onChange={(e) => setForm({ ...form, hsn_code: e.target.value })}
                 placeholder="e.g. 31010099"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
               />
             </FormField>
-
-            <FormField label="Unit">
+            <FormField label="Tax Category">
               <select
-                value={form.unit}
-                onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white"
+                value={form.tax_category}
+                onChange={(e) => setForm({ ...form, tax_category: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white"
               >
-                {UNITS.map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
+                {TAX_CATEGORIES.map(tc => <option key={tc} value={tc}>{tc}</option>)}
               </select>
             </FormField>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="MRP (₹)">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.mrp}
-                onChange={(e) => setForm({ ...form, mrp: e.target.value })}
-                placeholder="0.00"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
-              />
-            </FormField>
+          {/* ── Pricing ── */}
+          <div className="bg-green-50/50 rounded-xl p-4 border border-green-100">
+            <h3 className="text-xs font-bold text-green-700 uppercase tracking-wider mb-3">Item Price Info</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <FormField label={`Sales Price (${form.unit})`}>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={form.sales_price_main}
+                  onChange={(e) => setForm({ ...form, sales_price_main: e.target.value })}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+              {form.alt_unit && (
+                <FormField label={`Sales Price (${form.alt_unit})`}>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={form.sales_price_alt}
+                    onChange={(e) => setForm({ ...form, sales_price_alt: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                  />
+                </FormField>
+              )}
+              <FormField label={`Purc. Price (${form.unit})`}>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={form.purchase_price_main}
+                  onChange={(e) => setForm({ ...form, purchase_price_main: e.target.value })}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+              {form.alt_unit && (
+                <FormField label={`Purc. Price (${form.alt_unit})`}>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={form.purchase_price_alt}
+                    onChange={(e) => setForm({ ...form, purchase_price_alt: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                  />
+                </FormField>
+              )}
+              <FormField label={`MRP (${form.unit})`}>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={form.mrp}
+                  onChange={(e) => setForm({ ...form, mrp: e.target.value })}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+              <FormField label="Dealer Price (₹)">
+                <input
+                  type="number" min="0" step="0.01"
+                  value={form.dealer_price}
+                  onChange={(e) => setForm({ ...form, dealer_price: e.target.value })}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+              <FormField label="Min Sales Price (₹)">
+                <input
+                  type="number" min="0" step="0.01"
+                  value={form.min_sales_price}
+                  onChange={(e) => setForm({ ...form, min_sales_price: e.target.value })}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+            </div>
+          </div>
 
-            <FormField label="Dealer Price (₹)">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.dealer_price}
-                onChange={(e) => setForm({ ...form, dealer_price: e.target.value })}
-                placeholder="0.00"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
-              />
-            </FormField>
+          {/* ── Opening Stock ── */}
+          <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100">
+            <h3 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3">Opening Stock</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label={`Op. Stock Qty (${form.unit})`}>
+                <input
+                  type="number" step="0.01"
+                  value={form.opening_stock_qty}
+                  onChange={(e) => setForm({ ...form, opening_stock_qty: e.target.value })}
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+              <FormField label="Op. Stock Value (₹)">
+                <input
+                  type="number" step="0.01"
+                  value={form.opening_stock_value}
+                  onChange={(e) => setForm({ ...form, opening_stock_value: e.target.value })}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+              </FormField>
+            </div>
           </div>
 
           {/* Modal actions */}
