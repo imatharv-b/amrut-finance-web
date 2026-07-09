@@ -309,7 +309,7 @@ export default function ProductsPage() {
       label: 'Alt Unit',
       render: (val, row) => val ? (
         <span className="text-xs text-slate-600">
-          {val} <span className="text-slate-400">({row.conversion_factor || 1} {val}/{row.unit})</span>
+          {val} <span className="text-slate-400">({row.conversion_factor || 1} {row.unit}/{val})</span>
         </span>
       ) : <span className="text-slate-400">—</span>
     },
@@ -537,7 +537,7 @@ export default function ProductsPage() {
               {form.alt_unit && form.conversion_factor && (
                 <div className="flex items-end pb-2">
                   <span className="text-sm font-medium text-blue-700 bg-blue-100 px-3 py-2 rounded-lg">
-                    {form.conversion_factor} {form.alt_unit}/{form.unit}
+                    {form.conversion_factor} {form.unit}/{form.alt_unit}
                   </span>
                 </div>
               )}
