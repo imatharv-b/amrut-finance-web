@@ -414,12 +414,29 @@ export default function NewSalePage() {
                     />
                   </td>
                   <td className="px-4 py-2">
-                    <input
-                      type="text"
-                      value={item.unit}
-                      onChange={e => handleItemChange(index, 'unit', e.target.value)}
-                      className="w-full px-2 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary-500 outline-none"
-                    />
+                    {(() => {
+                      const prod = products.find(p => p.id === item.product_id);
+                      if (prod && prod.alt_unit) {
+                        return (
+                          <select
+                            value={item.unit}
+                            onChange={e => handleItemChange(index, 'unit', e.target.value)}
+                            className="w-full px-2 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary-500 outline-none bg-white"
+                          >
+                            <option value={prod.unit}>{prod.unit}</option>
+                            <option value={prod.alt_unit}>{prod.alt_unit}</option>
+                          </select>
+                        );
+                      }
+                      return (
+                        <input
+                          type="text"
+                          value={item.unit}
+                          readOnly
+                          className="w-full px-2 py-1.5 border border-slate-200 bg-slate-50 text-slate-500 rounded outline-none cursor-not-allowed"
+                        />
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-2">
                     <input
