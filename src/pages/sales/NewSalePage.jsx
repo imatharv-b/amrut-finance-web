@@ -123,6 +123,16 @@ export default function NewSalePage() {
       item.batch_id = value;
       const batch = item.batches.find(b => b.id === Number(value));
       if (batch) item.mfg_date = batch.mfg_date;
+    } else if (field === 'unit') {
+      item.unit = value;
+      const product = products.find(p => p.id === item.product_id);
+      if (product) {
+        if (value === product.alt_unit && product.dealer_price_alt) {
+          item.rate = product.dealer_price_alt;
+        } else {
+          item.rate = product.dealer_price || 0;
+        }
+      }
     } else {
       item[field] = value;
     }

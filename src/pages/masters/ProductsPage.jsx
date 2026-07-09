@@ -22,7 +22,9 @@ const emptyProduct = {
   alt_unit: '',
   conversion_factor: '',
   mrp: '',
-  dealer_price: ''
+  mrp_alt: '',
+  dealer_price: '',
+  dealer_price_alt: ''
 }
 
 const emptyBatch = {
@@ -119,7 +121,9 @@ export default function ProductsPage() {
       alt_unit: product.alt_unit || '',
       conversion_factor: product.conversion_factor ?? '',
       mrp: product.mrp ?? '',
-      dealer_price: product.dealer_price ?? ''
+      mrp_alt: product.mrp_alt ?? '',
+      dealer_price: product.dealer_price ?? '',
+      dealer_price_alt: product.dealer_price_alt ?? ''
     })
     setErrors({})
     setModalOpen(true)
@@ -158,7 +162,9 @@ export default function ProductsPage() {
         alt_unit: form.alt_unit || null,
         conversion_factor: form.conversion_factor ? parseFloat(form.conversion_factor) : 1,
         mrp: form.mrp ? parseFloat(form.mrp) : 0,
-        dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0
+        mrp_alt: form.mrp_alt ? parseFloat(form.mrp_alt) : 0,
+        dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0,
+        dealer_price_alt: form.dealer_price_alt ? parseFloat(form.dealer_price_alt) : 0
       }
 
       if (editingProduct) {
@@ -318,13 +324,27 @@ export default function ProductsPage() {
       key: 'mrp',
       label: 'MRP (₹)',
       sortable: true,
-      render: (val) => <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
+      render: (val, row) => (
+        <div className="text-xs">
+          <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
+          {row.alt_unit && row.mrp_alt ? (
+            <span className="text-slate-400 ml-1">/ {formatCurrency(row.mrp_alt)}</span>
+          ) : null}
+        </div>
+      )
     },
     {
       key: 'dealer_price',
       label: 'Dealer Price (₹)',
       sortable: true,
-      render: (val) => <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
+      render: (val, row) => (
+        <div className="text-xs">
+          <span className="font-mono text-slate-700">{formatCurrency(val)}</span>
+          {row.alt_unit && row.dealer_price_alt ? (
+            <span className="text-slate-400 ml-1">/ {formatCurrency(row.dealer_price_alt)}</span>
+          ) : null}
+        </div>
+      )
     }
   ]
 
@@ -571,7 +591,18 @@ export default function ProductsPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
                 />
               </FormField>
-              <FormField label="Dealer Price (₹)">
+              {form.alt_unit && (
+                <FormField label={`MRP (${form.alt_unit})`}>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={form.mrp_alt}
+                    onChange={(e) => setForm({ ...form, mrp_alt: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                  />
+                </FormField>
+              )}
+              <FormField label={`Dealer Price (${form.unit})`}>
                 <input
                   type="number" min="0" step="0.01"
                   value={form.dealer_price}
@@ -580,6 +611,17 @@ export default function ProductsPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
                 />
               </FormField>
+              {form.alt_unit && (
+                <FormField label={`Dealer Price (${form.alt_unit})`}>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={form.dealer_price_alt}
+                    onChange={(e) => setForm({ ...form, dealer_price_alt: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
+                  />
+                </FormField>
+              )}
             </div>
           </div>
 
