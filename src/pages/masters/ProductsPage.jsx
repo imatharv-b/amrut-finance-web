@@ -161,10 +161,10 @@ export default function ProductsPage() {
         unit: form.unit,
         alt_unit: form.alt_unit || null,
         conversion_factor: form.conversion_factor ? parseFloat(form.conversion_factor) : 1,
-        mrp: form.mrp ? parseFloat(form.mrp) : 0,
-        mrp_alt: form.mrp_alt ? parseFloat(form.mrp_alt) : 0,
-        dealer_price: form.dealer_price ? parseFloat(form.dealer_price) : 0,
-        dealer_price_alt: form.dealer_price_alt ? parseFloat(form.dealer_price_alt) : 0
+        mrp: form.mrp ? Math.round(parseFloat(form.mrp)) : 0,
+        mrp_alt: form.mrp_alt ? Math.round(parseFloat(form.mrp_alt)) : 0,
+        dealer_price: form.dealer_price ? Math.round(parseFloat(form.dealer_price)) : 0,
+        dealer_price_alt: form.dealer_price_alt ? Math.round(parseFloat(form.dealer_price_alt)) : 0
       }
 
       if (editingProduct) {
@@ -266,7 +266,7 @@ export default function ProductsPage() {
 
   const formatCurrency = (val) => {
     if (val == null || val === '') return '—'
-    return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+    return `₹${Number(val).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
   }
 
   const columns = [
@@ -584,7 +584,7 @@ export default function ProductsPage() {
 
               <FormField label={`MRP (${form.unit})`}>
                 <input
-                  type="number" min="0" step="0.01"
+                  type="number" min="0" step="1"
                   value={form.mrp}
                   onChange={(e) => setForm({ ...form, mrp: e.target.value })}
                   placeholder="0.00"
@@ -594,7 +594,7 @@ export default function ProductsPage() {
               {form.alt_unit && (
                 <FormField label={`MRP (${form.alt_unit})`}>
                   <input
-                    type="number" min="0" step="0.01"
+                    type="number" min="0" step="1"
                     value={form.mrp_alt}
                     onChange={(e) => setForm({ ...form, mrp_alt: e.target.value })}
                     placeholder="0.00"
@@ -604,7 +604,7 @@ export default function ProductsPage() {
               )}
               <FormField label={`Dealer Price (${form.unit})`}>
                 <input
-                  type="number" min="0" step="0.01"
+                  type="number" min="0" step="1"
                   value={form.dealer_price}
                   onChange={(e) => setForm({ ...form, dealer_price: e.target.value })}
                   placeholder="0.00"
@@ -614,7 +614,7 @@ export default function ProductsPage() {
               {form.alt_unit && (
                 <FormField label={`Dealer Price (${form.alt_unit})`}>
                   <input
-                    type="number" min="0" step="0.01"
+                    type="number" min="0" step="1"
                     value={form.dealer_price_alt}
                     onChange={(e) => setForm({ ...form, dealer_price_alt: e.target.value })}
                     placeholder="0.00"
