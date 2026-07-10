@@ -24,8 +24,9 @@ export default function DataTable({
 
   // ── Filter data by search term ─────────────────────────────────
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return data
-    const lower = searchTerm.toLowerCase()
+    const term = searchTerm || '';
+    if (!term.trim()) return data
+    const lower = term.toLowerCase()
     return data.filter((row) =>
       columns.some((col) => {
         const val = row[col.key]
@@ -105,7 +106,7 @@ export default function DataTable({
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              value={searchTerm}
+              value={searchTerm || ''}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={searchPlaceholder}
               className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50
