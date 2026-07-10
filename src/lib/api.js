@@ -769,10 +769,11 @@ export const api = {
           const partyReceiptsMap = {}
           seasonPayments.forEach(p => {
              const pName = p.parties?.name || 'Unknown'
-             if(!partyReceiptsMap[pName]) partyReceiptsMap[pName] = 0
-             partyReceiptsMap[pName] += Number(p.amount || 0)
+             const pId = p.party_id
+             if(!partyReceiptsMap[pName]) partyReceiptsMap[pName] = { id: pId, total: 0 }
+             partyReceiptsMap[pName].total += Number(p.amount || 0)
           })
-          const receiptsList = Object.entries(partyReceiptsMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
+          const receiptsList = Object.entries(partyReceiptsMap).map(([name, data]) => ({name, id: data.id, total: data.total})).sort((a,b) => b.total - a.total)
 
           // Compute Outstanding (Total Receivables > 0)
           let totalReceivables = 0

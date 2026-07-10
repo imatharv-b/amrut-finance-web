@@ -397,6 +397,7 @@ export default function Dashboard() {
               { key: 'balance', label: 'Outstanding (₹)', sortable: true, render: (val) => <span className="font-bold text-amber-600">₹{Number(val || 0).toFixed(2)}</span> }
             ]}
             data={stats.outstandingList || []}
+            onRowClick={(row) => row.id ? navigate(`/payments/ledger?party=${row.id}`) : null}
           />
         </div>
       </Modal>
@@ -424,6 +425,7 @@ export default function Dashboard() {
               { key: 'total', label: 'Amount (₹)', sortable: true, render: (val) => <span className="font-bold text-blue-600">₹{Number(val || 0).toFixed(2)}</span> }
             ]}
             data={stats.receiptsList || []}
+            onRowClick={(row) => row.id ? navigate(`/payments/ledger?party=${row.id}`) : null}
           />
         </div>
       </Modal>
