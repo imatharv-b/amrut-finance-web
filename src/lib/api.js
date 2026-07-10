@@ -575,6 +575,60 @@ export const api = {
           return { moved: ids.length }
         }
 
+        // =================== PURCHASES ===================
+        case 'purchases:getAll': {
+          const [filters] = args || [{}]
+          let q = withCompany(supabase.from('purchases_with_details').select('*')).order('date', { ascending: false }).order('id', { ascending: false })
+          if (filters?.season_id) q = q.eq('season_id', filters.season_id)
+          if (filters?.fromDate) q = q.gte('date', filters.fromDate)
+          if (filters?.toDate) q = q.lte('date', filters.toDate)
+          const { data, error } = await q
+          if (error) throw error
+          return data
+        }
+        case 'purchases:getNextInvoice': {
+          let prefix = 'PUR-'
+          const { data } = await withCompany(supabase.from('purchases').select('invoice_no')).order('id', { ascending: false }).limit(1)
+          if (!data || data.length === 0) return `${prefix}001`
+          const match = data[0].invoice_no.match(/(\d+)$/)
+          const num = match ? parseInt(match[1], 10) + 1 : 1
+          return `${prefix}${String(num).padStart(3, '0')}`
+        }
+        case 'purchases:add': {
+          const [purchaseData] = args
+          const { items, ...rest } = purchaseData
+          const { data: purchase, error } = await supabase.from('purchases').insert(injectCompany(rest)).select().single()
+          if (error) throw error
+          if (items && items.length > 0) {
+            const itemsToInsert = items.map(i => ({ ...i, purchase_id: purchase.id }))
+            await supabase.from('purchase_items').insert(itemsToInsert)
+          }
+          return { id: purchase.id, invoice_no: purchase.invoice_no }
+        }
+        case 'purchases:getById': {
+          const [id] = args
+          const { data: purchase, error } = await supabase.from('purchases_with_details').select('*').eq('id', id).single()
+          if (error) throw error
+          const { data: items } = await supabase.from('purchase_items').select('*, products(name)').eq('purchase_id', id)
+          return { purchase, items: items.map(i => ({...i, product_name: i.products?.name})) }
+        }
+        case 'purchases:update': {
+          const [purchaseData] = args
+          const { items, id, ...rest } = purchaseData
+          await supabase.from('purchases').update(rest).eq('id', id)
+          await supabase.from('purchase_items').delete().eq('purchase_id', id)
+          if (items && items.length > 0) {
+            const itemsToInsert = items.map(i => ({ ...i, purchase_id: id }))
+            await supabase.from('purchase_items').insert(itemsToInsert)
+          }
+          return true
+        }
+        case 'purchases:delete': {
+          const [id] = args
+          await supabase.from('purchases').delete().eq('id', id)
+          return true
+        }
+
         // =================== SALE RETURNS ===================
         case 'saleReturns:getAll': {
           const [filters] = args || [{}]

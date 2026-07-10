@@ -57,6 +57,15 @@ const NAVIGATION = [
     ]
   },
   {
+    label: 'Purchases',
+    icon: FileText,
+    roles: ['admin', 'data_entry'],
+    children: [
+      { label: 'New Purchase', icon: PlusCircle, path: '/purchases/new' },
+      { label: 'All Purchases', icon: FileText, path: '/purchases/all' }
+    ]
+  },
+  {
     label: 'Expenses',
     icon: Receipt,
     roles: ['admin', 'data_entry'],

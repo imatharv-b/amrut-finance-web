@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import Sidebar from './components/Sidebar'
 import Titlebar from './components/Titlebar'
 import LoadingSpinner from './components/LoadingSpinner'
+import ShortcutListener from './components/ShortcutListener'
 
 import { SeasonContext } from './context/SeasonContext'
 import { CompanyProvider, useCompany } from './context/CompanyContext'
@@ -20,6 +21,10 @@ const NewSalePage = React.lazy(() => import('./pages/sales/NewSalePage'))
 const EditSalePage = React.lazy(() => import('./pages/sales/EditSalePage'))
 const SaleReturnPage = React.lazy(() => import('./pages/sales/SaleReturnPage'))
 const AllSalesPage = React.lazy(() => import('./pages/sales/AllSalesPage'))
+
+const NewPurchasePage = React.lazy(() => import('./pages/purchases/NewPurchasePage'))
+const EditPurchasePage = React.lazy(() => import('./pages/purchases/EditPurchasePage'))
+const AllPurchasesPage = React.lazy(() => import('./pages/purchases/AllPurchasesPage'))
 
 const NewExpensePage = React.lazy(() => import('./pages/expenses/NewExpensePage'))
 const AllExpensesPage = React.lazy(() => import('./pages/expenses/AllExpensesPage'))
@@ -105,6 +110,7 @@ function AppWithCompany() {
 
           {/* Main Layout */}
           <div className="flex flex-1 overflow-hidden">
+            <ShortcutListener />
             {/* Sidebar */}
             <Sidebar />
 
@@ -119,6 +125,10 @@ function AppWithCompany() {
                   <Route path="/sales/edit/:id" element={<EditSalePage />} />
                   <Route path="/sales/all" element={<AllSalesPage />} />
                   <Route path="/sales/return" element={<SaleReturnPage />} />
+                  
+                  <Route path="/purchases/new" element={<NewPurchasePage />} />
+                  <Route path="/purchases/edit/:id" element={<EditPurchasePage />} />
+                  <Route path="/purchases/all" element={<AllPurchasesPage />} />
                   <Route path="/expenses/new" element={<NewExpensePage />} />
                   <Route path="/expenses/all" element={<AllExpensesPage />} />
                   <Route path="/expenses/types" element={<ExpenseTypesPage />} />
