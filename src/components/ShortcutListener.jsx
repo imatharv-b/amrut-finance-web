@@ -32,6 +32,12 @@ export default function ShortcutListener() {
           default:
             break;
         }
+      } else if (e.key === 'Escape') {
+        // Only navigate home on Escape if there's no modal currently open
+        const hasModal = document.querySelector('.fixed.inset-0.z-50');
+        if (!hasModal) {
+          navigate('/');
+        }
       }
     };
 

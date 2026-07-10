@@ -38,15 +38,7 @@ export default function NewPurchasePage() {
     { id: Date.now(), product_id: '', batch_id: '', batch_no: '', batches: [], mfg_date: '', qty: '', unit: '', rate: '', amount: 0 }
   ]);
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        navigate('/');
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate]);
+
 
   useEffect(() => {
     if (activeSeason) {
