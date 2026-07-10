@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Receipt, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/DataTable';
@@ -7,6 +8,7 @@ import { SeasonContext } from '../../context/SeasonContext';
 import { formatDate } from '../../lib/dateUtils';
 
 export default function AllExpensesPage() {
+  const location = useLocation();
   const { activeSeason } = useContext(SeasonContext);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +122,7 @@ export default function AllExpensesPage() {
             columns={columns}
             data={expenses}
             searchable
+            initialSearch={location.state?.search || ''}
             searchPlaceholder="Search expenses by type, paid to, description..."
             loading={loading}
             emptyMessage="No expenses found for this season"

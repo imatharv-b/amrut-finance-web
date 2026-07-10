@@ -15,9 +15,10 @@ export default function DataTable({
   loading = false,
   emptyMessage = 'No data found',
   emptyIcon: EmptyIcon = Inbox,
-  renderMobileCard
+  renderMobileCard,
+  initialSearch = ''
 }) {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
   const [currentPage, setCurrentPage] = useState(1)
 

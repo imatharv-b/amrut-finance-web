@@ -157,6 +157,7 @@ export default function RecordPaymentPage() {
     { key: 'payment_type', label: 'Type', sortable: true, render: (val) => {
       const typeConfig = {
         'Payment from Party': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+        'Advance from Party': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
         'Cash Discount': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
         'Coupon Gift Amount': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
         'Others': { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
@@ -274,6 +275,7 @@ export default function RecordPaymentPage() {
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white font-medium"
             >
               <option value="Receipt from Party">Receipt from Party</option>
+              <option value="Advance from Party">Advance from Party</option>
               <option value="Cash Discount">Cash Discount</option>
               <option value="Coupon Gift Amount">Coupon Gift Amount</option>
               <option value="Others">Others</option>

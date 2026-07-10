@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { SeasonContext } from '../context/SeasonContext'
 import StatCard from '../components/StatCard'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -55,6 +56,7 @@ const PieTooltip = ({ active, payload }) => {
 
 export default function Dashboard() {
   const { activeSeason } = useContext(SeasonContext)
+  const navigate = useNavigate()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeModal, setActiveModal] = useState(null) // 'sales', 'expenses', 'outstanding', 'coupons'
@@ -252,7 +254,11 @@ export default function Dashboard() {
           </ResponsiveContainer>
           <div className="mt-2 space-y-1.5 max-h-[120px] overflow-y-auto">
             {(stats.expenseBreakdown || []).map((item, i) => (
-              <div key={i} className="flex items-center justify-between text-sm">
+              <div 
+                key={i} 
+                onClick={() => navigate('/expenses/all', { state: { search: item.name } })}
+                className="flex items-center justify-between text-sm cursor-pointer hover:bg-slate-50 p-1.5 -mx-1.5 rounded-lg transition-colors"
+              >
                 <div className="flex items-center gap-2">
                   <span
                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
