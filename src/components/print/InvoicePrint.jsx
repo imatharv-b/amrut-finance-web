@@ -106,6 +106,14 @@ export const generateInvoiceHTML = (sale, items, settings) => {
         </table>
       </div>
 
+      <!-- Remarks Section -->
+      ${sale.remarks ? `
+      <div class="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+        <p class="text-[10px] text-slate-500 font-bold mb-0.5 uppercase tracking-wider">Remarks</p>
+        <p class="text-xs text-slate-800">${sale.remarks}</p>
+      </div>
+      ` : ''}
+
       <!-- Totals Section -->
       <div class="flex justify-between items-start gap-4">
         <div class="w-7/12">

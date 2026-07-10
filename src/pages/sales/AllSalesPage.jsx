@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { FileText, Edit, Trash2, Eye, Printer, Download, RefreshCw } from 'lucide-react';
+import { FileText, Edit, Trash2, Eye, Printer, Download, RefreshCw, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import DataTable from '../../components/DataTable';
@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { SeasonContext } from '../../context/SeasonContext';
 import { useCompany } from '../../context/CompanyContext';
 import { generateInvoiceHTML } from '../../components/print/InvoicePrint';
-import { printHTML } from '../../lib/printUtils';
+import { printHTML, exportAsJPG } from '../../lib/printUtils';
 import { formatDate } from '../../lib/dateUtils';
 
 export default function AllSalesPage() {
@@ -107,6 +107,21 @@ export default function AllSalesPage() {
       await printHTML(html);
     } catch (err) {
       toast.error(err.message || 'Failed to generate print view');
+    }
+  };
+
+  const handleWhatsApp = async (sale) => {
+    try {
+      let details = saleDetails;
+      if (!details || details.sale.id !== sale.id) {
+        details = await window.db.invoke('sales:getById', sale.id);
+      }
+      const html = generateInvoiceHTML(details.sale, details.items, firmSettings);
+      toast.loading('Generating image...', { id: 'wa-toast' });
+      await exportAsJPG(html, `Invoice_${sale.invoice_no}.jpg`);
+      toast.success('Image saved! You can now attach it in WhatsApp.', { id: 'wa-toast' });
+    } catch (err) {
+      toast.error(err.message || 'Failed to generate image', { id: 'wa-toast' });
     }
   };
 
@@ -249,7 +264,8 @@ export default function AllSalesPage() {
 
   const actions = [
     { label: 'View', icon: Eye, onClick: openView },
-    { label: 'Print', icon: Printer, onClick: handlePrint }
+    { label: 'Print', icon: Printer, onClick: handlePrint },
+    { label: 'WhatsApp', icon: Share2, onClick: handleWhatsApp }
   ];
 
   if (userRole !== 'data_entry') {

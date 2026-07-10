@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Printer } from 'lucide-react';
+import { BookOpen, Printer, Share2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
 import { generateLedgerHTML } from '../../components/print/LedgerPrint';
-import { printHTML } from '../../lib/printUtils';
+import { printHTML, exportAsJPG } from '../../lib/printUtils';
 import { formatDate } from '../../lib/dateUtils';
 
 export default function PartyLedgerPage() {
@@ -77,6 +77,18 @@ export default function PartyLedgerPage() {
     }
   };
 
+  const handleWhatsApp = async () => {
+    if (!ledgerData) return;
+    try {
+      const html = generateLedgerHTML(ledgerData, firmSettings);
+      toast.loading('Generating image for WhatsApp...', { id: 'wa-ledger' });
+      await exportAsJPG(html, `Ledger_${ledgerData.party.name}.jpg`);
+      toast.success('Image downloaded! You can now attach it in WhatsApp.', { id: 'wa-ledger' });
+    } catch (err) {
+      toast.error(err.message || 'Failed to generate image', { id: 'wa-ledger' });
+    }
+  };
+
   return (
     <div className="p-6 h-full flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -85,13 +97,22 @@ export default function PartyLedgerPage() {
           <p className="text-slate-500">View statement of account for a specific party</p>
         </div>
         {ledgerData && (
-          <button
-            onClick={handlePrint}
-            className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center"
-          >
-            <Printer className="w-4 h-4 mr-2" />
-            Print Ledger
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleWhatsApp}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition flex items-center shadow-sm"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              WhatsApp (JPG)
+            </button>
+            <button
+              onClick={handlePrint}
+              className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center shadow-sm"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print
+            </button>
+          </div>
         )}
       </div>
 
