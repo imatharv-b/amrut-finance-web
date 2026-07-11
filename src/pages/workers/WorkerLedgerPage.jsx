@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Briefcase } from 'lucide-react';
+import { BookOpen, Briefcase, Maximize, Minimize } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function WorkerLedgerPage() {
@@ -7,6 +7,7 @@ export default function WorkerLedgerPage() {
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     loadWorkers();
@@ -73,15 +74,15 @@ export default function WorkerLedgerPage() {
   });
 
   return (
-    <div className="p-6 h-full flex flex-col">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 flex flex-col p-2 sm:p-4 overflow-hidden" : "p-6 h-full flex flex-col"}>
+      <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 ${isFullscreen ? 'hidden' : ''}`}>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Worker Ledger</h1>
           <p className="text-slate-500">View salary credits, advances, and outstanding balances</p>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex items-end gap-4">
+      <div className={`bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex items-end gap-4 ${isFullscreen ? 'hidden' : ''}`}>
         <div className="flex-1 max-w-md">
           <label className="block text-sm font-medium text-slate-700 mb-1">Select Worker</label>
           <select
@@ -97,7 +98,7 @@ export default function WorkerLedgerPage() {
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+      <div className={`flex-1 bg-white shadow-sm border border-slate-200 overflow-hidden flex flex-col ${isFullscreen ? 'rounded-lg' : 'rounded-xl'}`}>
         {!selectedWorkerId ? (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-500">
             <Briefcase className="w-12 h-12 mb-4 text-slate-300" />
@@ -115,12 +116,28 @@ export default function WorkerLedgerPage() {
                 <p className="text-slate-600">Phone: {selectedWorker.phone || '-'}</p>
                 <p className="text-slate-500 text-sm mt-1">{selectedWorker.salary_type} Basis ({formatCurrency(selectedWorker.salary_amount)})</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-500 mb-1">Outstanding Balance</p>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-sm text-slate-500 mb-1">Outstanding Balance</p>
                 <div className={`text-2xl font-bold ${runningBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {formatCurrency(Math.abs(runningBalance))} {runningBalance >= 0 ? 'Cr' : 'Dr'}
                 </div>
                 <p className="text-xs text-slate-500 mt-1">(Positive balance means company owes worker)</p>
+                </div>
+                <button
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="p-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors shadow-sm ml-2 hidden md:flex"
+                  title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="p-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors shadow-sm ml-2 md:hidden"
+                  title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

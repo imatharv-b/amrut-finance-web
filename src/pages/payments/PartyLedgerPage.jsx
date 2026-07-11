@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Printer, Share2 } from 'lucide-react';
+import { BookOpen, Printer, Share2, Maximize, Minimize } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
@@ -18,6 +18,7 @@ export default function PartyLedgerPage() {
   const [ledgerData, setLedgerData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [firmSettings, setFirmSettings] = useState({});
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     loadParties();
@@ -90,8 +91,8 @@ export default function PartyLedgerPage() {
   };
 
   return (
-    <div className="p-6 h-full flex flex-col">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 flex flex-col p-2 sm:p-4 overflow-hidden" : "p-6 h-full flex flex-col"}>
+      <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 ${isFullscreen ? 'hidden' : ''}`}>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Party Ledger</h1>
           <p className="text-slate-500">View statement of account for a specific party</p>
@@ -146,7 +147,7 @@ export default function PartyLedgerPage() {
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+      <div className={`flex-1 bg-white shadow-sm border border-slate-200 overflow-hidden flex flex-col ${isFullscreen ? 'rounded-lg' : 'rounded-xl'}`}>
         {!selectedPartyId ? (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-500">
             <BookOpen className="w-12 h-12 mb-4 text-slate-300" />
@@ -165,8 +166,9 @@ export default function PartyLedgerPage() {
                 <p className="text-slate-600">{[ledgerData.party.village, ledgerData.party.taluka, ledgerData.party.district].filter(Boolean).join(', ')}</p>
                 <p className="text-slate-500 text-sm mt-1">Mobile: {ledgerData.party.mobile || '-'}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-500 mb-1">Current Balance</p>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-sm text-slate-500 mb-1">Current Balance</p>
                 {(() => {
                   const currentBalance = ledgerData.entries.length > 0 
                     ? ledgerData.entries[ledgerData.entries.length - 1].balance 
@@ -177,6 +179,21 @@ export default function PartyLedgerPage() {
                     </p>
                   );
                 })()}
+                </div>
+                <button
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="p-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors shadow-sm ml-2 hidden md:flex"
+                  title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="p-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors shadow-sm ml-2 md:hidden"
+                  title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                >
+                  {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
