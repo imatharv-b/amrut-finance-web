@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Search, Check } from 'lucide-react'
 
 export default function SearchableSelect({
@@ -10,7 +11,9 @@ export default function SearchableSelect({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [dropdownStyle, setDropdownStyle] = useState({})
   const containerRef = useRef(null)
+  const dropdownRef = useRef(null)
   const searchInputRef = useRef(null)
 
   // ── Find selected option ───────────────────────────────────────
@@ -33,14 +36,45 @@ export default function SearchableSelect({
   // ── Close on outside click ─────────────────────────────────────
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(e.target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target)
+      ) {
         setIsOpen(false)
         setSearchTerm('')
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    // Also close on scroll to avoid floating dropdowns detached from the input
+    const handleScroll = (e) => {
+      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    window.addEventListener('scroll', handleScroll, true)
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      window.removeEventListener('scroll', handleScroll, true)
+    }
+  }, [isOpen])
+
+  // ── Position dropdown ──────────────────────────────────────────
+  useLayoutEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      // Position it right below the input
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999
+      })
+    }
+  }, [isOpen])
 
   // ── Focus search on open ───────────────────────────────────────
   useEffect(() => {
@@ -83,11 +117,15 @@ export default function SearchableSelect({
         />
       </button>
 
-      {/* Dropdown */}
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl animate-scaleIn overflow-hidden">
+      {/* Dropdown via Portal */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="bg-white border border-slate-200 rounded-xl shadow-xl animate-scaleIn overflow-hidden flex flex-col"
+        >
           {/* Search */}
-          <div className="p-2 border-b border-slate-100">
+          <div className="p-2 border-b border-slate-100 shrink-0">
             <div className="relative">
               <Search
                 size={14}
@@ -137,7 +175,8 @@ export default function SearchableSelect({
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
