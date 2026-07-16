@@ -21,6 +21,12 @@ export default function SettingsPage() {
     role: 'salesman',
     company_id: ''
   });
+  
+  const [linkUser, setLinkUser] = useState({
+    id: '',
+    role: 'salesman',
+    company_id: ''
+  });
 
   useEffect(() => {
     loadSettings();
@@ -120,6 +126,30 @@ export default function SettingsPage() {
         const { data: sessionData } = await supabase.auth.getSession();
         if (!sessionData?.session) window.location.reload();
       } catch (e) {}
+    }
+  };
+
+  const handleLinkExistingUser = async (e) => {
+    e.preventDefault();
+    if (!linkUser.id || !linkUser.company_id) {
+      toast.error('Please fill all fields');
+      return;
+    }
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { error: upsertError } = await supabase.from('company_users').upsert({
+        company_id: Number(linkUser.company_id),
+        user_id: linkUser.id.trim(),
+        role: linkUser.role
+      }, { onConflict: 'company_id, user_id' });
+      
+      if (upsertError) throw upsertError;
+      
+      toast.success('User linked successfully!');
+      setLinkUser({ id: '', role: 'salesman', company_id: '' });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to link user: ' + err.message);
     }
   };
 
@@ -270,6 +300,64 @@ export default function SettingsPage() {
                 >
                   <Plus className="w-5 h-5 mr-2" />
                   Create User
+                </button>
+              </div>
+            </form>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mt-8">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Link Existing User by ID</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              If a user created their own account, they can find their User ID on the "Select Company" screen. Paste it here to grant them access without needing their password.
+            </p>
+            <form onSubmit={handleLinkExistingUser} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="User ID (UUID)" required>
+                  <input
+                    type="text"
+                    value={linkUser.id}
+                    onChange={e => setLinkUser({ ...linkUser, id: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition font-mono text-sm"
+                    placeholder="e.g. 123e4567-e89b-12d3-a456-426614174000"
+                  />
+                </FormField>
+
+                <FormField label="Assign Company" required>
+                  <select
+                    value={linkUser.company_id}
+                    onChange={e => setLinkUser({ ...linkUser, company_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white"
+                  >
+                    <option value="">Select a company...</option>
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="User Role" required>
+                  <select
+                    value={linkUser.role}
+                    onChange={e => setLinkUser({ ...linkUser, role: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white"
+                  >
+                    <option value="data_entry">Data Entry</option>
+                    <option value="salesman">Salesman (View Only)</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </FormField>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <button
+                  type="submit"
+                  className="flex items-center px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition shadow-sm"
+                >
+                  <Save className="w-5 h-5 mr-2" />
+                  Link User
                 </button>
               </div>
             </form>

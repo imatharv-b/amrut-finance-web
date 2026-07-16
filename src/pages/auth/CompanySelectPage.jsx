@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCompany } from '../../context/CompanyContext';
 import { Building2, LogOut } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function CompanySelectPage() {
   const { companies, selectCompany } = useCompany();
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data?.session?.user?.id);
+    });
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -34,7 +41,15 @@ export default function CompanySelectPage() {
         {companies.length === 0 ? (
           <div className="bg-white p-6 rounded-xl border border-red-100 shadow-sm text-center">
             <p className="text-red-600 font-medium">No companies assigned.</p>
-            <p className="text-slate-500 text-sm mt-1">Please contact your administrator to get access.</p>
+            <p className="text-slate-500 text-sm mt-1">Please provide this ID to your administrator to get access:</p>
+            {userId && (
+              <div className="mt-4">
+                <p className="text-xs text-slate-500 mb-1">Your User ID:</p>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 break-all select-all">
+                  {userId}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           companies.map((company) => (
