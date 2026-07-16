@@ -686,6 +686,14 @@ export const api = {
         }
         case 'schemes:add': {
           const [schemeData] = args
+          // Auto-fill start_date/end_date from the season if not provided
+          if (!schemeData.start_date && schemeData.season_id) {
+            const { data: season } = await supabase.from('seasons').select('start_date, end_date').eq('id', schemeData.season_id).single()
+            if (season) {
+              schemeData.start_date = season.start_date
+              schemeData.end_date = season.end_date
+            }
+          }
           const { data, error } = await supabase.from('schemes').insert(injectCompany(schemeData)).select().single()
           if (error) throw error
           return data
