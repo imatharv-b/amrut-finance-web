@@ -303,7 +303,6 @@ export default function SettingsPage() {
                 </button>
               </div>
             </form>
-            </form>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mt-8">
