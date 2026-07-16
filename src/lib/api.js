@@ -1336,6 +1336,18 @@ export const api = {
           if (error) throw error
           return data
         }
+        case 'workerLedger:update': {
+          const [id, updates] = args;
+          const { data, error } = await withCompany(supabase.from('worker_ledger').update(updates).eq('id', id).select());
+          if (error) throw error;
+          return data;
+        }
+        case 'workerLedger:delete': {
+          const [id] = args;
+          const { error } = await withCompany(supabase.from('worker_ledger').delete().eq('id', id));
+          if (error) throw error;
+          return true;
+        }
 
         default:
           console.warn('Unknown IPC channel invoked via API layer:', channel)

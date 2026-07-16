@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Briefcase, Maximize, Minimize } from 'lucide-react';
+import { BookOpen, Briefcase, Maximize, Minimize, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Modal from '../../components/Modal';
+import FormField from '../../components/FormField';
 
 export default function WorkerLedgerPage() {
   const [workers, setWorkers] = useState([]);
@@ -8,6 +10,9 @@ export default function WorkerLedgerPage() {
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadWorkers();
@@ -47,6 +52,42 @@ export default function WorkerLedgerPage() {
       setLedgerEntries([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClick = (entry) => {
+    setEditData({ ...entry });
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = async (id) => {
+    if (window.confirm('Are you sure you want to delete this ledger entry?')) {
+      try {
+        await window.db.invoke('workerLedger:delete', id);
+        toast.success('Entry deleted');
+        loadLedger();
+      } catch (err) {
+        toast.error('Failed to delete entry');
+      }
+    }
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await window.db.invoke('workerLedger:update', editData.id, {
+        amount: Number(editData.amount),
+        description: editData.description,
+        date: editData.date
+      });
+      toast.success('Entry updated');
+      setIsEditModalOpen(false);
+      loadLedger();
+    } catch (err) {
+      toast.error('Failed to update entry');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -150,6 +191,7 @@ export default function WorkerLedgerPage() {
                     <th className="px-6 py-4 text-right">Debit (₹)</th>
                     <th className="px-6 py-4 text-right">Credit (₹)</th>
                     <th className="px-6 py-4 text-right">Balance (₹)</th>
+                    <th className="px-6 py-4 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -158,6 +200,7 @@ export default function WorkerLedgerPage() {
                     <td className="px-6 py-4 text-right font-medium text-slate-600">
                       {formatCurrency(selectedWorker.opening_balance)} {selectedWorker.opening_balance >= 0 ? 'Cr' : 'Dr'}
                     </td>
+                    <td className="px-6 py-4"></td>
                   </tr>
                   
                   {enrichedEntries.map(entry => (
@@ -177,12 +220,22 @@ export default function WorkerLedgerPage() {
                       <td className={`px-6 py-4 text-sm text-right font-semibold ${entry.runningBalance >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
                         {formatCurrency(Math.abs(entry.runningBalance))} {entry.runningBalance >= 0 ? 'Cr' : 'Dr'}
                       </td>
+                      <td className="px-6 py-4 text-sm text-center">
+                        <div className="flex justify-center gap-2">
+                          <button onClick={() => handleEditClick(entry)} className="p-1 text-slate-400 hover:text-primary-600">
+                            <Edit size={16} />
+                          </button>
+                          <button onClick={() => handleDeleteClick(entry.id)} className="p-1 text-slate-400 hover:text-red-600">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   
                   {enrichedEntries.length === 0 && (
                      <tr>
-                       <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No ledger entries found for this worker.</td>
+                       <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No ledger entries found for this worker.</td>
                      </tr>
                   )}
                 </tbody>
@@ -208,6 +261,65 @@ export default function WorkerLedgerPage() {
           </>
         )}
       </div>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Ledger Entry"
+      >
+        {editData && (
+          <form onSubmit={handleSaveEdit} className="space-y-4">
+            <FormField label="Date" required>
+              <input
+                type="date"
+                required
+                value={editData.date}
+                onChange={(e) => setEditData(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              />
+            </FormField>
+            
+            <FormField label="Amount" required>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={editData.amount}
+                onChange={(e) => setEditData(prev => ({ ...prev, amount: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              />
+            </FormField>
+            
+            <FormField label="Description" required>
+              <textarea
+                required
+                rows={3}
+                value={editData.description || ''}
+                onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              />
+            </FormField>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex-1 px-4 py-2 bg-primary-700 text-white rounded-lg font-medium hover:bg-primary-800 transition disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }
