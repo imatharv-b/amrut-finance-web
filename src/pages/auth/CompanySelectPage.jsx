@@ -48,6 +48,12 @@ export default function CompanySelectPage() {
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 break-all select-all">
                   {userId}
                 </div>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-4 w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg font-medium transition-colors"
+                >
+                  Check Access Again
+                </button>
               </div>
             )}
           </div>
