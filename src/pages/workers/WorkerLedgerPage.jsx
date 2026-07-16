@@ -16,12 +16,14 @@ export default function WorkerLedgerPage() {
 
   useEffect(() => {
     loadWorkers();
-    // Silently clean up any orphaned ledger entries in the background
+    // Silently clean up any orphaned ledger entries and sync missing ones in the background
     window.db.invoke('worker_ledger:cleanup_orphans').then(count => {
-      // If orphans were removed and a worker is selected, reload the ledger to reflect the fix
-      if (count > 0 && selectedWorkerId) {
-        loadLedger();
-      }
+      window.db.invoke('workerLedger:syncAll').then(syncCount => {
+        // If orphans were removed or new entries synced and a worker is selected, reload the ledger to reflect the fix
+        if ((count > 0 || syncCount > 0) && selectedWorkerId) {
+          loadLedger();
+        }
+      });
     }).catch(console.error);
   }, []);
 

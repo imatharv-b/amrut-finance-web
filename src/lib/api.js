@@ -215,6 +215,29 @@ export const api = {
              }
           });
 
+          // Fetch native worker ledger entries (monthly salary, attendance) if this party is also a worker
+          const { data: workerForParty } = await supabase.from('workers').select('id').eq('party_id', partyId).single();
+          if (workerForParty) {
+            const { data: workerLedgerRes } = await supabase.from('worker_ledger')
+              .select('*')
+              .eq('worker_id', workerForParty.id)
+              .not('source_type', 'in', '("payment","expense")'); // Exclude those already fetched above
+
+            workerLedgerRes?.forEach(wl => {
+              rawEntries.push({
+                entry_date: wl.date,
+                ref: wl.source_type === 'monthly_salary' ? 'Salary' : wl.source_type === 'attendance' ? 'Attendance' : 'Ledger',
+                vch_no: 'Jrnl',
+                debit: wl.type === 'Debit' ? Number(wl.amount) : 0,
+                credit: wl.type === 'Credit' ? Number(wl.amount) : 0,
+                entry_type: 'worker_ledger',
+                particulars: wl.type === 'Debit' ? 'Dr Worker' : 'Cr Worker',
+                narration: wl.description || '',
+                items: []
+              });
+            });
+          }
+
           returnsRes.data?.forEach(r => {
              rawEntries.push({
                 entry_date: r.date,
@@ -1338,15 +1361,97 @@ export const api = {
         }
         case 'workerLedger:update': {
           const [id, updates] = args;
+          // Fetch existing entry to check source_type
+          const { data: existing, error: fetchErr } = await supabase.from('worker_ledger').select('*').eq('id', id).single();
+          if (fetchErr) throw fetchErr;
+
           const { data, error } = await withCompany(supabase.from('worker_ledger').update(updates).eq('id', id).select());
           if (error) throw error;
+
+          // Propagate edit to source if applicable
+          if (existing.source_type === 'payment' && existing.source_id) {
+            await supabase.from('payments').update({
+              amount: updates.amount,
+              date: updates.date,
+              remarks: updates.description ? updates.description.replace('Receipt Ref: ', '') : undefined
+            }).eq('id', existing.source_id);
+          } else if (existing.source_type === 'expense' && existing.source_id) {
+            await supabase.from('expenses').update({
+              amount: updates.amount,
+              date: updates.date,
+              description: updates.description
+            }).eq('id', existing.source_id);
+          }
+
           return data;
         }
         case 'workerLedger:delete': {
           const [id] = args;
+          const { data: existing, error: fetchErr } = await supabase.from('worker_ledger').select('*').eq('id', id).single();
+          if (fetchErr) throw fetchErr;
+
           const { error } = await withCompany(supabase.from('worker_ledger').delete().eq('id', id));
           if (error) throw error;
+
+          // Propagate delete to source if applicable
+          if (existing.source_type === 'payment' && existing.source_id) {
+            await supabase.from('payments').delete().eq('id', existing.source_id);
+          } else if (existing.source_type === 'expense' && existing.source_id) {
+            await supabase.from('expenses').delete().eq('id', existing.source_id);
+          }
+
           return true;
+        }
+        case 'workerLedger:syncAll': {
+          // This backfills missing worker_ledger entries from payments/expenses
+          const { data: linkedWorkers } = await withCompany(supabase.from('workers').select('id, company_id, party_id').not('party_id', 'is', null));
+          if (!linkedWorkers || linkedWorkers.length === 0) return 0;
+          
+          let syncedCount = 0;
+          for (const w of linkedWorkers) {
+             const { data: existingLedgers } = await supabase.from('worker_ledger').select('source_type, source_id').eq('worker_id', w.id);
+             
+             // Sync missing Payments
+             const paymentIds = new Set(existingLedgers.filter(l => l.source_type === 'payment').map(l => l.source_id));
+             const { data: payments } = await supabase.from('payments').select('*').eq('party_id', w.party_id);
+             const paymentsToInsert = (payments || []).filter(p => !paymentIds.has(p.id)).map(p => ({
+                company_id: w.company_id,
+                worker_id: w.id,
+                date: p.date,
+                amount: p.amount,
+                type: p.payment_type === 'Payment from Party' ? 'Credit' : 'Debit',
+                description: `Receipt Ref: ${p.mode} ${p.remarks ? '- ' + p.remarks : ''}`.trim(),
+                source_type: 'payment',
+                source_id: p.id
+             }));
+
+             if (paymentsToInsert.length > 0) {
+               await supabase.from('worker_ledger').insert(paymentsToInsert);
+               syncedCount += paymentsToInsert.length;
+             }
+
+             // Sync missing Expenses (Advance / Bad Debt)
+             const expenseIds = new Set(existingLedgers.filter(l => l.source_type === 'expense').map(l => l.source_id));
+             const { data: expenses } = await supabase.from('expenses').select('*, expense_types(name)').eq('party_id', w.party_id);
+             const expensesToInsert = (expenses || [])
+                .filter(e => !expenseIds.has(e.id) && (e.expense_types?.name === 'Advance to Party' || e.expense_types?.name === 'Bad Debt'))
+                .map(e => ({
+                   company_id: w.company_id,
+                   worker_id: w.id,
+                   date: e.date,
+                   amount: e.amount,
+                   type: 'Debit',
+                   description: e.description || e.expense_types?.name,
+                   source_type: 'expense',
+                   source_id: e.id
+                }));
+
+             if (expensesToInsert.length > 0) {
+               await supabase.from('worker_ledger').insert(expensesToInsert);
+               syncedCount += expensesToInsert.length;
+             }
+          }
+          return syncedCount;
         }
 
         default:
