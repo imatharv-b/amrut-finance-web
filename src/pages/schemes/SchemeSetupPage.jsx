@@ -97,7 +97,8 @@ export default function SchemeSetupPage() {
       setIsModalOpen(false);
       loadSchemes();
     } catch (err) {
-      toast.error('Failed to save scheme');
+      console.error('Scheme save error:', err);
+      toast.error('Failed to save scheme: ' + (err?.message || err));
     }
   };
 
