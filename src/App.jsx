@@ -155,6 +155,7 @@ function AppWithCompany() {
                   ) : role === 'salesman' ? (
                     <>
                       {/* Salesman user redirect from home to a default view */}
+                      <Route path="/schemes/coupons" element={<CouponIssuancePage />} />
                       <Route path="/" element={<Navigate to="/payments/ledger" replace />} />
                       <Route path="*" element={<Navigate to="/payments/ledger" replace />} />
                     </>

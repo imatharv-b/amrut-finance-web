@@ -427,10 +427,73 @@ export default function PartiesPage() {
                     </span>
                   </div>
                 </div>
+                
+                {/* Rating Badge */}
+                <div className="mt-1">
+                  {(() => {
+                    const ratingConfig = {
+                      'A+': { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300', label: 'A+ Excellent' },
+                      'A': { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300', label: 'A Good' },
+                      'B': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300', label: 'B Average' },
+                      'C': { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300', label: 'C Below Avg' },
+                      'D': { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300', label: 'D Delay' },
+                    };
+                    const val = row.rating || 'B';
+                    const config = ratingConfig[val] || ratingConfig['B'];
+                    return (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${config.bg} ${config.text} ${config.border}`}>
+                        {val === 'D' && <ShieldAlert className="w-3 h-3 mr-1" />}
+                        {val === 'A+' && <Star className="w-3 h-3 mr-1" />}
+                        {config.label}
+                      </span>
+                    )
+                  })()}
+                </div>
+
                 {row.latest_remark && (
                   <p className="text-xs text-slate-500 italic mt-1 line-clamp-1 border-t border-slate-100 pt-2">
                     Note: {row.latest_remark}
                   </p>
+                )}
+
+                {expandedRows.has(row.id) && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-semibold text-slate-700 text-sm">Recent Ledger</h4>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/payments/ledger?party=${row.id}`); }}
+                        className="text-xs text-primary-600 hover:text-primary-800 flex items-center bg-primary-50 px-2 py-1 rounded"
+                      >
+                        <FileText className="w-3 h-3 mr-1" /> Full Ledger
+                      </button>
+                    </div>
+                    {ledgers[row.id] ? (
+                      <div className="space-y-2">
+                        {ledgers[row.id].length > 0 ? ledgers[row.id].map((entry, idx) => (
+                          <div key={idx} className="bg-slate-50 p-2 rounded-lg text-xs flex justify-between items-center border border-slate-100">
+                            <div>
+                              <span className="text-slate-500 block mb-0.5">{formatDate(entry.date)}</span>
+                              <span className="font-medium text-slate-800">{entry.ref}</span>
+                            </div>
+                            <div className="text-right">
+                              {entry.debit > 0 ? (
+                                <span className="text-red-600 font-bold block">₹{entry.debit.toFixed(2)} Dr</span>
+                              ) : entry.credit > 0 ? (
+                                <span className="text-emerald-600 font-bold block">₹{entry.credit.toFixed(2)} Cr</span>
+                              ) : null}
+                              <span className="text-slate-400 text-[10px]">Bal: ₹{Math.abs(entry.balance || 0).toFixed(2)} {Number(entry.balance || 0) > 0 ? 'Dr' : 'Cr'}</span>
+                            </div>
+                          </div>
+                        )) : (
+                          <div className="text-center text-slate-500 text-xs py-2">No recent transactions</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-2">
+                        <div className="w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             );
