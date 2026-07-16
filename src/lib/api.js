@@ -905,11 +905,13 @@ export const api = {
             }))
 
           const partySalesById = {}
+          const partiesNameById = {}
           salesData?.forEach(s => {
              const pId = s.party_id
              if (pId) {
                  if (!partySalesById[pId]) partySalesById[pId] = 0
                  partySalesById[pId] += Number(s.total_amount || 0)
+                 partiesNameById[pId] = s.parties?.name || 'Unknown'
              }
           })
           
@@ -917,16 +919,38 @@ export const api = {
           const schemesAnalytics = (schemesData || []).map(s => {
              const target = Number(s.target_amount || 0)
              let achievedCount = 0
+             const partiesProgress = []
+
              if (target > 0) {
-                 achievedCount = Object.values(partySalesById).filter(total => total >= target).length
+                 Object.entries(partySalesById).forEach(([pId, totalSales]) => {
+                     if (totalSales > 0) {
+                        const percentage = Math.min((totalSales / target) * 100, 100)
+                        const achieved = totalSales >= target
+                        partiesProgress.push({
+                           party_id: pId,
+                           party_name: partiesNameById[pId] || 'Unknown',
+                           total_sales: totalSales,
+                           target: target,
+                           percentage: percentage,
+                           remaining: Math.max(target - totalSales, 0),
+                           achieved: achieved
+                        })
+                        if (achieved) achievedCount++
+                     }
+                 })
              }
+             
+             // Sort stores by percentage descending
+             partiesProgress.sort((a, b) => b.percentage - a.percentage)
+
              const couponsForScheme = couponsData.filter(c => c.scheme_id === s.id)
              return {
                 id: s.id,
                 name: s.name,
                 target: target,
                 achievedCount,
-                couponsCount: couponsForScheme.length
+                couponsCount: couponsForScheme.length,
+                partiesProgress
              }
           })
 

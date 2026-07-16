@@ -97,6 +97,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeModal, setActiveModal] = useState(null) // 'sales', 'expenses', 'outstanding', 'coupons'
+  const [selectedProgressSchemeId, setSelectedProgressSchemeId] = useState(null)
 
   useEffect(() => {
     if (!activeSeason) {
@@ -467,6 +468,73 @@ export default function Dashboard() {
                 />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Store Target Progression */}
+      {stats.schemesAnalytics && stats.schemesAnalytics.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn mt-6" style={{ animationDelay: '900ms', animationFillMode: 'both' }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">Store Target Progression</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Track how close stores are to achieving scheme targets</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-2 -mx-2 px-2 snap-x">
+            {stats.schemesAnalytics.map(s => (
+               <button 
+                  key={s.id}
+                  onClick={() => setSelectedProgressSchemeId(s.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors snap-start ${
+                    (selectedProgressSchemeId || stats.schemesAnalytics[0]?.id) === s.id 
+                    ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+               >
+                  {s.name}
+               </button>
+            ))}
+          </div>
+          
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {(() => {
+              const currentId = selectedProgressSchemeId || stats.schemesAnalytics[0]?.id;
+              const schemeData = stats.schemesAnalytics.find(s => s.id === currentId);
+              if (!schemeData || !schemeData.partiesProgress || schemeData.partiesProgress.length === 0) {
+                 return <p className="text-sm text-slate-400 text-center py-8">No active store progression for this scheme yet.</p>
+              }
+              return schemeData.partiesProgress.map((p, idx) => (
+                <div key={p.party_id} className="p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div className="flex justify-between items-end mb-2.5">
+                    <div>
+                      <h3 className="font-bold text-slate-800 text-sm">{idx + 1}. {p.party_name}</h3>
+                      <p className="text-xs font-medium mt-1">
+                        {p.achieved 
+                          ? <span className="text-emerald-600 flex items-center gap-1">🎉 Target Achieved!</span> 
+                          : <span className="text-slate-500">Needs <span className="text-amber-600 font-bold">{formatCurrency(p.remaining)}</span> more</span>}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-slate-800 text-sm">{formatCurrency(p.total_sales)}</span>
+                      <span className="text-xs text-slate-400 ml-1 block mt-0.5">of {formatCurrency(p.target)}</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2 mb-1.5 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-1000 ${p.achieved ? 'bg-emerald-500' : 'bg-primary-500'}`} 
+                      style={{width: `${p.percentage}%`}}
+                    ></div>
+                  </div>
+                  <div className="flex justify-end">
+                    <span className={`text-[11px] font-bold ${p.achieved ? 'text-emerald-600' : 'text-primary-600'}`}>
+                      {p.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       )}
