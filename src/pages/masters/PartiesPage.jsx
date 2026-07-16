@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Edit, Trash2, ChevronDown, ChevronRight, FileText, Star, ShieldAlert, Upload } from 'lucide-react';
+import { Users, Edit, Trash2, ChevronDown, ChevronRight, FileText, Star, ShieldAlert, Upload, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
@@ -73,6 +73,30 @@ export default function PartiesPage() {
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Owner Name', 'Village', 'Taluka', 'District', 'Mobile', 'GSTIN', 'Opening Balance', 'Rating'];
+    const csvRows = parties.map(p => [
+      `"${(p.name || '').replace(/"/g, '""')}"`,
+      `"${(p.owner_name || '').replace(/"/g, '""')}"`,
+      `"${(p.village || '').replace(/"/g, '""')}"`,
+      `"${(p.taluka || '').replace(/"/g, '""')}"`,
+      `"${(p.district || '').replace(/"/g, '""')}"`,
+      `"${(p.mobile || '').replace(/"/g, '""')}"`,
+      `"${(p.gstin || '').replace(/"/g, '""')}"`,
+      `"${(p.opening_balance || 0)}"`,
+      `"${(p.rating || 'B').replace(/"/g, '""')}"`
+    ].join(','));
+    
+    const csvContent = [headers.join(','), ...csvRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Parties_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFileChange = async (e) => {
@@ -336,6 +360,13 @@ export default function PartiesPage() {
           />
           {userRole === 'admin' && (
             <>
+              <button
+                onClick={handleExportCSV}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg font-medium transition flex items-center shadow-sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </button>
               <button
                 onClick={handleImportClick}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg font-medium transition flex items-center shadow-sm"
