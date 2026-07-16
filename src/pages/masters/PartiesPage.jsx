@@ -287,7 +287,7 @@ export default function PartiesPage() {
           'A': { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300', label: 'A Good' },
           'B': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300', label: 'B Average' },
           'C': { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300', label: 'C Below Avg' },
-          'D': { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300', label: 'D Defaulter' },
+          'D': { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300', label: 'D Delay' },
         };
         const config = ratingConfig[val] || ratingConfig['B'];
         return (
@@ -538,7 +538,7 @@ export default function PartiesPage() {
                 { value: 'A', label: 'A', sublabel: 'Good', color: 'green' },
                 { value: 'B', label: 'B', sublabel: 'Average', color: 'blue' },
                 { value: 'C', label: 'C', sublabel: 'Below Avg', color: 'amber' },
-                { value: 'D', label: 'D', sublabel: 'Defaulter', color: 'red' },
+                { value: 'D', label: 'D', sublabel: 'Delay', color: 'red' },
               ].map(r => {
                 const isSelected = formData.rating === r.value;
                 const colorMap = {

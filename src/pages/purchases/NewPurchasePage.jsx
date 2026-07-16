@@ -18,7 +18,7 @@ export default function NewPurchasePage() {
   const [coupons, setCoupons] = useState([]);
   const [partyOutstanding, setPartyOutstanding] = useState(null);
   const [partyRating, setPartyRating] = useState(null);
-  const [showDefaulterWarning, setShowDefaulterWarning] = useState(false);
+  const [showDelayWarning, setShowDelayWarning] = useState(false);
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -237,7 +237,7 @@ export default function NewPurchasePage() {
                 setPartyOutstanding(selectedParty ? (selectedParty.balance || 0) : null);
                 setPartyRating(selectedParty ? (selectedParty.rating || 'B') : null);
                 if (selectedParty && selectedParty.rating === 'D') {
-                  setShowDefaulterWarning(true);
+                  setShowDelayWarning(true);
                 }
               }}
               placeholder="Select Party..."
@@ -249,7 +249,7 @@ export default function NewPurchasePage() {
                 'A': { bg: 'bg-gradient-to-r from-green-500 to-green-600', text: 'text-white', label: 'Good', stars: 4, icon: '⭐' },
                 'B': { bg: 'bg-gradient-to-r from-blue-500 to-blue-600', text: 'text-white', label: 'Average', stars: 3, icon: '📊' },
                 'C': { bg: 'bg-gradient-to-r from-amber-500 to-amber-600', text: 'text-white', label: 'Below Average', stars: 2, icon: '⚠️' },
-                'D': { bg: 'bg-gradient-to-r from-red-600 to-red-700', text: 'text-white', label: 'Defaulter', stars: 1, icon: '🚫' },
+                'D': { bg: 'bg-gradient-to-r from-red-600 to-red-700', text: 'text-white', label: 'Delay', stars: 1, icon: '🚫' },
               };
               const config = ratingConfig[partyRating] || ratingConfig['B'];
               return (
@@ -590,8 +590,8 @@ export default function NewPurchasePage() {
         </button>
       </div>
 
-      {/* Defaulter Warning Modal */}
-      {showDefaulterWarning && (
+      {/* Delay Warning Modal */}
+      {showDelayWarning && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-[pulse_0.3s_ease-in-out]">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
@@ -599,13 +599,13 @@ export default function NewPurchasePage() {
                 <AlertTriangle className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">⚠️ Defaulter Alert!</h3>
+                <h3 className="text-lg font-bold text-white">⚠️ Delay Alert!</h3>
                 <p className="text-red-100 text-sm">This party is rated D</p>
               </div>
             </div>
             <div className="p-6">
               <p className="text-slate-700 text-base mb-2">
-                <strong>{parties.find(p => p.value === formData.party_id)?.label}</strong> is marked as a <span className="text-red-600 font-bold">Defaulter</span>.
+                <strong>{parties.find(p => p.value === formData.party_id)?.label}</strong> is marked as a <span className="text-red-600 font-bold">Delay</span>.
               </p>
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5">
                 <p className="text-amber-800 font-semibold text-sm flex items-center gap-2">
@@ -616,7 +616,7 @@ export default function NewPurchasePage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => {
-                    setShowDefaulterWarning(false);
+                    setShowDelayWarning(false);
                     setFormData(prev => ({ ...prev, party_id: '' }));
                     setPartyRating(null);
                     setPartyOutstanding(null);
@@ -626,7 +626,7 @@ export default function NewPurchasePage() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => setShowDefaulterWarning(false)}
+                  onClick={() => setShowDelayWarning(false)}
                   className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
                 >
                   Confirmed by Pintu Sir
