@@ -920,30 +920,33 @@ export const api = {
              const target = Number(s.target_amount || 0)
              let achievedCount = 0
              const partiesProgress = []
+             const couponsForScheme = couponsData.filter(c => c.scheme_id === s.id)
 
              if (target > 0) {
-                 Object.entries(partySalesById).forEach(([pId, totalSales]) => {
-                     if (totalSales > 0) {
-                        const percentage = Math.min((totalSales / target) * 100, 100)
-                        const achieved = totalSales >= target
-                        partiesProgress.push({
-                           party_id: pId,
-                           party_name: partiesNameById[pId] || 'Unknown',
-                           total_sales: totalSales,
-                           target: target,
-                           percentage: percentage,
-                           remaining: Math.max(target - totalSales, 0),
-                           achieved: achieved
-                        })
-                        if (achieved) achievedCount++
-                     }
+                 const participatingPartyIds = [...new Set(couponsForScheme.map(c => c.party_id))]
+                 
+                 participatingPartyIds.forEach(pId => {
+                     const totalSales = partySalesById[pId] || 0
+                     const percentage = Math.min((totalSales / target) * 100, 100)
+                     const achieved = totalSales >= target
+                     const partyName = partiesNameById[pId] || couponsForScheme.find(c => c.party_id === pId)?.parties?.name || 'Unknown'
+
+                     partiesProgress.push({
+                        party_id: pId,
+                        party_name: partyName,
+                        total_sales: totalSales,
+                        target: target,
+                        percentage: percentage,
+                        remaining: Math.max(target - totalSales, 0),
+                        achieved: achieved
+                     })
+                     if (achieved) achievedCount++
                  })
              }
              
              // Sort stores by percentage descending
              partiesProgress.sort((a, b) => b.percentage - a.percentage)
 
-             const couponsForScheme = couponsData.filter(c => c.scheme_id === s.id)
              return {
                 id: s.id,
                 name: s.name,

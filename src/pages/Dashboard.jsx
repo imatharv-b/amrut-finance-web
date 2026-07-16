@@ -57,10 +57,10 @@ const PieTooltip = ({ active, payload }) => {
 const SchemeTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null
   const data = payload[0].payload
-  const gap = data.achievedCount - data.couponsCount
+  const gap = data.couponsCount - data.achievedCount
   
-  let statusText = gap === 0 ? "Perfectly matched" : (gap > 0 ? `Missing ${gap} coupons` : `Over-issued ${Math.abs(gap)} coupons`)
-  let statusColor = gap === 0 ? "text-green-600" : (gap > 0 ? "text-amber-600" : "text-red-600")
+  let statusText = gap === 0 ? "100% conversion!" : `${gap} enrolled store(s) yet to hit target`
+  let statusColor = gap === 0 ? "text-green-600" : "text-amber-600"
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-slate-100 px-4 py-3 min-w-[200px]">
@@ -70,17 +70,17 @@ const SchemeTooltip = ({ active, payload, label }) => {
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="text-slate-600">Stores Achieved:</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="text-slate-600">Enrolled (Coupons):</span>
           </div>
-          <span className="font-semibold text-slate-800">{data.achievedCount}</span>
+          <span className="font-semibold text-slate-800">{data.couponsCount}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-slate-600">Coupons Issued:</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="text-slate-600">Successfully Achieved:</span>
           </div>
-          <span className="font-semibold text-slate-800">{data.couponsCount}</span>
+          <span className="font-semibold text-slate-800">{data.achievedCount}</span>
         </div>
       </div>
       
@@ -449,18 +449,18 @@ export default function Dashboard() {
                   wrapperStyle={{ paddingTop: 12, fontSize: 13 }}
                 />
                 <Bar
-                  dataKey="achievedCount"
-                  name="Stores Achieved Target"
-                  fill="url(#achievedGradient)"
+                  dataKey="couponsCount"
+                  name="Enrolled (Coupons Issued)"
+                  fill="url(#issuedGradient)"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={40}
                   onClick={(data) => navigate('/schemes/coupons')}
                   cursor="pointer"
                 />
                 <Bar
-                  dataKey="couponsCount"
-                  name="Coupons Issued"
-                  fill="url(#issuedGradient)"
+                  dataKey="achievedCount"
+                  name="Successfully Achieved Target"
+                  fill="url(#achievedGradient)"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={40}
                   onClick={(data) => navigate('/schemes/coupons')}
