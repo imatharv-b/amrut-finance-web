@@ -904,6 +904,32 @@ export const api = {
               total_amount: s.total_amount
             }))
 
+          const partySalesById = {}
+          salesData?.forEach(s => {
+             const pId = s.party_id
+             if (pId) {
+                 if (!partySalesById[pId]) partySalesById[pId] = 0
+                 partySalesById[pId] += Number(s.total_amount || 0)
+             }
+          })
+          
+          const { data: schemesData } = await withCompany(supabase.from('schemes').select('*')).eq('season_id', seasonId)
+          const schemesAnalytics = (schemesData || []).map(s => {
+             const target = Number(s.target_amount || 0)
+             let achievedCount = 0
+             if (target > 0) {
+                 achievedCount = Object.values(partySalesById).filter(total => total >= target).length
+             }
+             const couponsForScheme = couponsData.filter(c => c.scheme_id === s.id)
+             return {
+                id: s.id,
+                name: s.name,
+                target: target,
+                achievedCount,
+                couponsCount: couponsForScheme.length
+             }
+          })
+
           return { 
             totalSales, 
             totalExpenses, 
@@ -918,7 +944,8 @@ export const api = {
             outstandingList,
             salesList,
             receiptsList,
-            couponsList: couponsData
+            couponsList: couponsData,
+            schemesAnalytics
           }
         }
         case 'settings:get': {

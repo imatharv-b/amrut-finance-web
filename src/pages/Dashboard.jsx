@@ -54,6 +54,43 @@ const PieTooltip = ({ active, payload }) => {
   )
 }
 
+const SchemeTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null
+  const data = payload[0].payload
+  const gap = data.achievedCount - data.couponsCount
+  
+  let statusText = gap === 0 ? "Perfectly matched" : (gap > 0 ? `Missing ${gap} coupons` : `Over-issued ${Math.abs(gap)} coupons`)
+  let statusColor = gap === 0 ? "text-green-600" : (gap > 0 ? "text-amber-600" : "text-red-600")
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg border border-slate-100 px-4 py-3 min-w-[200px]">
+      <p className="text-sm font-bold text-slate-800 mb-1">{label}</p>
+      <p className="text-xs text-slate-500 mb-3">Target: {formatCurrency(data.target)}</p>
+      
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="text-slate-600">Stores Achieved:</span>
+          </div>
+          <span className="font-semibold text-slate-800">{data.achievedCount}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="text-slate-600">Coupons Issued:</span>
+          </div>
+          <span className="font-semibold text-slate-800">{data.couponsCount}</span>
+        </div>
+      </div>
+      
+      <div className={`mt-3 pt-2 border-t border-slate-100 text-xs font-semibold ${statusColor}`}>
+        {statusText}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const { activeSeason } = useContext(SeasonContext)
   const navigate = useNavigate()
@@ -359,6 +396,80 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Scheme Performance Analytics */}
+      {stats.schemesAnalytics && stats.schemesAnalytics.length > 0 && (
+        <div className="grid grid-cols-1 gap-6">
+          <div
+            className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
+            style={{ animationDelay: '800ms', animationFillMode: 'both' }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Scheme Performance Analytics</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Organic target achievement vs Coupons issued</p>
+              </div>
+              <Ticket className="w-5 h-5 text-emerald-500" />
+            </div>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart
+                data={stats.schemesAnalytics}
+                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                barCategoryGap="25%"
+              >
+                <defs>
+                  <linearGradient id="achievedGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0.9} />
+                  </linearGradient>
+                  <linearGradient id="issuedGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#059669" stopOpacity={0.9} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: '#94a3b8' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={30}
+                />
+                <Tooltip content={<SchemeTooltip />} cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ paddingTop: 12, fontSize: 13 }}
+                />
+                <Bar
+                  dataKey="achievedCount"
+                  name="Stores Achieved Target"
+                  fill="url(#achievedGradient)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={40}
+                  onClick={(data) => navigate('/schemes/coupons')}
+                  cursor="pointer"
+                />
+                <Bar
+                  dataKey="couponsCount"
+                  name="Coupons Issued"
+                  fill="url(#issuedGradient)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={40}
+                  onClick={(data) => navigate('/schemes/coupons')}
+                  cursor="pointer"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modals */}
       
