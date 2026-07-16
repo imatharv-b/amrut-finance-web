@@ -172,6 +172,7 @@ export const api = {
 
           salesRes.data?.forEach(s => {
              rawEntries.push({
+                id: s.id,
                 entry_date: s.date,
                 ref: s.invoice_no + (s.coupon_no ? ` (Coupon: ${s.coupon_no})` : ''),
                 vch_no: s.invoice_no,
@@ -186,6 +187,7 @@ export const api = {
 
           paymentsRes.data?.forEach(p => {
              rawEntries.push({
+                id: p.id,
                 entry_date: p.date,
                 ref: `Payment - ${p.mode}`,
                 vch_no: 'Rcpt',
@@ -202,6 +204,7 @@ export const api = {
              if (e.expense_types?.name === 'Advance to Party' || e.expense_types?.name === 'Bad Debt') {
                const isAdvance = e.expense_types?.name === 'Advance to Party';
                rawEntries.push({
+                  id: e.id,
                   entry_date: e.date,
                   ref: e.expense_types?.name,
                   vch_no: 'Jrnl',
@@ -225,6 +228,7 @@ export const api = {
 
             workerLedgerRes?.forEach(wl => {
               rawEntries.push({
+                id: wl.id,
                 entry_date: wl.date,
                 ref: wl.source_type === 'monthly_salary' ? 'Salary' : wl.source_type === 'attendance' ? 'Attendance' : 'Ledger',
                 vch_no: 'Jrnl',
@@ -240,6 +244,7 @@ export const api = {
 
           returnsRes.data?.forEach(r => {
              rawEntries.push({
+                id: r.id,
                 entry_date: r.date,
                 ref: `Sale Return - ${r.return_no}`,
                 vch_no: r.return_no,

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Printer, Share2, Maximize, Minimize } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { BookOpen, Printer, Share2, Maximize, Minimize, Edit } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
 import { generateLedgerHTML } from '../../components/print/LedgerPrint';
 import { printHTML, exportAsJPG } from '../../lib/printUtils';
 import { formatDate } from '../../lib/dateUtils';
+import Modal from '../../components/Modal';
+import FormField from '../../components/FormField';
 
 export default function PartyLedgerPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialPartyId = searchParams.get('party');
 
   const [parties, setParties] = useState([]);
@@ -19,6 +22,9 @@ export default function PartyLedgerPage() {
   const [loading, setLoading] = useState(false);
   const [firmSettings, setFirmSettings] = useState({});
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadParties();
@@ -87,6 +93,54 @@ export default function PartyLedgerPage() {
       toast.success('Image downloaded! You can now attach it in WhatsApp.', { id: 'wa-ledger' });
     } catch (err) {
       toast.error(err.message || 'Failed to generate image', { id: 'wa-ledger' });
+    }
+  };
+
+  const handleEditClick = (entry) => {
+    if (!entry.id) {
+       toast.error("Cannot edit this entry");
+       return;
+    }
+    
+    if (entry.entry_type === 'sale') {
+      navigate(`/sales/edit/${entry.id}`);
+    } else if (entry.entry_type === 'sale_return') {
+      toast.error("Sale Returns must be edited from the Returns page");
+    } else {
+      // payment, expense, worker_ledger
+      setEditData({ ...entry });
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      let amount = Number(editData.debit) || Number(editData.credit);
+      let updates = {
+         date: editData.entry_date,
+         amount: amount
+      };
+      
+      if (editData.entry_type === 'payment') {
+         updates.remarks = editData.narration;
+         await window.db.invoke('payments:update', { id: editData.id, ...updates });
+      } else if (editData.entry_type === 'expense') {
+         updates.description = editData.narration;
+         await window.db.invoke('expenses:update', { id: editData.id, ...updates });
+      } else if (editData.entry_type === 'worker_ledger') {
+         updates.description = editData.narration || editData.particulars;
+         await window.db.invoke('workerLedger:update', editData.id, updates);
+      }
+      
+      toast.success('Entry updated');
+      setIsEditModalOpen(false);
+      loadLedger();
+    } catch (err) {
+      toast.error('Failed to update entry');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -232,6 +286,9 @@ export default function PartyLedgerPage() {
                       ) : entry.credit > 0 ? (
                         <span className="font-bold text-green-600">₹{entry.credit.toFixed(2)} Cr</span>
                       ) : null}
+                      <button onClick={() => handleEditClick(entry)} className="ml-2 p-1 text-slate-400 hover:text-primary-600 inline-block align-middle">
+                         <Edit size={12} />
+                      </button>
                     </div>
                   </div>
                   
@@ -281,6 +338,7 @@ export default function PartyLedgerPage() {
                     <th className="px-6 py-3 border-b border-slate-200 text-right">Debit (₹)</th>
                     <th className="px-6 py-3 border-b border-slate-200 text-right">Credit (₹)</th>
                     <th className="px-6 py-3 border-b border-slate-200 text-right">Balance (₹)</th>
+                    <th className="px-6 py-3 border-b border-slate-200 w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -299,6 +357,7 @@ export default function PartyLedgerPage() {
                           ? `${Math.abs(Number(ledgerData.openingBalanceForPeriod || 0)).toFixed(2)} Cr` 
                           : '0.00'}
                     </td>
+                    <td className="px-6 py-3 border-b border-slate-200"></td>
                   </tr>
                   {ledgerData.entries.map((entry, index) => (
                     <tr key={index} className="hover:bg-slate-50 transition align-top">
@@ -336,11 +395,18 @@ export default function PartyLedgerPage() {
                             ? `${Math.abs(entry.balance).toFixed(2)} Cr` 
                             : '0.00'}
                       </td>
+                      <td className="px-6 py-3 whitespace-nowrap text-right">
+                         {entry.id && (
+                           <button onClick={() => handleEditClick(entry)} className="p-1 text-slate-400 hover:text-primary-600 inline-block align-middle" title="Edit">
+                              <Edit size={16} />
+                           </button>
+                         )}
+                      </td>
                     </tr>
                   ))}
                   {ledgerData.entries.length === 0 && (
                     <tr>
-                      <td colSpan="7" className="px-6 py-8 text-center text-slate-500">
+                      <td colSpan="8" className="px-6 py-8 text-center text-slate-500">
                         No transactions found for this party.
                       </td>
                     </tr>
@@ -368,6 +434,72 @@ export default function PartyLedgerPage() {
           </>
         ) : null}
       </div>
+
+      {/* Edit Modal for Generic Entries */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Entry"
+      >
+        {editData && (
+          <form onSubmit={handleSaveEdit} className="space-y-4">
+            <FormField label="Date" required>
+              <input
+                type="date"
+                required
+                value={editData.entry_date || ''}
+                onChange={(e) => setEditData(prev => ({ ...prev, entry_date: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              />
+            </FormField>
+            
+            <FormField label="Amount" required>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={editData.debit > 0 ? editData.debit : editData.credit}
+                onChange={(e) => {
+                   let amount = Number(e.target.value);
+                   setEditData(prev => ({
+                     ...prev, 
+                     debit: prev.debit > 0 ? amount : 0,
+                     credit: prev.credit > 0 ? amount : 0
+                   }))
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              />
+            </FormField>
+            
+            <FormField label="Narration / Remarks" required>
+              <textarea
+                required
+                rows={3}
+                value={editData.narration || editData.particulars || ''}
+                onChange={(e) => setEditData(prev => ({ ...prev, narration: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              />
+            </FormField>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex-1 px-4 py-2 bg-primary-700 text-white rounded-lg font-medium hover:bg-primary-800 transition disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }
