@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, Search, Check } from 'lucide-react'
+import { ChevronDown, Search, Check, X } from 'lucide-react'
 
 export default function SearchableSelect({
   options = [],
@@ -134,12 +134,12 @@ export default function SearchableSelect({
             style={typeof window !== 'undefined' && window.innerWidth >= 768 ? dropdownStyle : {}}
             className={`bg-white border border-slate-200 overflow-hidden flex flex-col z-[9999] shadow-xl animate-scaleIn
               ${typeof window !== 'undefined' && window.innerWidth < 768 
-                 ? 'fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[85vh] pb-safe'
+                 ? 'fixed inset-0 pb-safe'
                  : 'rounded-xl'}`}
           >
             {/* Search */}
-            <div className="p-3 border-b border-slate-100 shrink-0">
-              <div className="relative">
+            <div className="p-3 border-b border-slate-100 shrink-0 flex items-center gap-2">
+              <div className="relative flex-1">
                 <Search
                   size={16}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -155,10 +155,19 @@ export default function SearchableSelect({
                     focus:border-primary-400 placeholder:text-slate-400"
                 />
               </div>
+              {typeof window !== 'undefined' && window.innerWidth < 768 && (
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              )}
             </div>
 
             {/* Options List */}
-            <div className={`overflow-y-auto py-1 ${typeof window !== 'undefined' && window.innerWidth < 768 ? 'max-h-[60vh] md:max-h-[220px]' : 'max-h-[220px]'}`}>
+            <div className={`overflow-y-auto py-1 flex-1 ${typeof window !== 'undefined' && window.innerWidth >= 768 ? 'max-h-[220px]' : ''}`}>
               {filteredOptions.length === 0 ? (
               <div className="px-3 py-4 text-center text-sm text-slate-400">No results found</div>
             ) : (
