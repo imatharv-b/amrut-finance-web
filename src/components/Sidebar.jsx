@@ -39,10 +39,10 @@ const NAVIGATION = [
   {
     label: 'Masters',
     icon: Package,
-    roles: ['admin', 'data_entry'],
+    roles: ['admin', 'data_entry', 'salesman'],
     children: [
       { label: 'Products & Batches', icon: Package, path: '/masters/products', roles: ['admin', 'data_entry'] },
-      { label: 'Parties', icon: Users, path: '/masters/parties', roles: ['admin', 'data_entry'] },
+      { label: 'Parties', icon: Users, path: '/masters/parties', roles: ['admin', 'data_entry', 'salesman'] },
       { label: 'Associates', icon: UserCheck, path: '/masters/associates', roles: ['admin'] }
     ]
   },
