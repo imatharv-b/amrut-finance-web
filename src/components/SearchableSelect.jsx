@@ -65,14 +65,20 @@ export default function SearchableSelect({
   useLayoutEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
-      // Position it right below the input
-      setDropdownStyle({
-        position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-        zIndex: 9999
-      })
+      
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      
+      if (isMobile) {
+        setDropdownStyle({}) // Use CSS classes for mobile positioning
+      } else {
+        setDropdownStyle({
+          position: 'fixed',
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+          zIndex: 9999
+        })
+      }
     }
   }, [isOpen])
 
@@ -119,34 +125,41 @@ export default function SearchableSelect({
 
       {/* Dropdown via Portal */}
       {isOpen && typeof document !== 'undefined' && createPortal(
-        <div 
-          ref={dropdownRef}
-          style={dropdownStyle}
-          className="bg-white border border-slate-200 rounded-xl shadow-xl animate-scaleIn overflow-hidden flex flex-col"
-        >
-          {/* Search */}
-          <div className="p-2 border-b border-slate-100 shrink-0">
-            <div className="relative">
-              <Search
-                size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search..."
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg
-                  bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary-500/30
-                  focus:border-primary-400 placeholder:text-slate-400"
-              />
+        <>
+          {/* Backdrop for mobile */}
+          <div className="md:hidden fixed inset-0 bg-slate-900/40 z-[9998] animate-fadeIn" onClick={() => setIsOpen(false)} />
+          
+          <div 
+            ref={dropdownRef}
+            style={typeof window !== 'undefined' && window.innerWidth >= 768 ? dropdownStyle : {}}
+            className={`bg-white border border-slate-200 overflow-hidden flex flex-col z-[9999] shadow-xl animate-scaleIn
+              ${typeof window !== 'undefined' && window.innerWidth < 768 
+                 ? 'fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[85vh] pb-safe'
+                 : 'rounded-xl'}`}
+          >
+            {/* Search */}
+            <div className="p-3 border-b border-slate-100 shrink-0">
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full pl-9 pr-4 py-2.5 text-sm md:py-1.5 md:pl-8 md:pr-3 border border-slate-200 rounded-lg
+                    bg-slate-50 focus:outline-none focus:ring-1 focus:ring-primary-500/30
+                    focus:border-primary-400 placeholder:text-slate-400"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Options List */}
-          <div className="max-h-[220px] overflow-y-auto py-1">
-            {filteredOptions.length === 0 ? (
+            {/* Options List */}
+            <div className={`overflow-y-auto py-1 ${typeof window !== 'undefined' && window.innerWidth < 768 ? 'max-h-[60vh] md:max-h-[220px]' : 'max-h-[220px]'}`}>
+              {filteredOptions.length === 0 ? (
               <div className="px-3 py-4 text-center text-sm text-slate-400">No results found</div>
             ) : (
               filteredOptions.map((opt) => (
@@ -175,7 +188,8 @@ export default function SearchableSelect({
               ))
             )}
           </div>
-        </div>,
+        </div>
+        </>,
         document.body
       )}
     </div>

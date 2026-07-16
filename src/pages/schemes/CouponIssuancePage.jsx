@@ -36,7 +36,16 @@ export default function CouponIssuancePage() {
       ]);
       setCoupons(couponsData || []);
       setSchemes(schemesData || []);
-      setParties(partiesData.map(p => ({ value: p.id, label: p.name, sublabel: p.village })));
+      setParties(partiesData.map(p => ({ 
+        value: p.id, 
+        label: p.name, 
+        sublabel: [
+          p.village,
+          p.district ? `(${p.district})` : '',
+          p.mobile ? `📞 ${p.mobile}` : '',
+          p.associate_name ? `👤 ${p.associate_name}` : ''
+        ].filter(Boolean).join(' • ')
+      })));
     } catch (err) {
       toast.error('Failed to load data');
     } finally {
