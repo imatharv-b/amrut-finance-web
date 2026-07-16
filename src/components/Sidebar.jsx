@@ -39,10 +39,10 @@ const NAVIGATION = [
   {
     label: 'Masters',
     icon: Package,
-    roles: ['admin', 'data_entry', 'salesman'],
+    roles: ['admin', 'data_entry'],
     children: [
       { label: 'Products & Batches', icon: Package, path: '/masters/products', roles: ['admin', 'data_entry'] },
-      { label: 'Parties', icon: Users, path: '/masters/parties', roles: ['admin', 'data_entry', 'salesman'] },
+      { label: 'Parties', icon: Users, path: '/masters/parties', roles: ['admin', 'data_entry'] },
       { label: 'Associates', icon: UserCheck, path: '/masters/associates', roles: ['admin'] }
     ]
   },
@@ -87,10 +87,10 @@ const NAVIGATION = [
   {
     label: 'Workers',
     icon: Briefcase,
-    roles: ['admin', 'data_entry', 'salesman'],
+    roles: ['admin', 'data_entry'],
     children: [
       { label: 'All Workers', icon: Users, path: '/workers/all', roles: ['admin', 'data_entry'] },
-      { label: 'Attendance', icon: Calendar, path: '/workers/attendance', roles: ['admin', 'data_entry', 'salesman'] },
+      { label: 'Attendance', icon: Calendar, path: '/workers/attendance', roles: ['admin', 'data_entry'] },
       { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger', roles: ['admin', 'data_entry'] },
       { label: 'Wage Register', icon: FileText, path: '/workers/summary', roles: ['admin', 'data_entry'] },
       { label: 'Monthly Salary', icon: CalendarDays, path: '/workers/monthly-salary', roles: ['admin'] }
