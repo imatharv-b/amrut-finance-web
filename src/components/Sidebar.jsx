@@ -78,10 +78,10 @@ const NAVIGATION = [
   {
     label: 'Schemes',
     icon: Target,
-    roles: ['admin'],
+    roles: ['admin', 'salesman'],
     children: [
-      { label: 'Scheme Setup', icon: Target, path: '/schemes/setup' },
-      { label: 'Coupon Issuance', icon: Ticket, path: '/schemes/coupons' }
+      { label: 'Scheme Setup', icon: Target, path: '/schemes/setup', roles: ['admin'] },
+      { label: 'Coupon Issuance', icon: Ticket, path: '/schemes/coupons', roles: ['admin', 'salesman'] }
     ]
   },
   {
