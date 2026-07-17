@@ -921,10 +921,9 @@ export const api = {
              let achievedCount = 0
              const partiesProgress = []
              const couponsForScheme = couponsData.filter(c => c.scheme_id === s.id)
+             const participatingPartyIds = [...new Set(couponsForScheme.map(c => c.party_id))]
 
              if (target > 0) {
-                 const participatingPartyIds = [...new Set(couponsForScheme.map(c => c.party_id))]
-                 
                  participatingPartyIds.forEach(pId => {
                      const totalSales = partySalesById[pId] || 0
                      const percentage = Math.min((totalSales / target) * 100, 100)
@@ -952,7 +951,8 @@ export const api = {
                 name: s.name,
                 target: target,
                 achievedCount,
-                couponsCount: couponsForScheme.length,
+                enrolledCount: participatingPartyIds.length,
+                totalCoupons: couponsForScheme.length,
                 partiesProgress
              }
           })

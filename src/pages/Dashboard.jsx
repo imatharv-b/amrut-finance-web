@@ -57,7 +57,7 @@ const PieTooltip = ({ active, payload }) => {
 const SchemeTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null
   const data = payload[0].payload
-  const gap = data.couponsCount - data.achievedCount
+  const gap = data.enrolledCount - data.achievedCount
   
   let statusText = gap === 0 ? "100% conversion!" : `${gap} enrolled store(s) yet to hit target`
   let statusColor = gap === 0 ? "text-green-600" : "text-amber-600"
@@ -71,9 +71,9 @@ const SchemeTooltip = ({ active, payload, label }) => {
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-slate-600">Enrolled (Coupons):</span>
+            <span className="text-slate-600">Enrolled Stores:</span>
           </div>
-          <span className="font-semibold text-slate-800">{data.couponsCount}</span>
+          <span className="font-semibold text-slate-800">{data.enrolledCount}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
@@ -449,8 +449,8 @@ export default function Dashboard() {
                   wrapperStyle={{ paddingTop: 12, fontSize: 13 }}
                 />
                 <Bar
-                  dataKey="couponsCount"
-                  name="Enrolled (Coupons Issued)"
+                  dataKey="enrolledCount"
+                  name="Enrolled Stores"
                   fill="url(#issuedGradient)"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={40}

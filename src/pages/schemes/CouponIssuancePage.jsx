@@ -69,10 +69,10 @@ export default function CouponIssuancePage() {
         scheme_id: coupon.scheme_id || '',
         party_id: coupon.party_id || '',
         coupon_no: coupon.coupon_no || '',
-        date_issued: coupon.date_issued || new Date().toISOString().split('T')[0]
+        issue_date: coupon.issue_date || new Date().toISOString().split('T')[0]
       });
     } else {
-      setFormData({ scheme_id: '', party_id: '', coupon_no: '', date_issued: new Date().toISOString().split('T')[0] });
+      setFormData({ scheme_id: '', party_id: '', coupon_no: '', issue_date: new Date().toISOString().split('T')[0] });
     }
     setErrors({});
     setIsModalOpen(true);
@@ -101,7 +101,7 @@ export default function CouponIssuancePage() {
     if (!formData.scheme_id) newErrors.scheme_id = 'Scheme is required';
     if (!formData.party_id) newErrors.party_id = 'Party is required';
     if (!formData.coupon_no.trim()) newErrors.coupon_no = 'Coupon number is required';
-    if (!formData.date_issued) newErrors.date_issued = 'Issue date is required';
+    if (!formData.issue_date) newErrors.issue_date = 'Issue date is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -126,7 +126,7 @@ export default function CouponIssuancePage() {
   };
 
   const columns = [
-    { key: 'date_issued', label: 'Date Issued', sortable: true },
+    { key: 'issue_date', label: 'Date Issued', sortable: true },
     { key: 'coupon_no', label: 'Coupon No', sortable: true, render: (val) => <span className="font-bold text-slate-800 tracking-wider bg-slate-100 px-2 py-1 rounded">{val}</span> },
     { key: 'party_name', label: 'Party', sortable: true, render: (val) => <span className="font-medium text-slate-700">{val}</span> },
     { key: 'scheme_name', label: 'Scheme', sortable: true }
@@ -167,7 +167,7 @@ export default function CouponIssuancePage() {
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-3">
               <div className="flex justify-between items-start border-b border-slate-100 pb-3">
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">{row.date_issued}</p>
+                  <p className="text-xs text-slate-500 mb-1">{row.issue_date}</p>
                   <span className="font-bold text-slate-800 tracking-wider bg-slate-100 px-2 py-1 rounded text-lg">
                     {row.coupon_no}
                   </span>
@@ -196,11 +196,11 @@ export default function CouponIssuancePage() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedCoupon ? 'Edit Coupon' : 'Issue Coupon'} size="md">
         <form onSubmit={handleSave} className="space-y-4">
-          <FormField label="Date Issued" required error={errors.date_issued}>
+          <FormField label="Date Issued" required error={errors.issue_date}>
             <input
               type="date"
-              value={formData.date_issued}
-              onChange={e => setFormData({ ...formData, date_issued: e.target.value })}
+              value={formData.issue_date}
+              onChange={e => setFormData({ ...formData, issue_date: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
             />
           </FormField>
