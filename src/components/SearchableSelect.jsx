@@ -71,11 +71,15 @@ export default function SearchableSelect({
       if (isMobile) {
         setDropdownStyle({}) // Use CSS classes for mobile positioning
       } else {
+        const dropdownWidth = Math.max(rect.width, 300);
+        const maxLeft = window.innerWidth - dropdownWidth - 16;
+        const left = Math.min(rect.left, maxLeft);
+
         setDropdownStyle({
           position: 'fixed',
           top: rect.bottom + 4,
-          left: rect.left,
-          width: rect.width,
+          left: Math.max(16, left),
+          width: dropdownWidth,
           zIndex: 9999
         })
       }
