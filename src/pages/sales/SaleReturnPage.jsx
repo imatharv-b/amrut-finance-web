@@ -169,33 +169,16 @@ export default function SaleReturnPage() {
   const productOptions = products.map(p => ({ value: p.id, label: p.name }))
 
   const columns = [
-    { 
-      header: 'Date', accessor: 'date',
-      cell: (row) => formatDate(row.date)
-    },
-    { header: 'Return No', accessor: 'return_no' },
-    { header: 'Party', accessor: 'party_name' },
-    { header: 'Original Invoice', accessor: 'original_invoice' },
-    { 
-      header: 'Total Amount', 
-      accessor: (row) => `₹${Number(row.total_amount || 0).toFixed(2)}`,
-      className: 'text-right font-medium'
-    },
-    { header: 'Reason', accessor: 'reason' },
-    {
-      header: 'Actions',
-      accessor: (row) => (
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => setDeleteId(row.id)}
-            className="p-1 text-red-600 hover:bg-red-50 rounded"
-            title="Delete"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      )
-    }
+    { key: 'date', label: 'Date', sortable: true, render: (val) => formatDate(val) },
+    { key: 'return_no', label: 'Return No', sortable: true },
+    { key: 'party_name', label: 'Party', sortable: true },
+    { key: 'original_invoice', label: 'Original Invoice', sortable: true },
+    { key: 'total_amount', label: 'Total Amount', sortable: true, render: (val) => `₹${Number(val || 0).toFixed(2)}` },
+    { key: 'reason', label: 'Reason' }
+  ]
+
+  const tableActions = [
+    { label: 'Delete', icon: Trash2, onClick: (row) => setDeleteId(row.id), variant: 'danger' }
   ]
 
   if (!activeSeason) {
@@ -227,25 +210,34 @@ export default function SaleReturnPage() {
       </div>
 
       <div className="p-6 flex-1 overflow-hidden flex flex-col">
-        <div className="mb-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search by return no, party, or invoice..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-        </div>
-
         <div className="flex-1 min-h-0 bg-white rounded-lg border shadow-sm flex flex-col">
           <DataTable
             columns={columns}
             data={filteredReturns}
-            isLoading={loading}
-            emptyMessage="No sale returns found. Click 'Record Sale Return' to add one."
+            loading={loading}
+            searchable
+            searchPlaceholder="Search by return no, party, or invoice..."
+            emptyMessage="No sale returns found"
+            emptyIcon={RotateCcw}
+            actions={tableActions}
+            renderMobileCard={(row) => (
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs text-slate-500">{formatDate(row.date)}</p>
+                    <p className="font-bold text-slate-800">{row.return_no}</p>
+                  </div>
+                  <span className="font-semibold text-primary-700">₹{Number(row.total_amount || 0).toFixed(2)}</span>
+                </div>
+                <p className="text-sm text-slate-600">{row.party_name}</p>
+                {row.reason && <p className="text-xs text-slate-400">{row.reason}</p>}
+                <div className="flex justify-end pt-2 border-t border-slate-100">
+                  <button onClick={() => setDeleteId(row.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           />
         </div>
       </div>
