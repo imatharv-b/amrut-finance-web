@@ -313,8 +313,8 @@ export default function SaleReturnPage() {
           {/* Add Items Section */}
           <div className="border rounded-lg p-4 bg-gray-50">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Returned Items</h3>
-            <div className="flex flex-col sm:flex-row gap-2 mb-3">
-              <div className="flex-1 sm:min-w-[200px]">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px_120px_auto] gap-2 mb-3 items-end">
+              <div className="min-w-0">
                 <SearchableSelect
                   options={productOptions}
                   value={currentItem.product_id}
@@ -322,7 +322,7 @@ export default function SaleReturnPage() {
                   placeholder="Select Product..."
                 />
               </div>
-              <div className="w-full sm:w-24 flex-shrink-0">
+              <div>
                 <input
                   type="number"
                   placeholder="Qty"
@@ -333,7 +333,7 @@ export default function SaleReturnPage() {
                   min="0.01"
                 />
               </div>
-              <div className="w-full sm:w-32 flex-shrink-0">
+              <div>
                 <input
                   type="number"
                   placeholder="Rate (₹)"
@@ -344,11 +344,11 @@ export default function SaleReturnPage() {
                   min="0.01"
                 />
               </div>
-              <div className="w-full sm:w-auto flex-shrink-0">
+              <div>
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="w-full sm:w-auto px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition"
+                  className="w-full px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition"
                 >
                   Add
                 </button>
