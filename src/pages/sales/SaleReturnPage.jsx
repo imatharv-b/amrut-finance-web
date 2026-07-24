@@ -313,8 +313,8 @@ export default function SaleReturnPage() {
           {/* Add Items Section */}
           <div className="border rounded-lg p-4 bg-gray-50">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Returned Items</h3>
-            <div className="grid grid-cols-12 gap-2 mb-3">
-              <div className="col-span-5">
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
+              <div className="flex-1 sm:min-w-[200px]">
                 <SearchableSelect
                   options={productOptions}
                   value={currentItem.product_id}
@@ -322,33 +322,33 @@ export default function SaleReturnPage() {
                   placeholder="Select Product..."
                 />
               </div>
-              <div className="col-span-2">
+              <div className="w-full sm:w-24 flex-shrink-0">
                 <input
                   type="number"
                   placeholder="Qty"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                   value={currentItem.qty}
                   onChange={e => setCurrentItem({...currentItem, qty: e.target.value})}
                   step="0.01"
                   min="0.01"
                 />
               </div>
-              <div className="col-span-3">
+              <div className="w-full sm:w-32 flex-shrink-0">
                 <input
                   type="number"
                   placeholder="Rate (₹)"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                   value={currentItem.rate}
                   onChange={e => setCurrentItem({...currentItem, rate: e.target.value})}
                   step="0.01"
                   min="0.01"
                 />
               </div>
-              <div className="col-span-2">
+              <div className="w-full sm:w-auto flex-shrink-0">
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="w-full px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg"
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition"
                 >
                   Add
                 </button>
