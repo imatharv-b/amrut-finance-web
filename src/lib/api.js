@@ -687,10 +687,19 @@ export const api = {
           
           if (items && items.length > 0) {
             const itemsToInsert = items.map(item => ({
-              ...item,
-              sale_return_id: saleReturn.id
+              sale_return_id: saleReturn.id,
+              product_id: item.product_id,
+              qty: item.qty,
+              rate: item.rate,
+              amount: item.amount,
+              unit: item.unit
             }))
-            await supabase.from('sale_return_items').insert(itemsToInsert)
+            const { error: itemsError } = await supabase.from('sale_return_items').insert(itemsToInsert)
+            if (itemsError) {
+              // Rollback if items fail to insert
+              await supabase.from('sale_returns').delete().eq('id', saleReturn.id)
+              throw itemsError
+            }
           }
           return true
         }
@@ -711,7 +720,8 @@ export const api = {
               amount: item.amount,
               unit: item.unit
             }))
-            await supabase.from('sale_return_items').insert(itemsToInsert)
+            const { error: itemsError } = await supabase.from('sale_return_items').insert(itemsToInsert)
+            if (itemsError) throw itemsError
           }
           return true
         }
