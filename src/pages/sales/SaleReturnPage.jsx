@@ -126,10 +126,12 @@ export default function SaleReturnPage() {
     }
 
     const total_amount = formData.items.reduce((sum, item) => sum + item.amount, 0)
+    const finalSaleId = formData.sale_id === '' ? null : formData.sale_id
 
     try {
       await window.db.invoke('saleReturns:add', {
         ...formData,
+        sale_id: finalSaleId,
         season_id: activeSeason?.id,
         total_amount
       })
