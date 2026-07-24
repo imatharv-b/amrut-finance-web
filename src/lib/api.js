@@ -684,11 +684,36 @@ export const api = {
           const { items, ...rest } = returnData
           const { data: saleReturn, error } = await supabase.from('sale_returns').insert(injectCompany(rest)).select().single()
           if (error) throw error
+          
           if (items && items.length > 0) {
-            const itemsToInsert = items.map(i => ({ ...i, sale_return_id: saleReturn.id }))
+            const itemsToInsert = items.map(item => ({
+              ...item,
+              sale_return_id: saleReturn.id
+            }))
             await supabase.from('sale_return_items').insert(itemsToInsert)
           }
-          return { id: saleReturn.id, return_no: saleReturn.return_no }
+          return true
+        }
+        case 'saleReturns:update': {
+          const [id, returnData] = args
+          const { items, ...rest } = returnData
+          const { error: updateError } = await supabase.from('sale_returns').update(rest).eq('id', id)
+          if (updateError) throw updateError
+          
+          await supabase.from('sale_return_items').delete().eq('sale_return_id', id)
+          
+          if (items && items.length > 0) {
+            const itemsToInsert = items.map(item => ({
+              sale_return_id: id,
+              product_id: item.product_id,
+              qty: item.qty,
+              rate: item.rate,
+              amount: item.amount,
+              unit: item.unit
+            }))
+            await supabase.from('sale_return_items').insert(itemsToInsert)
+          }
+          return true
         }
         case 'saleReturns:getById': {
           const [id] = args

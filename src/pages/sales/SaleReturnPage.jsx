@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react'
-import { Plus, Search, FileText, Trash2, RotateCcw } from 'lucide-react'
+import { Plus, Search, FileText, Trash2, RotateCcw, Eye, Edit } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
@@ -19,7 +19,9 @@ export default function SaleReturnPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState('create') // 'create', 'edit', 'view'
   const [deleteId, setDeleteId] = useState(null)
+  const [editId, setEditId] = useState(null)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -75,9 +77,69 @@ export default function SaleReturnPage() {
         reason: '',
         items: []
       })
+      setModalMode('create')
+      setEditId(null)
       setIsModalOpen(true)
     } catch (error) {
       toast.error('Failed to generate return number')
+    }
+  }
+
+  const handleEdit = async (row) => {
+    try {
+      setLoading(true)
+      const data = await window.db.invoke('saleReturns:getById', row.id)
+      setFormData({
+        date: data.saleReturn.date,
+        party_id: data.saleReturn.party_id,
+        sale_id: data.saleReturn.sale_id || '',
+        return_no: data.saleReturn.return_no,
+        reason: data.saleReturn.reason || '',
+        items: data.items.map(item => ({
+          product_id: item.product_id,
+          product_name: item.product_name,
+          unit: item.unit,
+          qty: item.qty,
+          rate: item.rate,
+          amount: item.amount
+        }))
+      })
+      setModalMode('edit')
+      setEditId(row.id)
+      setIsModalOpen(true)
+    } catch (error) {
+      toast.error('Failed to load return details')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleView = async (row) => {
+    try {
+      setLoading(true)
+      const data = await window.db.invoke('saleReturns:getById', row.id)
+      setFormData({
+        date: data.saleReturn.date,
+        party_id: data.saleReturn.party_id,
+        sale_id: data.saleReturn.sale_id || '',
+        return_no: data.saleReturn.return_no,
+        reason: data.saleReturn.reason || '',
+        items: data.items.map(item => ({
+          product_id: item.product_id,
+          product_name: item.product_name,
+          unit: item.unit,
+          qty: item.qty,
+          rate: item.rate,
+          amount: item.amount
+        }))
+      })
+      setModalMode('view')
+      setEditId(row.id)
+      setIsModalOpen(true)
+    } catch (error) {
+      toast.error('Failed to load return details')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -129,17 +191,27 @@ export default function SaleReturnPage() {
     const finalSaleId = formData.sale_id === '' ? null : formData.sale_id
 
     try {
-      await window.db.invoke('saleReturns:add', {
-        ...formData,
-        sale_id: finalSaleId,
-        season_id: activeSeason?.id,
-        total_amount
-      })
-      toast.success('Sale return recorded successfully')
+      if (modalMode === 'edit') {
+        await window.db.invoke('saleReturns:update', [editId, {
+          ...formData,
+          sale_id: finalSaleId,
+          season_id: activeSeason?.id,
+          total_amount
+        }])
+        toast.success('Sale return updated successfully')
+      } else {
+        await window.db.invoke('saleReturns:add', {
+          ...formData,
+          sale_id: finalSaleId,
+          season_id: activeSeason?.id,
+          total_amount
+        })
+        toast.success('Sale return recorded successfully')
+      }
       setIsModalOpen(false)
       loadData()
     } catch (error) {
-      toast.error('Failed to record sale return')
+      toast.error(`Failed to ${modalMode} sale return`)
       console.error(error)
     }
   }
@@ -178,6 +250,8 @@ export default function SaleReturnPage() {
   ]
 
   const tableActions = [
+    { label: 'View', icon: Eye, onClick: (row) => handleView(row) },
+    { label: 'Edit', icon: Edit, onClick: (row) => handleEdit(row) },
     { label: 'Delete', icon: Trash2, onClick: (row) => setDeleteId(row.id), variant: 'danger' }
   ]
 
@@ -245,7 +319,7 @@ export default function SaleReturnPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Record Sale Return"
+        title={modalMode === 'create' ? 'Record Sale Return' : modalMode === 'edit' ? 'Edit Sale Return' : 'View Sale Return'}
         size="4xl"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -257,6 +331,7 @@ export default function SaleReturnPage() {
                 className="w-full px-3 py-2 border rounded-lg"
                 value={formData.date}
                 onChange={e => setFormData({...formData, date: e.target.value})}
+                disabled={modalMode === 'view'}
               />
             </FormField>
 
@@ -276,6 +351,7 @@ export default function SaleReturnPage() {
                 value={formData.party_id}
                 onChange={val => setFormData({...formData, party_id: val, sale_id: ''})}
                 placeholder="Select Party..."
+                disabled={modalMode === 'view'}
               />
             </FormField>
 
@@ -285,7 +361,7 @@ export default function SaleReturnPage() {
                 value={formData.sale_id}
                 onChange={val => setFormData({...formData, sale_id: val})}
                 placeholder={formData.party_id ? "Select Invoice..." : "Select Party first..."}
-                disabled={!formData.party_id}
+                disabled={!formData.party_id || modalMode === 'view'}
               />
             </FormField>
             
@@ -297,6 +373,7 @@ export default function SaleReturnPage() {
                   value={formData.reason}
                   onChange={e => setFormData({...formData, reason: e.target.value})}
                   placeholder="e.g., Damaged goods, Expired, etc."
+                  disabled={modalMode === 'view'}
                 />
               </FormField>
             </div>
@@ -305,47 +382,49 @@ export default function SaleReturnPage() {
           {/* Add Items Section */}
           <div className="border rounded-lg p-4 bg-gray-50">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Returned Items</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px_120px_auto] gap-2 mb-3 items-end">
-              <div className="min-w-0">
-                <SearchableSelect
-                  options={productOptions}
-                  value={currentItem.product_id}
-                  onChange={val => setCurrentItem({...currentItem, product_id: val})}
-                  placeholder="Select Product..."
-                />
+            {modalMode !== 'view' && (
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px_120px_auto] gap-2 mb-3 items-end">
+                <div className="min-w-0">
+                  <SearchableSelect
+                    options={productOptions}
+                    value={currentItem.product_id}
+                    onChange={val => setCurrentItem({...currentItem, product_id: val})}
+                    placeholder="Select Product..."
+                  />
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    placeholder="Qty"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    value={currentItem.qty}
+                    onChange={e => setCurrentItem({...currentItem, qty: e.target.value})}
+                    step="0.01"
+                    min="0.01"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="number"
+                    placeholder="Rate (₹)"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    value={currentItem.rate}
+                    onChange={e => setCurrentItem({...currentItem, rate: e.target.value})}
+                    step="0.01"
+                    min="0.01"
+                  />
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleAddItem}
+                    className="w-full px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
-              <div>
-                <input
-                  type="number"
-                  placeholder="Qty"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                  value={currentItem.qty}
-                  onChange={e => setCurrentItem({...currentItem, qty: e.target.value})}
-                  step="0.01"
-                  min="0.01"
-                />
-              </div>
-              <div>
-                <input
-                  type="number"
-                  placeholder="Rate (₹)"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                  value={currentItem.rate}
-                  onChange={e => setCurrentItem({...currentItem, rate: e.target.value})}
-                  step="0.01"
-                  min="0.01"
-                />
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={handleAddItem}
-                  className="w-full px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition"
-                >
-                  Add
-                </button>
-              </div>
-            </div>
+            )}
 
             {formData.items.length > 0 && (
               <table className="w-full text-sm mt-4 bg-white border rounded">
@@ -366,13 +445,15 @@ export default function SaleReturnPage() {
                       <td className="text-right py-2 px-3">₹{item.rate.toFixed(2)}</td>
                       <td className="text-right font-medium py-2 px-3">₹{item.amount.toFixed(2)}</td>
                       <td className="text-right py-2 px-3">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(idx)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {modalMode !== 'view' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(idx)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -394,14 +475,16 @@ export default function SaleReturnPage() {
               onClick={() => setIsModalOpen(false)}
               className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
             >
-              Cancel
+              {modalMode === 'view' ? 'Close' : 'Cancel'}
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
-            >
-              Save Return
-            </button>
+            {modalMode !== 'view' && (
+              <button
+                type="submit"
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
+              >
+                {modalMode === 'edit' ? 'Update Return' : 'Save Return'}
+              </button>
+            )}
           </div>
         </form>
       </Modal>
