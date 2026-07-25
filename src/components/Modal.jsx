@@ -5,7 +5,11 @@ const sizeClasses = {
   sm: 'max-w-[400px]',
   md: 'max-w-[500px]',
   lg: 'max-w-[700px]',
-  xl: 'max-w-[900px]'
+  xl: 'max-w-[900px]',
+  '2xl': 'max-w-[1024px]',
+  '3xl': 'max-w-[1152px]',
+  '4xl': 'max-w-[1280px]',
+  '5xl': 'max-w-[1536px]'
 }
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }) {
