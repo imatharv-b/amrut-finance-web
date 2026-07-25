@@ -337,7 +337,7 @@ export default function SaleReturnPage() {
                 <input
                   type="date"
                   required
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none transition-colors"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none transition-colors"
                   value={formData.date}
                   onChange={e => setFormData({...formData, date: e.target.value})}
                   disabled={modalMode === 'view'}
@@ -348,7 +348,7 @@ export default function SaleReturnPage() {
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg font-bold outline-none"
+                  className="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg font-bold outline-none"
                   value={formData.return_no || ''}
                   readOnly
                 />
@@ -378,7 +378,7 @@ export default function SaleReturnPage() {
                 <FormField label="Reason for Return">
                   <input
                     type="text"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none transition-colors"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none transition-colors"
                     value={formData.reason}
                     onChange={e => setFormData({...formData, reason: e.target.value})}
                     placeholder="e.g., Damaged goods, Expired, Wrong item delivered..."
@@ -395,8 +395,8 @@ export default function SaleReturnPage() {
               <Package size={16} className="text-slate-500" /> Returned Items
             </h3>
             {modalMode !== 'view' && (
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px_120px_auto] gap-2 mb-3 items-end">
-                <div className="min-w-0">
+              <div className="flex flex-col sm:flex-row gap-3 mb-4 items-end">
+                <div className="flex-1 w-full">
                   <SearchableSelect
                     options={productOptions}
                     value={currentItem.product_id}
@@ -404,7 +404,7 @@ export default function SaleReturnPage() {
                     placeholder="Select Product..."
                   />
                 </div>
-                <div>
+                <div className="w-full sm:w-28">
                   <input
                     type="number"
                     placeholder="Qty"
@@ -415,7 +415,7 @@ export default function SaleReturnPage() {
                     min="0.01"
                   />
                 </div>
-                <div>
+                <div className="w-full sm:w-32">
                   <input
                     type="number"
                     placeholder="Rate (₹)"
@@ -426,7 +426,7 @@ export default function SaleReturnPage() {
                     min="0.01"
                   />
                 </div>
-                <div>
+                <div className="w-full sm:w-auto mt-2 sm:mt-0">
                   <button
                     type="button"
                     onClick={handleAddItem}
