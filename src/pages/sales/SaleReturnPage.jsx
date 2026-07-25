@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react'
-import { Plus, Search, FileText, Trash2, RotateCcw, Eye, Edit } from 'lucide-react'
+import { Plus, Search, FileText, Trash2, RotateCcw, Eye, Edit, Package, FileWarning, RefreshCw, Box } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
@@ -192,12 +192,12 @@ export default function SaleReturnPage() {
 
     try {
       if (modalMode === 'edit') {
-        await window.db.invoke('saleReturns:update', [editId, {
+        await window.db.invoke('saleReturns:update', editId, {
           ...formData,
           sale_id: finalSaleId,
           season_id: activeSeason?.id,
           total_amount
-        }])
+        })
         toast.success('Sale return updated successfully')
       } else {
         await window.db.invoke('saleReturns:add', {
@@ -319,69 +319,81 @@ export default function SaleReturnPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === 'create' ? 'Record Sale Return' : modalMode === 'edit' ? 'Edit Sale Return' : 'View Sale Return'}
+        title={
+          <div className="flex items-center gap-2 text-primary-900">
+            {modalMode === 'create' ? <RotateCcw size={24} className="text-primary-600" /> : modalMode === 'edit' ? <Edit size={24} className="text-primary-600" /> : <Eye size={24} className="text-primary-600" />}
+            <span>{modalMode === 'create' ? 'Record Sale Return' : modalMode === 'edit' ? 'Edit Sale Return' : 'View Sale Return'}</span>
+          </div>
+        }
         size="4xl"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Date" required>
-              <input
-                type="date"
-                required
-                className="w-full px-3 py-2 border rounded-lg"
-                value={formData.date}
-                onChange={e => setFormData({...formData, date: e.target.value})}
-                disabled={modalMode === 'view'}
-              />
-            </FormField>
-
-            <FormField label="Return No." required>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border rounded-lg bg-gray-50 font-medium"
-                value={formData.return_no || ''}
-                readOnly
-              />
-            </FormField>
-
-            <FormField label="Party" required>
-              <SearchableSelect
-                options={partyOptions}
-                value={formData.party_id}
-                onChange={val => setFormData({...formData, party_id: val, sale_id: ''})}
-                placeholder="Select Party..."
-                disabled={modalMode === 'view'}
-              />
-            </FormField>
-
-            <FormField label="Original Invoice (Optional)">
-              <SearchableSelect
-                options={saleOptions}
-                value={formData.sale_id}
-                onChange={val => setFormData({...formData, sale_id: val})}
-                placeholder={formData.party_id ? "Select Invoice..." : "Select Party first..."}
-                disabled={!formData.party_id || modalMode === 'view'}
-              />
-            </FormField>
-            
-            <div className="col-span-2">
-              <FormField label="Reason for Return">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+              <FileWarning size={16} className="text-slate-500" /> Return Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <FormField label="Date" required>
                 <input
-                  type="text"
-                  className="w-full px-3 py-2 border rounded-lg"
-                  value={formData.reason}
-                  onChange={e => setFormData({...formData, reason: e.target.value})}
-                  placeholder="e.g., Damaged goods, Expired, etc."
+                  type="date"
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none transition-colors"
+                  value={formData.date}
+                  onChange={e => setFormData({...formData, date: e.target.value})}
                   disabled={modalMode === 'view'}
                 />
               </FormField>
+
+              <FormField label="Return No." required>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg font-bold outline-none"
+                  value={formData.return_no || ''}
+                  readOnly
+                />
+              </FormField>
+
+              <FormField label="Party" required>
+                <SearchableSelect
+                  options={partyOptions}
+                  value={formData.party_id}
+                  onChange={val => setFormData({...formData, party_id: val, sale_id: ''})}
+                  placeholder="Select Party..."
+                  disabled={modalMode === 'view'}
+                />
+              </FormField>
+
+              <FormField label="Original Invoice (Optional)">
+                <SearchableSelect
+                  options={saleOptions}
+                  value={formData.sale_id}
+                  onChange={val => setFormData({...formData, sale_id: val})}
+                  placeholder={formData.party_id ? "Select Invoice..." : "Select Party first..."}
+                  disabled={!formData.party_id || modalMode === 'view'}
+                />
+              </FormField>
+              
+              <div className="col-span-1 md:col-span-2">
+                <FormField label="Reason for Return">
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none transition-colors"
+                    value={formData.reason}
+                    onChange={e => setFormData({...formData, reason: e.target.value})}
+                    placeholder="e.g., Damaged goods, Expired, Wrong item delivered..."
+                    disabled={modalMode === 'view'}
+                  />
+                </FormField>
+              </div>
             </div>
           </div>
 
           {/* Add Items Section */}
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Returned Items</h3>
+          <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 shadow-inner">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 mb-4 pb-3 border-b border-slate-200">
+              <Package size={16} className="text-slate-500" /> Returned Items
+            </h3>
             {modalMode !== 'view' && (
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px_120px_auto] gap-2 mb-3 items-end">
                 <div className="min-w-0">
@@ -396,7 +408,7 @@ export default function SaleReturnPage() {
                   <input
                     type="number"
                     placeholder="Qty"
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     value={currentItem.qty}
                     onChange={e => setCurrentItem({...currentItem, qty: e.target.value})}
                     step="0.01"
@@ -407,7 +419,7 @@ export default function SaleReturnPage() {
                   <input
                     type="number"
                     placeholder="Rate (₹)"
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     value={currentItem.rate}
                     onChange={e => setCurrentItem({...currentItem, rate: e.target.value})}
                     step="0.01"
@@ -418,71 +430,87 @@ export default function SaleReturnPage() {
                   <button
                     type="button"
                     onClick={handleAddItem}
-                    className="w-full px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition"
+                    className="w-full px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold shadow-md transition-colors flex items-center justify-center gap-2"
                   >
-                    Add
+                    <Plus size={18} /> Add
                   </button>
                 </div>
               </div>
             )}
 
-            {formData.items.length > 0 && (
-              <table className="w-full text-sm mt-4 bg-white border rounded">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="text-left py-2 px-3">Product</th>
-                    <th className="text-right py-2 px-3">Qty</th>
-                    <th className="text-right py-2 px-3">Rate</th>
-                    <th className="text-right py-2 px-3">Amount</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.items.map((item, idx) => (
-                    <tr key={idx} className="border-t">
-                      <td className="py-2 px-3">{item.product_name}</td>
-                      <td className="text-right py-2 px-3">{item.qty} {item.unit}</td>
-                      <td className="text-right py-2 px-3">₹{item.rate.toFixed(2)}</td>
-                      <td className="text-right font-medium py-2 px-3">₹{item.amount.toFixed(2)}</td>
-                      <td className="text-right py-2 px-3">
-                        {modalMode !== 'view' && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(idx)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </td>
+            {formData.items.length > 0 ? (
+              <div className="overflow-hidden border border-slate-200 rounded-xl mt-5 shadow-sm bg-white">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-100 text-slate-600 font-semibold uppercase text-xs">
+                    <tr>
+                      <th className="py-3 px-4">Product</th>
+                      <th className="text-right py-3 px-4">Qty</th>
+                      <th className="text-right py-3 px-4">Rate</th>
+                      <th className="text-right py-3 px-4">Amount</th>
+                      <th></th>
                     </tr>
-                  ))}
-                  <tr className="border-t-2 font-bold bg-gray-50">
-                    <td colSpan="3" className="text-right py-3 px-3">Total Return Amount:</td>
-                    <td className="text-right py-3 px-3 text-lg text-primary-700">
-                      ₹{formData.items.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
-                    </td>
-                    <td></td>
-                  </tr>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {formData.items.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-4 font-medium text-slate-800">
+                          <div className="flex items-center gap-2">
+                            <Box size={14} className="text-primary-500" />
+                            {item.product_name}
+                          </div>
+                        </td>
+                        <td className="text-right py-3 px-4 text-slate-600">{item.qty} <span className="text-xs text-slate-400">{item.unit}</span></td>
+                        <td className="text-right py-3 px-4 text-slate-600">₹{item.rate.toFixed(2)}</td>
+                        <td className="text-right py-3 px-4 font-bold text-slate-800">₹{item.amount.toFixed(2)}</td>
+                        <td className="text-right py-3 px-4">
+                          {modalMode !== 'view' && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors"
+                              title="Remove Item"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50 border-t border-slate-200">
+                    <tr>
+                      <td colSpan="3" className="text-right py-4 px-4 font-bold text-slate-600 uppercase text-xs tracking-wider">Total Return Amount:</td>
+                      <td className="text-right py-4 px-4 text-lg font-black text-primary-700">
+                        ₹{formData.items.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-300 mt-4">
+                <Package size={32} className="mx-auto text-slate-300 mb-2" />
+                <p className="text-slate-500 font-medium">No items added to this return yet.</p>
+                <p className="text-slate-400 text-sm mt-1">Select a product and add quantity to begin.</p>
+              </div>
             )}
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
+              className="px-5 py-2.5 text-slate-700 hover:bg-slate-100 rounded-lg font-bold transition-colors"
             >
               {modalMode === 'view' ? 'Close' : 'Cancel'}
             </button>
             {modalMode !== 'view' && (
               <button
                 type="submit"
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
+                className="px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-bold shadow-lg shadow-primary-500/30 transition-all flex items-center gap-2"
               >
-                {modalMode === 'edit' ? 'Update Return' : 'Save Return'}
+                {modalMode === 'edit' ? <><RefreshCw size={18} /> Update Return</> : <><Plus size={18} /> Save Return</>}
               </button>
             )}
           </div>
