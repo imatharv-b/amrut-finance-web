@@ -337,7 +337,7 @@ export default function PartiesPage() {
     }
   ];
 
-  const actions = userRole === 'admin' ? [
+  const actions = (userRole === 'admin' || userRole === 'accountant') ? [
     { label: 'Edit', icon: Edit, onClick: openModal },
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ] : [];
@@ -359,7 +359,7 @@ export default function PartiesPage() {
             accept=".csv"
             className="hidden"
           />
-          {userRole === 'admin' && (
+          {(userRole === 'admin' || userRole === 'accountant') && (
             <>
               <button
                 onClick={handleExportCSV}
