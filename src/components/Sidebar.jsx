@@ -87,13 +87,13 @@ const NAVIGATION = [
   {
     label: 'Workers',
     icon: Briefcase,
-    roles: ['admin', 'data_entry'],
+    roles: ['admin', 'data_entry', 'finance_manager'],
     children: [
-      { label: 'All Workers', icon: Users, path: '/workers/all', roles: ['admin', 'data_entry'] },
-      { label: 'Attendance', icon: Calendar, path: '/workers/attendance', roles: ['admin', 'data_entry'] },
-      { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger', roles: ['admin', 'data_entry'] },
-      { label: 'Wage Register', icon: FileText, path: '/workers/summary', roles: ['admin', 'data_entry'] },
-      { label: 'Monthly Salary', icon: CalendarDays, path: '/workers/monthly-salary', roles: ['admin'] }
+      { label: 'All Workers', icon: Users, path: '/workers/all', roles: ['admin', 'data_entry', 'finance_manager'] },
+      { label: 'Attendance', icon: Calendar, path: '/workers/attendance', roles: ['admin', 'data_entry', 'finance_manager'] },
+      { label: 'Worker Ledger', icon: BookOpen, path: '/workers/ledger', roles: ['admin', 'data_entry', 'finance_manager'] },
+      { label: 'Wage Register', icon: FileText, path: '/workers/summary', roles: ['admin', 'data_entry', 'finance_manager'] },
+      { label: 'Monthly Salary', icon: CalendarDays, path: '/workers/monthly-salary', roles: ['admin', 'finance_manager'] }
     ]
   },
   {

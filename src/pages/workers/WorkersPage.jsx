@@ -3,8 +3,12 @@ import { Briefcase, PlusCircle, Search, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
+import { useCompany } from '../../context/CompanyContext';
 
 export default function WorkersPage() {
+  const { userRole } = useCompany();
+  const canManageWorkers = ['admin', 'data_entry', 'finance_manager'].includes(userRole);
+  
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -101,8 +105,11 @@ export default function WorkersPage() {
     )},
     { key: 'salary_amount', label: 'Ledger Rate', render: (val) => <span className="font-medium text-emerald-600">{formatCurrency(val)}</span> },
     { key: 'taking_salary', label: 'Taking Salary', render: (val) => <span className="font-medium text-blue-600">{formatCurrency(val)}</span> },
-    { key: 'opening_balance', label: 'Opening Bal.', render: (val) => <span className="text-slate-600">{formatCurrency(val)}</span> },
-    {
+    { key: 'opening_balance', label: 'Opening Bal.', render: (val) => <span className="text-slate-600">{formatCurrency(val)}</span> }
+  ];
+
+  if (canManageWorkers) {
+    columns.push({
       key: 'actions',
       label: 'Actions',
       render: (_, worker) => (
@@ -114,8 +121,8 @@ export default function WorkersPage() {
           <Edit2 className="w-4 h-4" />
         </button>
       )
-    }
-  ];
+    });
+  }
 
   return (
     <div className="p-6 h-full flex flex-col items-center">
@@ -130,21 +137,23 @@ export default function WorkersPage() {
               <p className="text-slate-500">Manage worker profiles and salary structures</p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              if (isAdding) {
-                setIsAdding(false);
-                setEditingId(null);
-                setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0', opening_balance_date: '' });
-              } else {
-                setIsAdding(true);
-              }
-            }}
-            className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center"
-          >
-            <PlusCircle className="w-4 h-4 mr-2" />
-            {isAdding ? 'Cancel' : 'Add New Worker'}
-          </button>
+          {canManageWorkers && (
+            <button
+              onClick={() => {
+                if (isAdding) {
+                  setIsAdding(false);
+                  setEditingId(null);
+                  setFormData({ name: '', phone: '', salary_type: 'Daily', salary_amount: '', taking_salary: '', opening_balance: '0', opening_balance_date: '' });
+                } else {
+                  setIsAdding(true);
+                }
+              }}
+              className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center"
+            >
+              <PlusCircle className="w-4 h-4 mr-2" />
+              {isAdding ? 'Cancel' : 'Add New Worker'}
+            </button>
+          )}
         </div>
 
         {isAdding && (
