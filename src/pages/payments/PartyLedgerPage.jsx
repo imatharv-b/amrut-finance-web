@@ -145,35 +145,9 @@ export default function PartyLedgerPage() {
   };
 
   return (
-    <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 flex flex-col p-2 sm:p-4 overflow-hidden" : "p-6 h-full flex flex-col"}>
-      <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 ${isFullscreen ? 'hidden' : ''}`}>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Party Ledger</h1>
-          <p className="text-slate-500">View statement of account for a specific party</p>
-        </div>
-        {ledgerData && (
-          <div className="flex gap-3">
-            <button
-              onClick={handleWhatsApp}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition flex items-center shadow-sm"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              WhatsApp (JPG)
-            </button>
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center shadow-sm"
-            >
-              <Printer className="w-4 h-4 mr-2" />
-              Print
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap items-end gap-4">
-        <div className="flex-1 min-w-[200px] max-w-md">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Select Party</label>
+    <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 flex flex-col overflow-hidden" : "h-full flex flex-col overflow-hidden"}>
+      <div className={`bg-white border-b border-slate-200 px-3 py-2 sm:px-4 sm:py-2.5 flex flex-wrap gap-2 sm:gap-3 items-center shrink-0 z-20 ${isFullscreen ? 'hidden' : ''}`}>
+        <div className="w-[250px] sm:w-[300px]">
           <SearchableSelect
             options={parties}
             value={selectedPartyId}
@@ -181,27 +155,47 @@ export default function PartyLedgerPage() {
             placeholder="Search and select party..."
           />
         </div>
-        <div className="w-40">
-          <label className="block text-sm font-medium text-slate-700 mb-1">From Date</label>
+        
+        <div className="flex items-center gap-2">
           <input
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+            className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-[130px]"
+            placeholder="From"
           />
-        </div>
-        <div className="w-40">
-          <label className="block text-sm font-medium text-slate-700 mb-1">To Date</label>
+          <span className="text-slate-400 text-sm">to</span>
           <input
             type="date"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+            className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-[130px]"
+            placeholder="To"
           />
         </div>
+
+        {ledgerData && (
+          <div className="flex gap-2 ml-auto">
+            <button
+              onClick={handleWhatsApp}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition flex items-center shadow-sm"
+              title="Share via WhatsApp"
+            >
+              <Share2 className="w-4 h-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">WhatsApp (JPG)</span>
+            </button>
+            <button
+              onClick={handlePrint}
+              className="px-3 py-1.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-sm font-medium transition flex items-center shadow-sm"
+            >
+              <Printer className="w-4 h-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Print</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className={`flex-1 bg-white shadow-sm border border-slate-200 overflow-hidden flex flex-col ${isFullscreen ? 'rounded-lg' : 'rounded-xl'}`}>
+      <div className={`flex-1 bg-white overflow-hidden flex flex-col ${isFullscreen ? '' : 'border-t-0'}`}>
         {!selectedPartyId ? (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-500">
             <BookOpen className="w-12 h-12 mb-4 text-slate-300" />
