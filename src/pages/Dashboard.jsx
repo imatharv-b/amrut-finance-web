@@ -150,7 +150,6 @@ export default function Dashboard() {
     { title: 'Total Sales', value: formatCurrency(stats.totalSales), icon: IndianRupee, color: 'green', onClick: () => setActiveModal('sales') },
     { title: 'Total Expenses', value: formatCurrency(stats.totalExpenses), icon: Receipt, color: 'red', onClick: () => setActiveModal('expenses') },
     { title: 'Total Receipts', value: formatCurrency(stats.totalReceipts), icon: Wallet, color: 'blue', onClick: () => setActiveModal('receipts') },
-    { title: 'Net Balance', value: formatCurrency(stats.netBalance), icon: TrendingUp, color: 'purple', onClick: null }, // Net balance is a computed stat, no specific list
     { title: 'Outstanding', value: formatCurrency(stats.totalReceivables), icon: AlertCircle, color: 'amber', onClick: () => setActiveModal('outstanding') },
     { title: 'Coupons Issued', value: stats.couponsIssued?.toString() || '0', icon: Ticket, color: 'green', onClick: () => setActiveModal('coupons') },
   ]
