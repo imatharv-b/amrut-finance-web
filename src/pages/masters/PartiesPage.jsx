@@ -337,7 +337,9 @@ export default function PartiesPage() {
     }
   ];
 
-  const actions = (userRole === 'admin' || userRole === 'accountant') ? [
+  const canManageParties = ['admin', 'accountant', 'data_entry', 'finance_manager'].includes(userRole);
+
+  const actions = canManageParties ? [
     { label: 'Edit', icon: Edit, onClick: openModal },
     { label: 'Delete', icon: Trash2, onClick: confirmDelete, variant: 'danger' }
   ] : [];
@@ -349,7 +351,7 @@ export default function PartiesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Parties</h1>
-          <p className="text-slate-500">Total Parties: {parties.length}{userRole !== 'salesman' && <> | Total Outstanding: <span className="text-red-600 font-semibold">₹{totalOutstanding.toFixed(2)}</span></>}</p>
+          <p className="text-slate-500">Total Parties: {parties.length}{userRole === 'admin' && <> | Total Outstanding: <span className="text-red-600 font-semibold">₹{totalOutstanding.toFixed(2)}</span></>}</p>
         </div>
         <div className="flex gap-2">
           <input
@@ -359,7 +361,7 @@ export default function PartiesPage() {
             accept=".csv"
             className="hidden"
           />
-          {(userRole === 'admin' || userRole === 'accountant') && (
+          {canManageParties && (
             <>
               <button
                 onClick={handleExportCSV}
