@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileBarChart2, Search, Printer, Download, ChevronDown, ChevronRight, Gift, Tag, TrendingUp, Target, Package, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -149,135 +149,113 @@ export default function ReportsPage() {
   const selectedSeasonObj = seasons.find(s => s.id === Number(selectedSeason));
 
   return (
-    <div className="p-6 h-full flex flex-col">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Reports</h1>
-          <p className="text-slate-500">View and print various analytics reports</p>
-        </div>
-      </div>
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Compact sticky toolbar */}
+      <div className="bg-white border-b border-slate-200 px-3 py-2 sm:px-4 sm:py-2.5 flex flex-wrap gap-2 sm:gap-3 items-center shrink-0 z-20">
+        <select
+          value={reportType}
+          onChange={(e) => {
+            setReportType(e.target.value);
+            setReportData(null);
+          }}
+          className="px-2.5 py-1.5 sm:px-3 sm:py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-primary-500 outline-none"
+        >
+          <option value="outstanding">Outstanding</option>
+          <option value="expense">Expenses</option>
+          <option value="coupon">Coupon Analytics</option>
+          <option value="batch_manufacturing">Batch Mfg.</option>
+          <option value="party_schemes">Party Schemes</option>
+        </select>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-end">
-        <div className="w-48">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Report Type</label>
-          <select
-            value={reportType}
-            onChange={(e) => {
-              setReportType(e.target.value);
-              setReportData(null);
-            }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-          >
-            <option value="outstanding">Outstanding Report</option>
-            <option value="expense">Expense Report</option>
-            <option value="coupon">Coupon Analytics</option>
-            <option value="batch_manufacturing">Batch Manufacturing Record</option>
-            <option value="party_schemes">Party Scheme Ledger</option>
-          </select>
-        </div>
-        <div className="w-48">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Season</label>
-          <select
-            value={selectedSeason}
-            onChange={(e) => setSelectedSeason(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-          >
-            {seasons.map(s => (
-              <option key={s.id} value={s.id}>{s.name} ({s.start_date} to {s.end_date})</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={selectedSeason}
+          onChange={(e) => setSelectedSeason(e.target.value)}
+          className="px-2.5 py-1.5 sm:px-3 sm:py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none max-w-[180px]"
+        >
+          {seasons.map(s => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
 
         {reportType === 'batch_manufacturing' && (
-          <div className="w-64">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
-            <select
-              value={selectedProduct}
-              onChange={e => setSelectedProduct(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-            >
-              <option value="">Select a product...</option>
-              {products.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={selectedProduct}
+            onChange={e => setSelectedProduct(e.target.value)}
+            className="px-2.5 py-1.5 sm:px-3 sm:py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none max-w-[180px]"
+          >
+            <option value="">Select Product...</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
         )}
 
         {reportType === 'party_schemes' && (
-          <div className="w-64">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Party / Krishi Kendra</label>
-            <select
-              value={selectedParty}
-              onChange={e => setSelectedParty(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-            >
-              <option value="">Select a party...</option>
-              {parties.map(p => (
-                <option key={p.id} value={p.id}>{p.name} {p.village ? `(${p.village})` : ''}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={selectedParty}
+            onChange={e => setSelectedParty(e.target.value)}
+            className="px-2.5 py-1.5 sm:px-3 sm:py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none max-w-[180px]"
+          >
+            <option value="">Select Party...</option>
+            {parties.map(p => (
+              <option key={p.id} value={p.id}>{p.name} {p.village ? `(${p.village})` : ''}</option>
+            ))}
+          </select>
         )}
 
         {(reportType === 'expense' || reportType === 'batch_manufacturing') && (
           <>
-            <div className="w-32">
-              <label className="block text-sm font-medium text-slate-700 mb-1">From Date</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={e => setFromDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              />
-            </div>
-            <div className="w-32">
-              <label className="block text-sm font-medium text-slate-700 mb-1">To Date</label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={e => setToDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-              />
-            </div>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={e => setFromDate(e.target.value)}
+              className="px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-[130px]"
+              placeholder="From"
+            />
+            <input
+              type="date"
+              value={toDate}
+              onChange={e => setToDate(e.target.value)}
+              className="px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-[130px]"
+              placeholder="To"
+            />
           </>
         )}
         {reportType === 'expense' && (
-            <div className="w-48">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Expense Type</label>
-              <select
-                value={selectedExpenseType}
-                onChange={e => setSelectedExpenseType(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-              >
-                <option value="">All Expenses</option>
-                {expenseTypes.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </div>
+          <select
+            value={selectedExpenseType}
+            onChange={e => setSelectedExpenseType(e.target.value)}
+            className="px-2.5 py-1.5 sm:px-3 sm:py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none max-w-[160px]"
+          >
+            <option value="">All Expenses</option>
+            {expenseTypes.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
         )}
+
         <button
           onClick={generateReport}
           disabled={loading || (reportType !== 'batch_manufacturing' && reportType !== 'party_schemes' && !selectedSeason)}
-          className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition flex items-center disabled:opacity-50"
+          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-sm font-medium transition flex items-center disabled:opacity-50"
         >
-          <Search className="w-4 h-4 mr-2" />
+          <Search className="w-3.5 h-3.5 mr-1.5" />
           Generate
         </button>
         
         {reportData && (
           <button
-            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg font-medium transition flex items-center ml-auto"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium transition flex items-center ml-auto"
             onClick={() => window.print()}
           >
-            <Printer className="w-4 h-4 mr-2" />
-            Print Report
+            <Printer className="w-3.5 h-3.5 mr-1.5" />
+            Print
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-hidden bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col print-area print:overflow-visible print:h-auto print:border-none print:shadow-none">
+      {/* Full-height report content */}
+      <div className="flex-1 overflow-auto bg-white border-t-0 print-area print:overflow-visible print:h-auto">
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center p-12">
             <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-4"></div>
@@ -286,7 +264,7 @@ export default function ReportsPage() {
         ) : !reportData ? (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-500">
             <FileBarChart2 className="w-12 h-12 mb-4 text-slate-300" />
-            <p className="text-lg">Select a season and click Generate</p>
+            <p className="text-lg">Select report type and click Generate</p>
           </div>
         ) : (
           <>
