@@ -7,6 +7,7 @@ import FormField from '../../components/FormField'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { SeasonContext } from '../../context/SeasonContext'
 import { useCompany } from '../../context/CompanyContext'
+import * as XLSX from 'xlsx'
 
 const UNITS = ['Bottle', 'Ltr', 'Kg', 'Box', 'Jar', 'Bag', 'Pouch', 'Pcs', 'Can', 'Drum', 'Bucket']
 const CATEGORIES = ['Fertilizer', 'Pesticide', 'Biostimulant']
@@ -76,6 +77,27 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
+
+  const handleExportBusy = () => {
+    const rows = products.map(p => ({
+      'ItemName': (p.name || '').trim().toUpperCase(),
+      'ParentGroup': 'General',
+      'Unit': p.unit || '',
+      'SaleTaxCategory': 'GST 5%',
+      'GSTRate': 5
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const colWidths = Object.keys(rows[0] || {}).map(key => ({
+      wch: Math.max(key.length, ...rows.map(r => String(r[key] || '').length)) + 2
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Items');
+    XLSX.writeFile(wb, `Busy_Export_Items.xlsx`);
+    toast.success('Exported Items to Busy format successfully!');
+  };
 
   const fetchBatches = useCallback(async (productId) => {
     try {
@@ -416,15 +438,24 @@ export default function ProductsPage() {
             {products.length} product{products.length !== 1 ? 's' : ''} registered
           </p>
         </div>
-        {userRole !== 'data_entry' && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={openAddModal}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition"
+            onClick={handleExportBusy}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
           >
-            <Plus size={18} />
-            Add Product
+            <Layers size={18} />
+            Export to Busy
           </button>
-        )}
+          {userRole !== 'data_entry' && (
+            <button
+              onClick={openAddModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg font-medium transition"
+            >
+              <Plus size={18} />
+              Add Product
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Data Table */}

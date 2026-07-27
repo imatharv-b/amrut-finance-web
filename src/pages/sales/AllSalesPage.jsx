@@ -147,57 +147,64 @@ export default function AllSalesPage() {
       const rows = [];
       for (const sale of filteredSales) {
         const details = await window.db.invoke('sales:getById', sale.id);
-        const isPakka = sale.sale_type === 'pakka';
         const items = details.items || [];
-        
-        // Calculate tax amounts for the whole invoice
-        const grossTotal = Number(sale.total_amount || 0) + Number(sale.discount || 0);
-        const cgstPct = isPakka ? Number(sale.cgst_percent || 0) : 0;
-        const sgstPct = isPakka ? Number(sale.sgst_percent || 0) : 0;
-        const taxableBasis = isPakka ? grossTotal / (1 + (cgstPct + sgstPct) / 100) : grossTotal;
-        
-        if (items.length === 0) {
-          // Sale with no items — export as single row
+        if (items.length === 0) continue; // Skip empty sales
+
+        const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const billDiscount = Number(sale.discount || 0);
+
+        // Pre-calculate line totals for the BillAmount
+        let billAmount = 0;
+        const processedItems = items.map(item => {
+          const qty = Number(item.qty || 0);
+          const rate = Number(item.rate || 0);
+          const amount = qty * rate; // using exact Qty * Rate as per prompt
+          
+          let lineDiscount = 0;
+          if (subtotal > 0) {
+             lineDiscount = (amount / subtotal) * billDiscount;
+          }
+          
+          const taxable = amount - lineDiscount;
+          const cgstAmount = Math.round(taxable * 0.025 * 100) / 100;
+          const sgstAmount = Math.round(taxable * 0.025 * 100) / 100;
+          const lineTotal = taxable + cgstAmount + sgstAmount;
+          billAmount += lineTotal;
+
+          return {
+            qty, rate, amount, lineDiscount, cgstAmount, sgstAmount, lineTotal, itemName: item.product_name || '', unit: item.unit || ''
+          };
+        });
+
+        // Add rows
+        for (const item of processedItems) {
+          // Format date as DD-MM-YYYY
+          let vchDate = sale.date;
+          if (vchDate && vchDate.includes('-')) {
+             const [y, m, d] = vchDate.split('-');
+             if (y.length === 4) vchDate = `${d}-${m}-${y}`;
+          }
+
           rows.push({
-            'Vch Date': sale.date,
-            'Vch No': sale.invoice_no,
-            'Vch Type': isPakka ? 'Tax Invoice' : 'Pro Forma',
-            'Party Name': sale.party_name || '',
-            'Item Name': '',
-            'Quantity': '',
-            'Unit': '',
-            'Rate': '',
-            'Amount': Number(taxableBasis).toFixed(2),
-            'Discount': Number(sale.discount || 0).toFixed(2),
-            'CGST %': cgstPct,
-            'CGST Amount': isPakka ? (taxableBasis * cgstPct / 100).toFixed(2) : '0.00',
-            'SGST %': sgstPct,
-            'SGST Amount': isPakka ? (taxableBasis * sgstPct / 100).toFixed(2) : '0.00',
-            'Total Amount': Number(sale.total_amount || 0).toFixed(2),
-            'Amount Paid': Number(sale.amount_paid || 0).toFixed(2),
-            'Associate': sale.associate_name || '',
-          });
-        } else {
-          items.forEach((item, idx) => {
-            rows.push({
-              'Vch Date': idx === 0 ? sale.date : '',
-              'Vch No': idx === 0 ? sale.invoice_no : '',
-              'Vch Type': idx === 0 ? (isPakka ? 'Tax Invoice' : 'Pro Forma') : '',
-              'Party Name': idx === 0 ? (sale.party_name || '') : '',
-              'Item Name': item.product_name || '',
-              'Quantity': Number(item.qty || 0),
-              'Unit': item.unit || '',
-              'Rate': Number(item.rate || 0).toFixed(2),
-              'Amount': Number(item.amount || 0).toFixed(2),
-              'Discount': idx === 0 ? Number(sale.discount || 0).toFixed(2) : '',
-              'CGST %': idx === 0 ? cgstPct : '',
-              'CGST Amount': idx === 0 ? (isPakka ? (taxableBasis * cgstPct / 100).toFixed(2) : '0.00') : '',
-              'SGST %': idx === 0 ? sgstPct : '',
-              'SGST Amount': idx === 0 ? (isPakka ? (taxableBasis * sgstPct / 100).toFixed(2) : '0.00') : '',
-              'Total Amount': idx === 0 ? Number(sale.total_amount || 0).toFixed(2) : '',
-              'Amount Paid': idx === 0 ? Number(sale.amount_paid || 0).toFixed(2) : '',
-              'Associate': idx === 0 ? (sale.associate_name || '') : '',
-            });
+            'VchDate': vchDate,
+            'VchNo': sale.invoice_no || '',
+            'VchType': 'Sale',
+            'VchSeries': 'MAIN',
+            'PartyName': (sale.party_name || '').trim().toUpperCase(),
+            'SaleType': 'Local Sale @5%',
+            'ItemName': (item.itemName).trim().toUpperCase(),
+            'Quantity': item.qty,
+            'Unit': item.unit,
+            'Rate': item.rate,
+            'Amount': item.amount,
+            'Discount': item.lineDiscount,
+            'CGST %': 2.5,
+            'CGST Amount': item.cgstAmount,
+            'SGST %': 2.5,
+            'SGST Amount': item.sgstAmount,
+            'LineTotal': item.lineTotal,
+            'BillAmount': billAmount,
+            'Associate': sale.associate_name || ''
           });
         }
       }
@@ -212,8 +219,7 @@ export default function AllSalesPage() {
       ws['!cols'] = colWidths;
 
       const wb = XLSX.utils.book_new();
-      const sheetName = exportType === 'kaccha' ? 'Kaccha Bills' : exportType === 'pakka' ? 'Pakka Bills' : 'All Bills';
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.utils.book_append_sheet(wb, ws, 'Sale');
 
       // Generate filename
       const dateRange = fromDate && toDate ? `_${fromDate}_to_${toDate}` : '';

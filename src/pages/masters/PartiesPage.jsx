@@ -8,6 +8,7 @@ import FormField from '../../components/FormField';
 import { useNavigate } from 'react-router-dom';
 import { useCompany } from '../../context/CompanyContext';
 import { formatDate } from '../../lib/dateUtils';
+import * as XLSX from 'xlsx';
 
 const parseCSV = (text) => {
   const lines = [];
@@ -98,6 +99,29 @@ export default function PartiesPage() {
     link.download = `Parties_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportBusy = () => {
+    const rows = parties.map(p => ({
+      'AccountName': (p.name || '').trim().toUpperCase(),
+      'GroupName': 'Sundry Debtors',
+      'State': 'Maharashtra',
+      'StateCode': '27',
+      'GSTIN': p.gstin || '',
+      'OpeningBalance': Number(p.opening_balance || 0),
+      'DrCr': 'Dr'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const colWidths = Object.keys(rows[0] || {}).map(key => ({
+      wch: Math.max(key.length, ...rows.map(r => String(r[key] || '').length)) + 2
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Accounts');
+    XLSX.writeFile(wb, `Busy_Export_Parties.xlsx`);
+    toast.success('Exported to Busy format successfully!');
   };
 
   const handleFileChange = async (e) => {
@@ -369,6 +393,13 @@ export default function PartiesPage() {
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
+              </button>
+              <button
+                onClick={handleExportBusy}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition flex items-center shadow-sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export to Busy
               </button>
               <button
                 onClick={handleImportClick}
