@@ -1023,6 +1023,131 @@ export const api = {
           }
           return true
         }
+        case 'reports:couponAnalytics': {
+          const [seasonId] = args
+          
+          // 1. Fetch all schemes for this season
+          const { data: schemes } = await withCompany(
+            supabase.from('schemes').select('*').eq('season_id', seasonId)
+          )
+          if (!schemes || schemes.length === 0) return { schemes: [], coupons: [], summary: { totalSchemes: 0, totalCoupons: 0, totalSales: 0, totalTarget: 0 } }
+          
+          const schemeIds = schemes.map(s => s.id)
+          
+          // 2. Fetch all coupons for these schemes
+          const { data: coupons } = await withCompany(
+            supabase.from('scheme_coupons').select('*, parties(name, village, district)').in('scheme_id', schemeIds)
+          )
+          
+          // 3. Fetch all sales that have a coupon_no, for this season
+          const { data: salesWithCoupons } = await withCompany(
+            supabase.from('sales')
+              .select('*, sale_items(*, products(name, unit))')
+              .eq('season_id', seasonId)
+              .not('coupon_no', 'is', null)
+              .neq('coupon_no', '')
+          )
+          
+          // 4. Build a map: coupon_no -> { sales, totalAmount, items }
+          const couponSalesMap = {}
+          ;(salesWithCoupons || []).forEach(sale => {
+            const cno = sale.coupon_no
+            if (!couponSalesMap[cno]) {
+              couponSalesMap[cno] = { totalAmount: 0, salesCount: 0, items: [] }
+            }
+            couponSalesMap[cno].totalAmount += Number(sale.total_amount || 0)
+            couponSalesMap[cno].salesCount += 1
+            ;(sale.sale_items || []).forEach(item => {
+              couponSalesMap[cno].items.push({
+                product_name: item.products?.name || 'Unknown',
+                unit: item.products?.unit || item.unit || '',
+                qty: Number(item.qty || 0),
+                rate: Number(item.rate || 0),
+                amount: Number(item.amount || 0)
+              })
+            })
+          })
+          
+          // 5. Build coupon-level detail
+          const couponDetails = (coupons || []).map(c => {
+            const scheme = schemes.find(s => s.id === c.scheme_id)
+            const salesData = couponSalesMap[c.coupon_no] || { totalAmount: 0, salesCount: 0, items: [] }
+            const targetAmount = Number(scheme?.target_amount || 0)
+            const totalSales = salesData.totalAmount
+            const remaining = Math.max(0, targetAmount - totalSales)
+            const completionPct = targetAmount > 0 ? Math.min(100, (totalSales / targetAmount) * 100) : 0
+            
+            // Aggregate items by product
+            const productMap = {}
+            salesData.items.forEach(item => {
+              const key = item.product_name
+              if (!productMap[key]) {
+                productMap[key] = { product_name: item.product_name, unit: item.unit, qty: 0, amount: 0 }
+              }
+              productMap[key].qty += item.qty
+              productMap[key].amount += item.amount
+            })
+            
+            return {
+              id: c.id,
+              coupon_no: c.coupon_no,
+              issue_date: c.issue_date,
+              party_name: c.parties?.name || 'Unknown',
+              party_village: c.parties?.village || '',
+              party_district: c.parties?.district || '',
+              scheme_id: c.scheme_id,
+              scheme_name: scheme?.name || 'Unknown',
+              target_amount: targetAmount,
+              total_sales: totalSales,
+              remaining: remaining,
+              completion_pct: Math.round(completionPct * 100) / 100,
+              sales_count: salesData.salesCount,
+              products: Object.values(productMap),
+              status: totalSales >= targetAmount ? 'ACHIEVED' : totalSales > 0 ? 'IN_PROGRESS' : 'NOT_STARTED'
+            }
+          })
+          
+          // 6. Build scheme-level summaries
+          const schemeSummaries = schemes.map(scheme => {
+            const schemeCoupons = couponDetails.filter(c => c.scheme_id === scheme.id)
+            const totalCoupons = schemeCoupons.length
+            const totalSales = schemeCoupons.reduce((sum, c) => sum + c.total_sales, 0)
+            const totalTarget = totalCoupons * Number(scheme.target_amount || 0)
+            const totalRemaining = schemeCoupons.reduce((sum, c) => sum + c.remaining, 0)
+            const achieved = schemeCoupons.filter(c => c.status === 'ACHIEVED').length
+            const inProgress = schemeCoupons.filter(c => c.status === 'IN_PROGRESS').length
+            const notStarted = schemeCoupons.filter(c => c.status === 'NOT_STARTED').length
+            
+            return {
+              id: scheme.id,
+              name: scheme.name,
+              target_per_coupon: Number(scheme.target_amount || 0),
+              benefit_description: scheme.benefit_description || '',
+              total_coupons: totalCoupons,
+              total_sales: totalSales,
+              total_target: totalTarget,
+              total_remaining: totalRemaining,
+              completion_pct: totalTarget > 0 ? Math.round((totalSales / totalTarget) * 10000) / 100 : 0,
+              achieved,
+              in_progress: inProgress,
+              not_started: notStarted,
+              coupons: schemeCoupons
+            }
+          })
+          
+          // 7. Overall summary
+          const summary = {
+            totalSchemes: schemes.length,
+            totalCoupons: couponDetails.length,
+            totalSales: couponDetails.reduce((sum, c) => sum + c.total_sales, 0),
+            totalTarget: schemeSummaries.reduce((sum, s) => sum + s.total_target, 0),
+            totalAchieved: couponDetails.filter(c => c.status === 'ACHIEVED').length,
+            totalInProgress: couponDetails.filter(c => c.status === 'IN_PROGRESS').length,
+            totalNotStarted: couponDetails.filter(c => c.status === 'NOT_STARTED').length
+          }
+          
+          return { schemes: schemeSummaries, coupons: couponDetails, summary }
+        }
         case 'reports:partySchemeLedger': {
           const { partyId, schemeId } = args[0]
           return { party: null, scheme: null, salesRows: [] } // Minimal stub for migration

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileBarChart2, Search, Printer, Download } from 'lucide-react';
+import { FileBarChart2, Search, Printer, Download, ChevronDown, ChevronRight, Gift, Tag, TrendingUp, Target, Package, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ReportsPage() {
@@ -19,6 +19,8 @@ export default function ReportsPage() {
   
   const [parties, setParties] = useState([]);
   const [selectedParty, setSelectedParty] = useState('');
+  const [expandedSchemes, setExpandedSchemes] = useState({});
+  const [expandedCoupons, setExpandedCoupons] = useState({});
   
   useEffect(() => {
     loadSeasons();
@@ -111,11 +113,16 @@ export default function ReportsPage() {
           total_amount: expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0)
         });
       } else if (reportType === 'coupon') {
-        const coupons = await window.db.invoke('reports:couponAnalytics', selectedSeason);
+        const result = await window.db.invoke('reports:couponAnalytics', selectedSeason);
         setReportData({
           type: 'coupon',
-          coupons: coupons
+          ...result
         });
+        // Auto-expand all schemes
+        const expanded = {};
+        (result.schemes || []).forEach(s => { expanded[s.id] = true; });
+        setExpandedSchemes(expanded);
+        setExpandedCoupons({});
       } else if (reportType === 'batch_manufacturing') {
         if (!selectedProduct) { toast.error('Please select a product'); return; }
         const data = await window.db.invoke('reports:batchManufacturing', { productId: selectedProduct, fromDate, toDate });
@@ -283,21 +290,58 @@ export default function ReportsPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border-b border-slate-200 bg-slate-50">
-              <div>
-                <p className="text-sm text-slate-500">Season</p>
-                <p className="text-lg font-bold text-slate-800">{selectedSeasonObj?.name}</p>
-                <p className="text-xs text-slate-500">{selectedSeasonObj?.start_date} to {selectedSeasonObj?.end_date}</p>
+            {reportData.type === 'coupon' ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <Gift size={16} className="text-primary-500" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Schemes</span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-800">{reportData.summary?.totalSchemes || 0}</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <Tag size={16} className="text-blue-500" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Coupons Issued</span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-800">{reportData.summary?.totalCoupons || 0}</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <TrendingUp size={16} className="text-green-500" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Total Sales</span>
+                  </div>
+                  <p className="text-2xl font-black text-green-700">₹{(reportData.summary?.totalSales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-slate-500 mb-1">
+                    <Target size={16} className="text-orange-500" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Total Target</span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-800">₹{(reportData.summary?.totalTarget || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                  <div className="mt-2 h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary-500 to-green-500 rounded-full transition-all" style={{ width: `${Math.min(100, reportData.summary?.totalTarget > 0 ? (reportData.summary.totalSales / reportData.summary.totalTarget) * 100 : 0)}%` }}></div>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">{reportData.summary?.totalTarget > 0 ? ((reportData.summary.totalSales / reportData.summary.totalTarget) * 100).toFixed(1) : 0}% achieved</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-500">
-                  {reportData.type === 'outstanding' ? 'Total Season Outstanding' : reportData.type === 'expense' ? 'Total Expense Amount' : reportData.type === 'batch_manufacturing' ? 'Total Batches' : reportData.type === 'party_schemes' ? 'Total Schemes' : 'Total Coupons'}
-                </p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {reportData.type === 'outstanding' ? `₹${reportData.total_balance.toFixed(2)}` : reportData.type === 'expense' ? `₹${reportData.total_amount.toFixed(2)}` : reportData.type === 'batch_manufacturing' || reportData.type === 'party_schemes' ? reportData.rows.length : reportData.coupons.length}
-                </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border-b border-slate-200 bg-slate-50">
+                <div>
+                  <p className="text-sm text-slate-500">Season</p>
+                  <p className="text-lg font-bold text-slate-800">{selectedSeasonObj?.name}</p>
+                  <p className="text-xs text-slate-500">{selectedSeasonObj?.start_date} to {selectedSeasonObj?.end_date}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-slate-500">
+                    {reportData.type === 'outstanding' ? 'Total Season Outstanding' : reportData.type === 'expense' ? 'Total Expense Amount' : reportData.type === 'batch_manufacturing' ? 'Total Batches' : 'Total Schemes'}
+                  </p>
+                  <p className="text-2xl font-bold text-slate-800">
+                    {reportData.type === 'outstanding' ? `₹${reportData.total_balance.toFixed(2)}` : reportData.type === 'expense' ? `₹${reportData.total_amount.toFixed(2)}` : reportData.type === 'batch_manufacturing' || reportData.type === 'party_schemes' ? reportData.rows.length : '—'}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex-1 overflow-auto p-0 print:overflow-visible print:h-auto">
               {reportData.type === 'outstanding' ? (
@@ -434,55 +478,180 @@ export default function ReportsPage() {
                     )}
                   </tbody>
                 </table>
-              ) : (
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-100 text-slate-600 font-medium sticky top-0 z-10 shadow-sm">
-                    <tr>
-                      <th className="px-6 py-3 border-b border-slate-200 w-16">Sr No</th>
-                      <th className="px-6 py-3 border-b border-slate-200">Date Issued</th>
-                      <th className="px-6 py-3 border-b border-slate-200">Coupon No</th>
-                      <th className="px-6 py-3 border-b border-slate-200">Krishi Kendra</th>
-                      <th className="px-6 py-3 border-b border-slate-200">Scheme</th>
-                      <th className="px-6 py-3 border-b border-slate-200 text-right">Target (₹)</th>
-                      <th className="px-6 py-3 border-b border-slate-200 text-right">Sales (₹)</th>
-                      <th className="px-6 py-3 border-b border-slate-200 text-right">Paid (₹)</th>
-                      <th className="px-6 py-3 border-b border-slate-200 text-center">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {reportData.coupons.map((coupon, index) => (
-                      <tr key={coupon.id} className="hover:bg-slate-50 transition">
-                        <td className="px-6 py-3 text-slate-500">{index + 1}</td>
-                        <td className="px-6 py-3 text-slate-600">{coupon.date_issued}</td>
-                        <td className="px-6 py-3 font-medium text-slate-800">{coupon.coupon_no}</td>
-                        <td className="px-6 py-3 font-medium text-slate-800">{coupon.party_name}</td>
-                        <td className="px-6 py-3 text-slate-600">{coupon.scheme_name}</td>
-                        <td className="px-6 py-3 text-right text-slate-600">{coupon.target_amount.toFixed(2)}</td>
-                        <td className="px-6 py-3 text-right font-medium text-slate-800">{coupon.total_sales.toFixed(2)}</td>
-                        <td className="px-6 py-3 text-right text-green-600">{coupon.total_paid.toFixed(2)}</td>
-                        <td className="px-6 py-3 text-center">
-                          {coupon.total_sales >= coupon.target_amount ? (
-                            coupon.total_paid >= coupon.target_amount ? (
-                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">ACHIEVED</span>
-                            ) : (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold whitespace-nowrap">PAYMENT PENDING</span>
-                            )
-                          ) : (
-                            <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">PENDING</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {reportData.coupons.length === 0 && (
-                      <tr>
-                        <td colSpan="9" className="px-6 py-8 text-center text-slate-500">
-                          No coupons found for this season.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
+              ) : reportData.type === 'coupon' ? (
+                <div className="p-4 space-y-4">
+                  {(reportData.schemes || []).length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <Gift size={48} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-lg font-medium">No schemes found for this season.</p>
+                      <p className="text-sm mt-1">Create a scheme and issue coupons to see analytics here.</p>
+                    </div>
+                  ) : (
+                    (reportData.schemes || []).map(scheme => (
+                      <div key={scheme.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        {/* Scheme Header */}
+                        <button
+                          onClick={() => setExpandedSchemes(prev => ({ ...prev, [scheme.id]: !prev[scheme.id] }))}
+                          className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-white hover:from-slate-100 hover:to-slate-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm">
+                              <Gift size={20} />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-800 text-base">{scheme.name}</h3>
+                              <p className="text-xs text-slate-500">
+                                {scheme.benefit_description || `Target: ₹${scheme.target_per_coupon.toLocaleString('en-IN')}`} • {scheme.total_coupons} coupons
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="hidden md:flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Sales / Target</p>
+                                <p className="text-sm font-bold text-slate-800">₹{scheme.total_sales.toLocaleString('en-IN')} / ₹{scheme.total_target.toLocaleString('en-IN')}</p>
+                              </div>
+                              <div className="w-24">
+                                <div className="h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all ${scheme.completion_pct >= 100 ? 'bg-green-500' : scheme.completion_pct >= 50 ? 'bg-blue-500' : 'bg-orange-400'}`} style={{ width: `${Math.min(100, scheme.completion_pct)}%` }}></div>
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-0.5 text-center">{scheme.completion_pct.toFixed(1)}%</p>
+                              </div>
+                              <div className="flex gap-1">
+                                <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">{scheme.achieved}✓</span>
+                                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">{scheme.in_progress}⏳</span>
+                                <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">{scheme.not_started}○</span>
+                              </div>
+                            </div>
+                            {expandedSchemes[scheme.id] ? <ChevronDown size={20} className="text-slate-400" /> : <ChevronRight size={20} className="text-slate-400" />}
+                          </div>
+                        </button>
+
+                        {/* Scheme Expanded Content */}
+                        {expandedSchemes[scheme.id] && (
+                          <div className="border-t border-slate-200">
+                            {/* Mobile summary */}
+                            <div className="md:hidden p-3 bg-slate-50 grid grid-cols-3 gap-2 text-center text-xs border-b border-slate-100">
+                              <div><span className="text-slate-400">Sales</span><br/><span className="font-bold">₹{scheme.total_sales.toLocaleString('en-IN')}</span></div>
+                              <div><span className="text-slate-400">Target</span><br/><span className="font-bold">₹{scheme.total_target.toLocaleString('en-IN')}</span></div>
+                              <div><span className="text-slate-400">Remaining</span><br/><span className="font-bold text-red-600">₹{scheme.total_remaining.toLocaleString('en-IN')}</span></div>
+                            </div>
+                            <table className="w-full text-sm text-left">
+                              <thead className="bg-slate-100 text-slate-600 font-medium text-xs uppercase tracking-wider">
+                                <tr>
+                                  <th className="px-4 py-2.5 w-8"></th>
+                                  <th className="px-4 py-2.5">Coupon No</th>
+                                  <th className="px-4 py-2.5">Party (Krishi Kendra)</th>
+                                  <th className="px-4 py-2.5 hidden md:table-cell">Issue Date</th>
+                                  <th className="px-4 py-2.5 text-right">Target (₹)</th>
+                                  <th className="px-4 py-2.5 text-right">Sales (₹)</th>
+                                  <th className="px-4 py-2.5 text-right hidden md:table-cell">Remaining (₹)</th>
+                                  <th className="px-4 py-2.5 text-center">Progress</th>
+                                  <th className="px-4 py-2.5 text-center">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {scheme.coupons.map(coupon => (
+                                  <React.Fragment key={coupon.id}>
+                                    <tr
+                                      className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                      onClick={() => setExpandedCoupons(prev => ({ ...prev, [coupon.id]: !prev[coupon.id] }))}
+                                    >
+                                      <td className="px-4 py-3 text-slate-400">
+                                        {expandedCoupons[coupon.id] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded tracking-wider text-xs">{coupon.coupon_no}</span>
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <p className="font-medium text-slate-800">{coupon.party_name}</p>
+                                        {coupon.party_village && <p className="text-[11px] text-slate-400">{coupon.party_village}{coupon.party_district ? `, ${coupon.party_district}` : ''}</p>}
+                                      </td>
+                                      <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{coupon.issue_date}</td>
+                                      <td className="px-4 py-3 text-right text-slate-600">₹{coupon.target_amount.toLocaleString('en-IN')}</td>
+                                      <td className="px-4 py-3 text-right font-bold text-slate-800">₹{coupon.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                      <td className="px-4 py-3 text-right text-red-600 font-medium hidden md:table-cell">₹{coupon.remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                      <td className="px-4 py-3">
+                                        <div className="w-full max-w-[100px] mx-auto">
+                                          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                            <div className={`h-full rounded-full transition-all ${coupon.completion_pct >= 100 ? 'bg-green-500' : coupon.completion_pct >= 50 ? 'bg-blue-500' : 'bg-orange-400'}`} style={{ width: `${Math.min(100, coupon.completion_pct)}%` }}></div>
+                                          </div>
+                                          <p className="text-[10px] text-slate-500 text-center mt-0.5">{coupon.completion_pct.toFixed(1)}%</p>
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3 text-center">
+                                        {coupon.status === 'ACHIEVED' ? (
+                                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold inline-flex items-center gap-1"><CheckCircle2 size={12} /> ACHIEVED</span>
+                                        ) : coupon.status === 'IN_PROGRESS' ? (
+                                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">IN PROGRESS</span>
+                                        ) : (
+                                          <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">NOT STARTED</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                    {/* Product Breakdown */}
+                                    {expandedCoupons[coupon.id] && (
+                                      <tr>
+                                        <td colSpan="9" className="p-0">
+                                          <div className="bg-slate-50 border-y border-slate-200 px-8 py-3">
+                                            {coupon.products && coupon.products.length > 0 ? (
+                                              <>
+                                                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2 flex items-center gap-1">
+                                                  <Package size={12} /> Material / Products Delivered
+                                                </p>
+                                                <table className="w-full text-xs">
+                                                  <thead>
+                                                    <tr className="text-slate-500">
+                                                      <th className="text-left py-1 font-medium">Product</th>
+                                                      <th className="text-right py-1 font-medium">Qty</th>
+                                                      <th className="text-right py-1 font-medium">Unit</th>
+                                                      <th className="text-right py-1 font-medium">Amount (₹)</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody>
+                                                    {coupon.products.map((prod, pi) => (
+                                                      <tr key={pi} className="border-t border-slate-200/50">
+                                                        <td className="py-1.5 font-medium text-slate-700">{prod.product_name}</td>
+                                                        <td className="text-right py-1.5 text-slate-600">{prod.qty.toFixed(2)}</td>
+                                                        <td className="text-right py-1.5 text-slate-400">{prod.unit}</td>
+                                                        <td className="text-right py-1.5 font-bold text-slate-800">₹{prod.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                                      </tr>
+                                                    ))}
+                                                  </tbody>
+                                                </table>
+                                              </>
+                                            ) : (
+                                              <p className="text-slate-400 text-xs italic">No sales recorded against this coupon yet.</p>
+                                            )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                                {scheme.coupons.length === 0 && (
+                                  <tr>
+                                    <td colSpan="9" className="px-6 py-6 text-center text-slate-400 text-sm">No coupons issued under this scheme.</td>
+                                  </tr>
+                                )}
+                              </tbody>
+                              <tfoot className="bg-slate-100 border-t-2 border-slate-300">
+                                <tr className="font-bold text-sm">
+                                  <td colSpan="4" className="px-4 py-3 text-right text-slate-600 uppercase text-xs tracking-wider">Scheme Total:</td>
+                                  <td className="px-4 py-3 text-right text-slate-700">₹{scheme.total_target.toLocaleString('en-IN')}</td>
+                                  <td className="px-4 py-3 text-right text-green-700">₹{scheme.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                  <td className="px-4 py-3 text-right text-red-600 hidden md:table-cell">₹{scheme.total_remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                  <td colSpan="2" className="px-4 py-3 text-center text-slate-500 text-xs">{scheme.completion_pct.toFixed(1)}% overall</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : null}
             </div>
           </>
         )}
