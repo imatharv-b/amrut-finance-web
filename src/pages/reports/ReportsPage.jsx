@@ -478,7 +478,7 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                             </div>
                             <div>
                               <h3 className="font-bold text-slate-800 text-base flex flex-wrap items-center gap-2">
-                                {scheme.name} <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-2 py-1 rounded">Target: ₹{scheme.target_per_coupon.toLocaleString('en-IN')}</span>
+                                {scheme.name} <span className="text-sm text-slate-700 font-bold bg-slate-100 px-3 py-1 rounded-md border border-slate-200 shadow-sm">Target: ₹{scheme.target_per_coupon.toLocaleString('en-IN')}</span>
                               </h3>
                               <p className="text-xs text-slate-500">
                                 {scheme.benefit_description ? `${scheme.benefit_description} • ` : ''}{scheme.total_coupons} coupons
@@ -524,7 +524,6 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                   <th className="px-4 py-2.5">Coupon No</th>
                                   <th className="px-4 py-2.5">Party (Krishi Kendra)</th>
                                   <th className="px-4 py-2.5 hidden md:table-cell">Issue Date</th>
-                                  <th className="px-4 py-2.5 text-right">Target (₹)</th>
                                   <th className="px-4 py-2.5 text-right">Sales (₹)</th>
                                   <th className="px-4 py-2.5 text-right hidden md:table-cell">Remaining (₹)</th>
                                   <th className="px-4 py-2.5 text-right text-blue-600">Receipts (₹)</th>
@@ -550,7 +549,6 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                         {coupon.party_village && <p className="text-[11px] text-slate-400">{coupon.party_village}{coupon.party_district ? `, ${coupon.party_district}` : ''}</p>}
                                       </td>
                                       <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{coupon.issue_date}</td>
-                                      <td className="px-4 py-3 text-right text-slate-600">₹{coupon.target_amount.toLocaleString('en-IN')}</td>
                                       <td className="px-4 py-3 text-right font-bold text-slate-800">₹{coupon.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-right text-red-600 font-medium hidden md:table-cell">₹{coupon.remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-right text-blue-600 font-medium">₹{Number(coupon.party_receipts || 0).toLocaleString('en-IN')}</td>
@@ -613,7 +611,6 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                               <tfoot className="bg-slate-100 border-t-2 border-slate-300">
                                 <tr className="font-bold text-sm">
                                   <td colSpan="4" className="px-4 py-3 text-right text-slate-600 uppercase text-xs tracking-wider">Scheme Total:</td>
-                                  <td className="px-4 py-3 text-right text-slate-700">₹{scheme.total_target.toLocaleString('en-IN')}</td>
                                   <td className="px-4 py-3 text-right text-green-700">₹{scheme.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                   <td className="px-4 py-3 text-right text-red-600 hidden md:table-cell">₹{scheme.total_remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                   <td className="px-4 py-3"></td>
@@ -642,8 +639,7 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
 
                                   <div className="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                                     <div>
-                                      <p className="text-[10px] text-slate-400 uppercase font-bold">Target</p>
-                                      <p className="font-semibold text-slate-700">₹{coupon.target_amount.toLocaleString('en-IN')}</p>
+                                      {/* Placeholder for new column */}
                                     </div>
                                     <div className="text-right">
                                       <p className="text-[10px] text-slate-400 uppercase font-bold">Sales</p>
