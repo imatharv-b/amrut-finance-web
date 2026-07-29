@@ -1053,16 +1053,29 @@ export const api = {
           const { data: season } = await supabase.from('seasons').select('start_date, end_date').eq('id', seasonId).single()
           
           let partyPaymentsQuery = supabase.from('payments').select('party_id, amount, date').in('party_id', partyIds)
+          let partySalesQuery = supabase.from('sales').select('party_id, total_amount, date').in('party_id', partyIds)
+          let partyReturnsQuery = supabase.from('sale_returns').select('party_id, total_amount, date').in('party_id', partyIds)
+          
           if (season) {
             partyPaymentsQuery = partyPaymentsQuery.gte('date', season.start_date).lte('date', season.end_date)
+            partySalesQuery = partySalesQuery.gte('date', season.start_date).lte('date', season.end_date)
+            partyReturnsQuery = partyReturnsQuery.gte('date', season.start_date).lte('date', season.end_date)
           }
           
-          const { data: partyPayments } = await withCompany(partyPaymentsQuery)
+          const [ { data: partyPayments }, { data: partySales }, { data: partyReturns } ] = await Promise.all([
+            withCompany(partyPaymentsQuery),
+            withCompany(partySalesQuery),
+            withCompany(partyReturnsQuery)
+          ])
+          
           const receiptMap = {}
-          ;(partyPayments || []).forEach(p => {
-            if (!receiptMap[p.party_id]) receiptMap[p.party_id] = 0
-            receiptMap[p.party_id] += Number(p.amount || 0)
-          })
+          ;(partyPayments || []).forEach(p => { receiptMap[p.party_id] = (receiptMap[p.party_id] || 0) + Number(p.amount || 0) })
+          
+          const salesMap = {}
+          ;(partySales || []).forEach(s => { salesMap[s.party_id] = (salesMap[s.party_id] || 0) + Number(s.total_amount || 0) })
+          
+          const returnsMap = {}
+          ;(partyReturns || []).forEach(r => { returnsMap[r.party_id] = (returnsMap[r.party_id] || 0) + Number(r.total_amount || 0) })
 
           // 3. Fetch all sales that have a coupon_no, for this season
           const { data: salesWithCoupons } = await withCompany(
@@ -1112,7 +1125,23 @@ export const api = {
               productMap[key].qty += item.qty
               productMap[key].amount += item.amount
             })
+
+            const partyCurrentBal = balanceMap[c.party_id] || 0
+            const partyReceipts = receiptMap[c.party_id] || 0
+            const partySeasonSalesAmt = salesMap[c.party_id] || 0
+            const partySeasonReturnsAmt = returnsMap[c.party_id] || 0
             
+            // Calculate Opening Balance at start of season
+            const openingBal = partyCurrentBal - partySeasonSalesAmt + partySeasonReturnsAmt + partyReceipts
+            
+            const materialBaki = Math.max(0, targetAmount - totalSales)
+            const couponPaymentPending = targetAmount - partyReceipts
+            
+            // Replicate the requested Excel Formula: =IF(Sales>Target, OpeningBal + Sales - Payments, CouponPaymentPending + OpeningBal)
+            const totalBalance = totalSales > targetAmount 
+              ? (openingBal + totalSales - partyReceipts) 
+              : (couponPaymentPending + openingBal)
+
             return {
               id: c.id,
               coupon_no: c.coupon_no,
@@ -1130,8 +1159,12 @@ export const api = {
               sales_count: salesData.salesCount,
               products: Object.values(productMap),
               status: totalSales >= targetAmount ? 'ACHIEVED' : totalSales > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
-              party_outstanding: balanceMap[c.party_id] || 0,
-              party_receipts: receiptMap[c.party_id] || 0
+              party_outstanding: partyCurrentBal, // Keep current balance for reference if needed
+              party_receipts: partyReceipts,
+              opening_bal: openingBal,
+              material_baki: materialBaki,
+              coupon_payment_pending: couponPaymentPending,
+              total_balance: totalBalance
             }
           })
           
