@@ -1049,9 +1049,15 @@ export const api = {
           ;(partyBalances || []).forEach(pb => { balanceMap[pb.id] = Number(pb.balance || 0) })
 
           // Fetch receipts received (payments) for these parties in the current season
-          const { data: partyPayments } = await withCompany(
-            supabase.from('payments').select('party_id, amount').eq('season_id', seasonId).in('party_id', partyIds)
-          )
+          // Using season start/end dates is more reliable as season_id might not be fully backfilled on all payments
+          const { data: season } = await supabase.from('seasons').select('start_date, end_date').eq('id', seasonId).single()
+          
+          let partyPaymentsQuery = supabase.from('payments').select('party_id, amount, date').in('party_id', partyIds)
+          if (season) {
+            partyPaymentsQuery = partyPaymentsQuery.gte('date', season.start_date).lte('date', season.end_date)
+          }
+          
+          const { data: partyPayments } = await withCompany(partyPaymentsQuery)
           const receiptMap = {}
           ;(partyPayments || []).forEach(p => {
             if (!receiptMap[p.party_id]) receiptMap[p.party_id] = 0
