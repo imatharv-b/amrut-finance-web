@@ -269,8 +269,8 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
         ) : (
           <>
             {reportData.type === 'coupon' ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-6 border-b border-slate-200 bg-gradient-to-br from-slate-50 to-white">
+                <div className="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-2 text-slate-500 mb-1">
                     <Gift size={16} className="text-primary-500" />
                     <span className="text-xs font-medium uppercase tracking-wider">Schemes</span>
@@ -291,16 +291,16 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                   </div>
                   <p className="text-2xl font-black text-green-700">₹{(reportData.summary?.totalSales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                 </div>
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                <div className="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-2 text-slate-500 mb-1">
                     <Target size={16} className="text-orange-500" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Total Target</span>
+                    <span className="text-[10px] sm:text-xs font-medium uppercase tracking-wider">Target</span>
                   </div>
-                  <p className="text-2xl font-black text-slate-800">₹{(reportData.summary?.totalTarget || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
-                  <div className="mt-2 h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <p className="text-lg sm:text-2xl font-black text-slate-800">₹{(reportData.summary?.totalTarget || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 })}</p>
+                  <div className="mt-2 h-1.5 sm:h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-primary-500 to-green-500 rounded-full transition-all" style={{ width: `${Math.min(100, reportData.summary?.totalTarget > 0 ? (reportData.summary.totalSales / reportData.summary.totalTarget) * 100 : 0)}%` }}></div>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">{reportData.summary?.totalTarget > 0 ? ((reportData.summary.totalSales / reportData.summary.totalTarget) * 100).toFixed(1) : 0}% achieved</p>
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 mt-1">{reportData.summary?.totalTarget > 0 ? ((reportData.summary.totalSales / reportData.summary.totalTarget) * 100).toFixed(1) : 0}% achieved</p>
                 </div>
               </div>
             ) : (
@@ -514,8 +514,9 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                               <div><span className="text-slate-400">Target</span><br/><span className="font-bold">₹{scheme.total_target.toLocaleString('en-IN')}</span></div>
                               <div><span className="text-slate-400">Remaining</span><br/><span className="font-bold text-red-600">₹{scheme.total_remaining.toLocaleString('en-IN')}</span></div>
                             </div>
-                            <table className="w-full text-sm text-left">
-                              <thead className="bg-slate-100 text-slate-600 font-medium text-xs uppercase tracking-wider">
+                            <div className="hidden md:block overflow-x-auto">
+                              <table className="w-full text-sm text-left">
+                                <thead className="bg-slate-100 text-slate-600 font-medium text-xs uppercase tracking-wider">
                                 <tr>
                                   <th className="px-4 py-2.5 w-8"></th>
                                   <th className="px-4 py-2.5">Coupon No</th>
@@ -623,6 +624,94 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                 </tr>
                               </tfoot>
                             </table>
+                            </div>
+
+                            {/* Mobile Card View */}
+                            <div className="md:hidden divide-y divide-slate-100 bg-white">
+                              {scheme.coupons.map(coupon => (
+                                <div key={coupon.id} className="p-3 sm:p-4 flex flex-col gap-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded tracking-wider text-xs">{coupon.coupon_no}</span>
+                                      <span className="text-xs text-slate-500">{coupon.issue_date}</span>
+                                    </div>
+                                    <div>
+                                      {coupon.status === 'ACHIEVED' ? (
+                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold inline-flex items-center gap-1"><CheckCircle2 size={12} /> ACHIEVED</span>
+                                      ) : coupon.status === 'IN_PROGRESS' ? (
+                                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">IN PROGRESS</span>
+                                      ) : (
+                                        <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">NOT STARTED</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <p className="font-bold text-slate-800">{coupon.party_name}</p>
+                                    {coupon.party_village && <p className="text-[11px] text-slate-500">{coupon.party_village}</p>}
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                    <div>
+                                      <p className="text-[10px] text-slate-400 uppercase font-bold">Target</p>
+                                      <p className="font-semibold text-slate-700">₹{coupon.target_amount.toLocaleString('en-IN')}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-[10px] text-slate-400 uppercase font-bold">Sales</p>
+                                      <p className="font-bold text-slate-800">₹{coupon.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 0 })}</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="w-full">
+                                    <div className="flex justify-between text-[10px] text-slate-500 mb-1 font-medium">
+                                      <span>Progress</span>
+                                      <span>{coupon.completion_pct.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                      <div className={`h-full rounded-full transition-all ${coupon.completion_pct >= 100 ? 'bg-green-500' : coupon.completion_pct >= 50 ? 'bg-blue-500' : 'bg-orange-400'}`} style={{ width: `${Math.min(100, coupon.completion_pct)}%` }}></div>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    onClick={() => setExpandedCoupons(prev => ({ ...prev, [coupon.id]: !prev[coupon.id] }))}
+                                    className="w-full mt-1 py-2 flex items-center justify-center gap-1 text-xs font-semibold text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                                  >
+                                    {expandedCoupons[coupon.id] ? (
+                                      <>Hide Details <ChevronDown size={14} /></>
+                                    ) : (
+                                      <>View Products <ChevronRight size={14} /></>
+                                    )}
+                                  </button>
+
+                                  {expandedCoupons[coupon.id] && coupon.products && (
+                                    <div className="mt-1 bg-white rounded-lg border border-slate-100 overflow-hidden">
+                                      {coupon.products.length > 0 ? (
+                                        <>
+                                          <div className="bg-slate-50 px-3 py-2 border-b border-slate-100">
+                                            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1">
+                                              <Package size={12} /> Delivered Products
+                                            </p>
+                                          </div>
+                                          <div className="px-3 py-2 space-y-2.5">
+                                            {coupon.products.map((prod, pi) => (
+                                              <div key={pi} className="flex justify-between items-start text-xs border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
+                                                <div>
+                                                  <p className="font-medium text-slate-700">{prod.product_name}</p>
+                                                  <p className="text-[11px] text-slate-500 mt-0.5">{prod.qty.toFixed(2)} {prod.unit}</p>
+                                                </div>
+                                                <p className="font-bold text-slate-800">₹{prod.amount.toLocaleString('en-IN', { minimumFractionDigits: 0 })}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <p className="text-xs text-slate-500 text-center py-4">No products delivered against this coupon yet.</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
