@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FileBarChart2, Search, Printer, Download, ChevronDown, ChevronRight, Gift, Tag, TrendingUp, Target, Package, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function ReportsPage() {
+export default function ReportsPage({ defaultReport = 'outstanding' }) {
   const [seasons, setSeasons] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState('');
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const [reportType, setReportType] = useState('outstanding');
+  const [reportType, setReportType] = useState(defaultReport);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [expenseTypes, setExpenseTypes] = useState([]);

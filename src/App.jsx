@@ -156,14 +156,14 @@ function AppWithCompany() {
                     <>
                       {/* Salesman user redirect from home to a default view */}
                       <Route path="/schemes/coupons" element={<CouponIssuancePage />} />
-                      <Route path="/" element={<Navigate to="/payments/ledger" replace />} />
-                      <Route path="*" element={<Navigate to="/payments/ledger" replace />} />
+                      <Route path="/" element={<ReportsPage defaultReport="coupon" />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
                     </>
                   ) : (
                     <>
                       {/* Data Entry user redirect from home to a default page */}
-                      <Route path="/" element={<Navigate to="/sales/new" replace />} />
-                      <Route path="*" element={<Navigate to="/sales/new" replace />} />
+                      <Route path="/" element={<ReportsPage defaultReport="coupon" />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
                     </>
                   )}
                 </Routes>

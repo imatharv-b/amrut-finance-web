@@ -34,7 +34,7 @@ const NAVIGATION = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     path: '/',
-    roles: ['admin'] // Only admin
+    roles: ['admin', 'data_entry', 'salesman', 'finance_manager', 'accountant'] // Everyone gets the dashboard route
   },
   {
     label: 'Masters',
