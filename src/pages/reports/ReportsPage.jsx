@@ -477,9 +477,11 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                               <Gift size={20} />
                             </div>
                             <div>
-                              <h3 className="font-bold text-slate-800 text-base">{scheme.name}</h3>
+                              <h3 className="font-bold text-slate-800 text-base flex flex-wrap items-center gap-2">
+                                {scheme.name} <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-2 py-1 rounded">Target: ₹{scheme.target_per_coupon.toLocaleString('en-IN')}</span>
+                              </h3>
                               <p className="text-xs text-slate-500">
-                                {scheme.benefit_description || `Target: ₹${scheme.target_per_coupon.toLocaleString('en-IN')}`} • {scheme.total_coupons} coupons
+                                {scheme.benefit_description ? `${scheme.benefit_description} • ` : ''}{scheme.total_coupons} coupons
                               </p>
                             </div>
                           </div>
@@ -525,8 +527,9 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                   <th className="px-4 py-2.5 text-right">Target (₹)</th>
                                   <th className="px-4 py-2.5 text-right">Sales (₹)</th>
                                   <th className="px-4 py-2.5 text-right hidden md:table-cell">Remaining (₹)</th>
+                                  <th className="px-4 py-2.5 text-right text-blue-600">Receipts (₹)</th>
+                                  <th className="px-4 py-2.5 text-right text-orange-600">Outstanding (₹)</th>
                                   <th className="px-4 py-2.5 text-center">Progress</th>
-                                  <th className="px-4 py-2.5 text-center">Status</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-100">
@@ -550,6 +553,8 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                       <td className="px-4 py-3 text-right text-slate-600">₹{coupon.target_amount.toLocaleString('en-IN')}</td>
                                       <td className="px-4 py-3 text-right font-bold text-slate-800">₹{coupon.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-right text-red-600 font-medium hidden md:table-cell">₹{coupon.remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                      <td className="px-4 py-3 text-right text-blue-600 font-medium">₹{Number(coupon.party_receipts || 0).toLocaleString('en-IN')}</td>
+                                      <td className="px-4 py-3 text-right text-orange-600 font-bold">₹{Number(coupon.party_outstanding || 0).toLocaleString('en-IN')}</td>
                                       <td className="px-4 py-3">
                                         <div className="w-full max-w-[100px] mx-auto">
                                           <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
@@ -557,15 +562,6 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                           </div>
                                           <p className="text-[10px] text-slate-500 text-center mt-0.5">{coupon.completion_pct.toFixed(1)}%</p>
                                         </div>
-                                      </td>
-                                      <td className="px-4 py-3 text-center">
-                                        {coupon.status === 'ACHIEVED' ? (
-                                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold inline-flex items-center gap-1"><CheckCircle2 size={12} /> ACHIEVED</span>
-                                        ) : coupon.status === 'IN_PROGRESS' ? (
-                                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">IN PROGRESS</span>
-                                        ) : (
-                                          <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">NOT STARTED</span>
-                                        )}
                                       </td>
                                     </tr>
                                     {/* Product Breakdown */}
@@ -620,7 +616,9 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                   <td className="px-4 py-3 text-right text-slate-700">₹{scheme.total_target.toLocaleString('en-IN')}</td>
                                   <td className="px-4 py-3 text-right text-green-700">₹{scheme.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                   <td className="px-4 py-3 text-right text-red-600 hidden md:table-cell">₹{scheme.total_remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                                  <td colSpan="2" className="px-4 py-3 text-center text-slate-500 text-xs">{scheme.completion_pct.toFixed(1)}% overall</td>
+                                  <td className="px-4 py-3"></td>
+                                  <td className="px-4 py-3"></td>
+                                  <td className="px-4 py-3 text-center text-slate-500 text-xs">{scheme.completion_pct.toFixed(1)}% overall</td>
                                 </tr>
                               </tfoot>
                             </table>
@@ -634,15 +632,6 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                     <div className="flex items-center gap-2">
                                       <span className="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded tracking-wider text-xs">{coupon.coupon_no}</span>
                                       <span className="text-xs text-slate-500">{coupon.issue_date}</span>
-                                    </div>
-                                    <div>
-                                      {coupon.status === 'ACHIEVED' ? (
-                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold inline-flex items-center gap-1"><CheckCircle2 size={12} /> ACHIEVED</span>
-                                      ) : coupon.status === 'IN_PROGRESS' ? (
-                                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">IN PROGRESS</span>
-                                      ) : (
-                                        <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">NOT STARTED</span>
-                                      )}
                                     </div>
                                   </div>
                                   
@@ -659,6 +648,14 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                     <div className="text-right">
                                       <p className="text-[10px] text-slate-400 uppercase font-bold">Sales</p>
                                       <p className="font-bold text-slate-800">₹{coupon.total_sales.toLocaleString('en-IN', { minimumFractionDigits: 0 })}</p>
+                                    </div>
+                                    <div className="pt-2 border-t border-slate-200">
+                                      <p className="text-[10px] text-blue-500 uppercase font-bold">Receipts</p>
+                                      <p className="font-semibold text-blue-700">₹{Number(coupon.party_receipts || 0).toLocaleString('en-IN')}</p>
+                                    </div>
+                                    <div className="text-right pt-2 border-t border-slate-200">
+                                      <p className="text-[10px] text-orange-500 uppercase font-bold">Outstanding</p>
+                                      <p className="font-bold text-orange-700">₹{Number(coupon.party_outstanding || 0).toLocaleString('en-IN')}</p>
                                     </div>
                                   </div>
 

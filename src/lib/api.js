@@ -1039,6 +1039,25 @@ export const api = {
             supabase.from('scheme_coupons').select('*, parties(name, village, district)').in('scheme_id', schemeIds)
           )
           
+          const partyIds = [...new Set((coupons || []).map(c => c.party_id).filter(Boolean))]
+
+          // Fetch outstanding balances for these parties
+          const { data: partyBalances } = await withCompany(
+            supabase.from('parties_with_balance').select('id, balance').in('id', partyIds)
+          )
+          const balanceMap = {}
+          ;(partyBalances || []).forEach(pb => { balanceMap[pb.id] = Number(pb.balance || 0) })
+
+          // Fetch receipts received (payments) for these parties in the current season
+          const { data: partyPayments } = await withCompany(
+            supabase.from('payments').select('party_id, amount').eq('season_id', seasonId).in('party_id', partyIds)
+          )
+          const receiptMap = {}
+          ;(partyPayments || []).forEach(p => {
+            if (!receiptMap[p.party_id]) receiptMap[p.party_id] = 0
+            receiptMap[p.party_id] += Number(p.amount || 0)
+          })
+
           // 3. Fetch all sales that have a coupon_no, for this season
           const { data: salesWithCoupons } = await withCompany(
             supabase.from('sales')
@@ -1092,6 +1111,7 @@ export const api = {
               id: c.id,
               coupon_no: c.coupon_no,
               issue_date: c.issue_date,
+              party_id: c.party_id,
               party_name: c.parties?.name || 'Unknown',
               party_village: c.parties?.village || '',
               party_district: c.parties?.district || '',
@@ -1103,7 +1123,9 @@ export const api = {
               completion_pct: Math.round(completionPct * 100) / 100,
               sales_count: salesData.salesCount,
               products: Object.values(productMap),
-              status: totalSales >= targetAmount ? 'ACHIEVED' : totalSales > 0 ? 'IN_PROGRESS' : 'NOT_STARTED'
+              status: totalSales >= targetAmount ? 'ACHIEVED' : totalSales > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
+              party_outstanding: balanceMap[c.party_id] || 0,
+              party_receipts: receiptMap[c.party_id] || 0
             }
           })
           
