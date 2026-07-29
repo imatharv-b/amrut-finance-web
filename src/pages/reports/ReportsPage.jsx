@@ -527,8 +527,8 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                   <th className="px-4 py-2.5 text-right text-slate-800">Material Sale (₹)</th>
                                   <th className="px-4 py-2.5 text-right text-slate-600">Opening Bal (₹)</th>
                                   <th className="px-4 py-2.5 text-right text-green-600">Payment Jama (₹)</th>
-                                  <th className="px-4 py-2.5 text-right hidden md:table-cell text-red-600">Material Baki (₹)</th>
-                                  <th className="px-4 py-2.5 text-right text-blue-600 hidden md:table-cell">Payment Pending (₹)</th>
+                                  <th className="px-4 py-2.5 text-right hidden md:table-cell text-red-600">Remaining (₹)</th>
+                                  <th className="px-4 py-2.5 text-right text-blue-600 hidden md:table-cell">Outstanding (₹)</th>
                                   <th className="px-4 py-2.5 text-right text-orange-600 font-bold">Total Balance (₹)</th>
                                   <th className="px-4 py-2.5 text-center">Progress</th>
                                 </tr>
@@ -662,7 +662,7 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
                                       <p className="font-bold text-green-700">₹{Number(coupon.party_receipts || 0).toLocaleString('en-IN')}</p>
                                     </div>
                                     <div className="pt-2 border-t border-slate-200">
-                                      <p className="text-[10px] text-blue-500 uppercase font-bold">Payment Pending</p>
+                                      <p className="text-[10px] text-blue-500 uppercase font-bold">Outstanding</p>
                                       <p className="font-semibold text-blue-700">₹{Number(coupon.coupon_payment_pending || 0).toLocaleString('en-IN')}</p>
                                     </div>
                                     <div className="text-right pt-2 border-t border-slate-200">

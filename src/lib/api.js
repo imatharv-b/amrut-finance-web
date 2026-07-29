@@ -1135,12 +1135,13 @@ export const api = {
             const openingBal = partyCurrentBal - partySeasonSalesAmt + partySeasonReturnsAmt + partyReceipts
             
             const materialBaki = Math.max(0, targetAmount - totalSales)
-            const couponPaymentPending = targetAmount - partyReceipts
             
-            // Replicate the requested Excel Formula: =IF(Sales>Target, OpeningBal + Sales - Payments, CouponPaymentPending + OpeningBal)
-            const totalBalance = totalSales > targetAmount 
-              ? (openingBal + totalSales - partyReceipts) 
-              : (couponPaymentPending + openingBal)
+            // Payment Pending (Outstanding for the season): 
+            // If they bought more than target, they owe for the sales. If they bought less, they still owe for the target.
+            const couponPaymentPending = Math.max(targetAmount, totalSales) - partyReceipts
+            
+            // Total Balance = Opening Balance + Outstanding for the season
+            const totalBalance = openingBal + couponPaymentPending
 
             return {
               id: c.id,
