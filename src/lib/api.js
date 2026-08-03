@@ -1192,8 +1192,7 @@ export const api = {
             couponsList: couponsData,
             schemesAnalytics,
             couponSummary,
-            locationAnalytics,
-            productAnalytics
+            locationAnalytics
           }
         }
         case 'settings:get': {
