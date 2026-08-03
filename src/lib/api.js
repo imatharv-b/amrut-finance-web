@@ -992,6 +992,114 @@ export const api = {
              }
           })
 
+          // Coupon Analytics Summary for Dashboard
+          // We need season-filtered sales/payments/returns per coupon party
+          const couponPartyIds = [...new Set(couponsData.map(c => c.party_id).filter(Boolean))]
+          
+          // Fetch season-filtered data for coupon parties
+          let couponPaymentsData = [], couponPartySalesData = [], couponReturnsData = []
+          if (couponPartyIds.length > 0 && seasonData) {
+            const [cpRes, csRes, crRes] = await Promise.all([
+              withCompany(supabase.from('payments').select('party_id, amount, date').in('party_id', couponPartyIds).gte('date', seasonData.start_date).lte('date', seasonData.end_date)),
+              withCompany(supabase.from('sales').select('party_id, total_amount, date, coupon_no').in('party_id', couponPartyIds).gte('date', seasonData.start_date).lte('date', seasonData.end_date)),
+              withCompany(supabase.from('sale_returns').select('party_id, total_amount, date').in('party_id', couponPartyIds).gte('date', seasonData.start_date).lte('date', seasonData.end_date))
+            ])
+            couponPaymentsData = cpRes.data || []
+            couponPartySalesData = csRes.data || []
+            couponReturnsData = crRes.data || []
+          }
+          
+          // Build per-party maps for coupon analytics
+          const cpReceiptMap = {}, cpSalesMap = {}, cpReturnsMap = {}
+          couponPaymentsData.forEach(p => { cpReceiptMap[p.party_id] = (cpReceiptMap[p.party_id] || 0) + Number(p.amount || 0) })
+          couponPartySalesData.forEach(s => { cpSalesMap[s.party_id] = (cpSalesMap[s.party_id] || 0) + Number(s.total_amount || 0) })
+          couponReturnsData.forEach(r => { cpReturnsMap[r.party_id] = (cpReturnsMap[r.party_id] || 0) + Number(r.total_amount || 0) })
+          
+          // Fetch party balances for coupon parties
+          let cpBalanceMap = {}
+          if (couponPartyIds.length > 0) {
+            const { data: cpBal } = await withCompany(supabase.from('parties_with_balance').select('id, balance').in('id', couponPartyIds))
+            ;(cpBal || []).forEach(pb => { cpBalanceMap[pb.id] = Number(pb.balance || 0) })
+          }
+          
+          // Build coupon sales map by coupon_no
+          const cpCouponSalesMap = {}
+          couponPartySalesData.forEach(s => {
+            if (s.coupon_no) {
+              cpCouponSalesMap[s.coupon_no] = (cpCouponSalesMap[s.coupon_no] || 0) + Number(s.total_amount || 0)
+            }
+          })
+          
+          // Compute per-coupon analytics  
+          let totalCouponMaterialSale = 0, totalCouponPaymentJama = 0
+          let totalCouponMaterialBaki = 0, totalCouponPaymentPending = 0
+          let totalCouponBalance = 0, totalCouponTarget = 0
+          let couponAchieved = 0, couponInProgress = 0, couponNotStarted = 0
+          
+          const couponSchemeBreakdown = {}
+          
+          couponsData.forEach(c => {
+            const scheme = schemesData?.find(s => s.id === c.scheme_id)
+            const targetAmount = Number(scheme?.target_amount || 0)
+            const couponSales = cpCouponSalesMap[c.coupon_no] || 0
+            const partyReceipts = cpReceiptMap[c.party_id] || 0
+            const partyCurrentBal = cpBalanceMap[c.party_id] || 0
+            const partySeasonSalesAmt = cpSalesMap[c.party_id] || 0
+            const partySeasonReturnsAmt = cpReturnsMap[c.party_id] || 0
+            
+            const openingBal = partyCurrentBal - partySeasonSalesAmt + partySeasonReturnsAmt + partyReceipts
+            const materialBaki = Math.max(0, targetAmount - couponSales)
+            const paymentPending = Math.max(targetAmount, couponSales) - partyReceipts
+            const totalBalance = openingBal + paymentPending
+            
+            totalCouponTarget += targetAmount
+            totalCouponMaterialSale += couponSales
+            totalCouponPaymentJama += partyReceipts
+            totalCouponMaterialBaki += materialBaki
+            totalCouponPaymentPending += paymentPending
+            totalCouponBalance += totalBalance
+            
+            if (couponSales >= targetAmount && targetAmount > 0) couponAchieved++
+            else if (couponSales > 0) couponInProgress++
+            else couponNotStarted++
+            
+            // Per-scheme breakdown
+            const sName = scheme?.name || 'Unknown'
+            if (!couponSchemeBreakdown[sName]) {
+              couponSchemeBreakdown[sName] = { name: sName, target: 0, materialSale: 0, paymentJama: 0, materialBaki: 0, paymentPending: 0, totalBalance: 0, achieved: 0, inProgress: 0, notStarted: 0, total: 0 }
+            }
+            const sb = couponSchemeBreakdown[sName]
+            sb.target += targetAmount
+            sb.materialSale += couponSales
+            sb.paymentJama += partyReceipts
+            sb.materialBaki += materialBaki
+            sb.paymentPending += paymentPending
+            sb.totalBalance += totalBalance
+            sb.total++
+            if (couponSales >= targetAmount && targetAmount > 0) sb.achieved++
+            else if (couponSales > 0) sb.inProgress++
+            else sb.notStarted++
+          })
+          
+          const collectionEfficiency = totalCouponMaterialSale > 0 ? Math.round((totalCouponPaymentJama / totalCouponMaterialSale) * 10000) / 100 : 0
+          const targetAchievementRate = couponsData.length > 0 ? Math.round((couponAchieved / couponsData.length) * 10000) / 100 : 0
+          
+          const couponSummary = {
+            totalCoupons: couponsData.length,
+            totalTarget: totalCouponTarget,
+            totalMaterialSale: totalCouponMaterialSale,
+            totalPaymentJama: totalCouponPaymentJama,
+            totalMaterialBaki: totalCouponMaterialBaki,
+            totalPaymentPending: totalCouponPaymentPending,
+            totalBalance: totalCouponBalance,
+            achieved: couponAchieved,
+            inProgress: couponInProgress,
+            notStarted: couponNotStarted,
+            collectionEfficiency,
+            targetAchievementRate,
+            schemeBreakdown: Object.values(couponSchemeBreakdown)
+          }
+
           return { 
             totalSales, 
             totalExpenses, 
@@ -1007,7 +1115,8 @@ export const api = {
             salesList,
             receiptsList,
             couponsList: couponsData,
-            schemesAnalytics
+            schemesAnalytics,
+            couponSummary
           }
         }
         case 'settings:get': {

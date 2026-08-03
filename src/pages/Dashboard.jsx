@@ -194,69 +194,172 @@ export default function Dashboard() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Sales vs Expenses */}
+        {/* Coupon Analytics Command Center */}
         <div
           className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
           style={{ animationDelay: '400ms', animationFillMode: 'both' }}
         >
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Monthly Sales vs Expenses</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Month-wise comparison</p>
+              <h2 className="text-lg font-bold text-slate-800">Coupon Performance</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Season-wide coupon analytics overview</p>
             </div>
-          </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart
-              data={stats.monthlySalesExpenses || []}
-              margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
-              barCategoryGap="20%"
+            <button 
+              onClick={() => navigate('/reports')}
+              className="text-xs font-semibold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
             >
-              <defs>
-                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#15803d" stopOpacity={0.9} />
-                </linearGradient>
-                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f87171" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#dc2626" stopOpacity={0.9} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 12, fill: '#64748b' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tickFormatter={formatCompact}
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
-                axisLine={false}
-                tickLine={false}
-                width={55}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
-              <Legend
-                iconType="circle"
-                iconSize={8}
-                wrapperStyle={{ paddingTop: 12, fontSize: 13 }}
-              />
-              <Bar
-                dataKey="sales"
-                name="Sales"
-                fill="url(#salesGradient)"
-                radius={[6, 6, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar
-                dataKey="expenses"
-                name="Expenses"
-                fill="url(#expenseGradient)"
-                radius={[6, 6, 0, 0]}
-                maxBarSize={40}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+              View Details <ArrowUpRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          {stats.couponSummary && stats.couponSummary.totalCoupons > 0 ? (
+            <>
+              {/* Top Row: Donut + Key Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+                {/* Donut Chart - Coupon Status */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative">
+                    <ResponsiveContainer width={140} height={140}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Achieved', value: stats.couponSummary.achieved, fill: '#22c55e' },
+                            { name: 'In Progress', value: stats.couponSummary.inProgress, fill: '#f59e0b' },
+                            { name: 'Not Started', value: stats.couponSummary.notStarted, fill: '#e2e8f0' }
+                          ].filter(d => d.value > 0)}
+                          dataKey="value"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={65}
+                          innerRadius={42}
+                          paddingAngle={3}
+                          strokeWidth={0}
+                        >
+                          {[
+                            { fill: '#22c55e' },
+                            { fill: '#f59e0b' },
+                            { fill: '#e2e8f0' }
+                          ].filter((_, i) => [stats.couponSummary.achieved, stats.couponSummary.inProgress, stats.couponSummary.notStarted][i] > 0).map((entry, index) => (
+                            <Cell key={index} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<PieTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-black text-slate-800">{stats.couponSummary.totalCoupons}</span>
+                      <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Coupons</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-2 text-[10px] font-semibold">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> {stats.couponSummary.achieved} Done</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> {stats.couponSummary.inProgress} Active</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-200"></span> {stats.couponSummary.notStarted} Idle</span>
+                  </div>
+                </div>
+
+                {/* Achievement & Collection Gauges */}
+                <div className="flex flex-col gap-3 justify-center">
+                  {/* Target Achievement */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] uppercase tracking-wider text-emerald-600 font-bold">Target Hit Rate</span>
+                      <span className="text-lg font-black text-emerald-700">{stats.couponSummary.targetAchievementRate}%</span>
+                    </div>
+                    <div className="w-full bg-emerald-200/50 rounded-full h-2 overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-1000" style={{ width: `${Math.min(100, stats.couponSummary.targetAchievementRate)}%` }}></div>
+                    </div>
+                    <p className="text-[10px] text-emerald-500 mt-1">{stats.couponSummary.achieved} of {stats.couponSummary.totalCoupons} stores hit target</p>
+                  </div>
+                  {/* Collection Efficiency */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] uppercase tracking-wider text-blue-600 font-bold">Collection Rate</span>
+                      <span className="text-lg font-black text-blue-700">{stats.couponSummary.collectionEfficiency}%</span>
+                    </div>
+                    <div className="w-full bg-blue-200/50 rounded-full h-2 overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-1000" style={{ width: `${Math.min(100, stats.couponSummary.collectionEfficiency)}%` }}></div>
+                    </div>
+                    <p className="text-[10px] text-blue-500 mt-1">Jama received vs Material sold</p>
+                  </div>
+                </div>
+
+                {/* Financial KPIs */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-center">
+                    <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Material Sale</p>
+                    <p className="text-sm font-black text-slate-800">{formatCompact(stats.couponSummary.totalMaterialSale)}</p>
+                  </div>
+                  <div className="bg-green-50 rounded-xl p-2.5 border border-green-100 text-center">
+                    <p className="text-[9px] uppercase tracking-wider text-green-500 font-bold mb-0.5">Payment Jama</p>
+                    <p className="text-sm font-black text-green-700">{formatCompact(stats.couponSummary.totalPaymentJama)}</p>
+                  </div>
+                  <div className="bg-red-50 rounded-xl p-2.5 border border-red-100 text-center">
+                    <p className="text-[9px] uppercase tracking-wider text-red-400 font-bold mb-0.5">Material Baki</p>
+                    <p className="text-sm font-black text-red-600">{formatCompact(stats.couponSummary.totalMaterialBaki)}</p>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-2.5 border border-orange-100 text-center">
+                    <p className="text-[9px] uppercase tracking-wider text-orange-400 font-bold mb-0.5">Total Balance</p>
+                    <p className="text-sm font-black text-orange-700">{formatCompact(stats.couponSummary.totalBalance)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Per-Scheme Financial Breakdown */}
+              {stats.couponSummary.schemeBreakdown && stats.couponSummary.schemeBreakdown.length > 0 && (
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-3">Scheme-wise Breakdown</p>
+                  <div className="space-y-2.5 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
+                    {stats.couponSummary.schemeBreakdown.map((sb, i) => {
+                      const salesPct = sb.target > 0 ? Math.min(100, (sb.materialSale / sb.target) * 100) : 0
+                      return (
+                        <div key={i} className="bg-slate-50 rounded-xl p-3 border border-slate-100 hover:border-slate-200 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-slate-800">{sb.name}</span>
+                              <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-semibold">{sb.total} stores</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-semibold">
+                              <span className="text-green-600">{sb.achieved} ✓</span>
+                              <span className="text-amber-500">{sb.inProgress} ◌</span>
+                              <span className="text-slate-400">{sb.notStarted} ○</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden mb-2">
+                            <div className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all" style={{ width: `${salesPct}%` }}></div>
+                          </div>
+                          <div className="grid grid-cols-4 gap-2 text-[10px]">
+                            <div>
+                              <span className="text-slate-400">Sale</span>
+                              <p className="font-bold text-slate-700">{formatCompact(sb.materialSale)}</p>
+                            </div>
+                            <div>
+                              <span className="text-green-500">Jama</span>
+                              <p className="font-bold text-green-600">{formatCompact(sb.paymentJama)}</p>
+                            </div>
+                            <div>
+                              <span className="text-red-400">Baki</span>
+                              <p className="font-bold text-red-600">{formatCompact(sb.materialBaki)}</p>
+                            </div>
+                            <div>
+                              <span className="text-orange-400">Balance</span>
+                              <p className="font-bold text-orange-600">{formatCompact(sb.totalBalance)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[320px] text-slate-400">
+              <Ticket className="w-12 h-12 mb-3 text-slate-300" />
+              <p className="text-sm font-medium">No coupon data available yet</p>
+              <p className="text-xs mt-1">Issue coupons to see analytics here</p>
+            </div>
+          )}
         </div>
 
         {/* Expense Breakdown */}
