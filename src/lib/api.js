@@ -831,11 +831,6 @@ export const api = {
           
           const { data: salesData } = await withCompany(supabase.from('sales').select('*, parties(name, village, district)')).eq('season_id', seasonId)
           
-          // Fetch sale items for product analytics
-          const { data: seasonSaleItems } = await withCompany(
-            supabase.from('sale_items').select('qty, amount, products(name), sales!inner(season_id)')
-          ).eq('sales.season_id', seasonId)
-          
           let expQuery = withCompany(supabase.from('expenses').select('*, expense_types(name)'))
           if (seasonData) {
             expQuery = expQuery.gte('date', seasonData.start_date).lte('date', seasonData.end_date)
@@ -948,32 +943,64 @@ export const api = {
 
           const partySalesMap = {}
           const locationSalesMap = {}
+          
+          // Helper to extract location from party name if db village is missing or generic
+          const extractLocation = (partyName) => {
+            let v = 'Unknown'
+            let d = 'Unknown'
+            if (!partyName) return { v, d }
+            
+            let nameWithoutDist = partyName
+            const distMatch = partyName.match(/\(([^)]+)\)$/)
+            if (distMatch) {
+              d = distMatch[1].trim()
+              nameWithoutDist = partyName.replace(/\([^)]+\)$/, '').trim()
+            }
+            
+            const kwMatch = nameWithoutDist.match(/(?:\bK\.K\b|\bKK\b|\bKRUSHI\s+KENDRA\b|\bKRUSHY\s+KENDRA\b|\bKRUSHI\b|\bFARM\s+HOUSE\b|\bF\.P\.O\b|\bAGRO\b|\bDM\b)(.*)/i)
+            if (kwMatch && kwMatch[1].trim()) {
+              v = kwMatch[1].trim()
+            } else {
+              const parts = nameWithoutDist.split(' ')
+              v = parts.length > 1 ? parts[parts.length - 1] : nameWithoutDist
+            }
+            v = v.replace(/^[.,\-]+|[.,\-]+$/g, '').trim()
+            return { v, d }
+          }
+          
           salesData?.forEach(s => {
              const pName = s.parties?.name || 'Unknown'
              if(!partySalesMap[pName]) partySalesMap[pName] = 0
              partySalesMap[pName] += Number(s.total_amount || 0)
              
-             // Location Analytics (Normalize strings to group similar ones)
-             const v = s.parties?.village?.trim().toLowerCase() || 'unknown'
-             const d = s.parties?.district?.trim().toLowerCase() || 'unknown'
-             const locKey = `${v}, ${d}`
-             if(!locationSalesMap[locKey]) locationSalesMap[locKey] = { village: s.parties?.village || 'Unknown', district: s.parties?.district || 'Unknown', total: 0 }
+             // Location Analytics
+             let dbVillage = s.parties?.village?.trim()
+             let dbDistrict = s.parties?.district?.trim()
+             
+             let finalVillage = dbVillage || 'Unknown'
+             let finalDistrict = dbDistrict || 'Unknown'
+             
+             if (finalVillage.toLowerCase() === 'unknown' || finalVillage === '') {
+                const extracted = extractLocation(pName)
+                finalVillage = extracted.v || 'Unknown'
+                finalDistrict = extracted.d !== 'Unknown' ? extracted.d : finalDistrict
+             }
+             
+             const locKey = `${finalVillage.toLowerCase()}, ${finalDistrict.toLowerCase()}`
+             
+             if(!locationSalesMap[locKey]) {
+                locationSalesMap[locKey] = { 
+                  village: finalVillage, 
+                  district: finalDistrict, 
+                  total: 0 
+                }
+             }
              locationSalesMap[locKey].total += Number(s.total_amount || 0)
           })
           const salesList = Object.entries(partySalesMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
           const topParties = salesList.slice(0, 50)
           
-          const locationAnalytics = Object.values(locationSalesMap).sort((a,b) => b.total - a.total).slice(0, 20)
-
-          // Product Analytics
-          const productSalesMap = {}
-          seasonSaleItems?.forEach(item => {
-             const pName = item.products?.name || 'Unknown'
-             if(!productSalesMap[pName]) productSalesMap[pName] = { name: pName, qty: 0, amount: 0 }
-             productSalesMap[pName].qty += Number(item.qty || 0)
-             productSalesMap[pName].amount += Number(item.amount || 0)
-          })
-          const productAnalytics = Object.values(productSalesMap).sort((a,b) => b.amount - a.amount).slice(0, 10)
+          const locationAnalytics = Object.values(locationSalesMap).sort((a,b) => b.total - a.total).slice(0, 50)
 
           // Recent Sales
           const recentSales = (salesData || [])

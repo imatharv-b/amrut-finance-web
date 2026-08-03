@@ -642,37 +642,7 @@ export default function Dashboard() {
       )}
 
       {/* Advanced Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 mb-8">
-        {/* Top Selling Products */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Top Selling Products</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Highest revenue generators</p>
-            </div>
-            <Package className="w-5 h-5 text-indigo-500" />
-          </div>
-          <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-            {(stats.productAnalytics || []).map((prod, index) => (
-              <div key={index} className="flex justify-between items-center p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700">{prod.name}</p>
-                    <p className="text-xs text-slate-500">{prod.qty} units sold</p>
-                  </div>
-                </div>
-                <span className="text-sm font-bold text-indigo-700">{formatCurrency(prod.amount)}</span>
-              </div>
-            ))}
-            {(!stats.productAnalytics || stats.productAnalytics.length === 0) && (
-              <p className="text-sm text-slate-400 text-center py-4">No product data available</p>
-            )}
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 gap-6 mt-8 mb-8">
         {/* Location Analytics (Heatmap List) */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-5">
