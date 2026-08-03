@@ -7,6 +7,21 @@ export const setGlobalCompanyId = (id) => {
 
 // Helper to filter by company (for per-company tables)
 const withCompany = (query) => globalCompanyId ? query.eq('company_id', globalCompanyId) : query;
+
+async function logActivity(action, entity_type, entity_name, details = {}) {
+  if (!globalCompanyId) return;
+  try {
+    await supabase.from('activity_logs').insert([{
+      company_id: globalCompanyId,
+      action,
+      entity_type,
+      entity_name,
+      details
+    }]);
+  } catch (err) {
+    console.error('Failed to log activity:', err);
+  }
+}
 // Helper to inject company_id (for inserts)
 const injectCompany = (data) => globalCompanyId ? { ...data, company_id: globalCompanyId } : data;
 
@@ -515,6 +530,10 @@ export const api = {
         }
         case 'payments:delete': {
           const [id] = args
+          const { data: payment } = await supabase.from('payments').select('*').eq('id', id).single()
+          if (payment) {
+            await logActivity('DELETE', 'PAYMENT', payment.payment_type, { amount: payment.amount, party_id: payment.party_id })
+          }
           const { error } = await supabase.from('payments').delete().eq('id', id)
           if (error) throw error
           
@@ -561,8 +580,6 @@ export const api = {
         }
         case 'sales:add': {
           const [saleData] = args
-          // Supabase doesn't easily do nested inserts with relationships in the client unless structured perfectly.
-          // We'll do it sequentially for simplicity.
           const { items, ...rest } = saleData
           const { data: sale, error } = await supabase.from('sales').insert(injectCompany(rest)).select().single()
           if (error) throw error
@@ -570,6 +587,7 @@ export const api = {
             const itemsToInsert = items.map(i => ({ ...i, sale_id: sale.id }))
             await supabase.from('sale_items').insert(itemsToInsert)
           }
+          await logActivity('CREATE', 'SALE', sale.invoice_no, { total_amount: sale.total_amount, party_id: sale.party_id })
           return { id: sale.id, invoice_no: sale.invoice_no }
         }
         case 'sales:getById': {
@@ -588,12 +606,17 @@ export const api = {
             const itemsToInsert = items.map(i => ({ ...i, sale_id: id }))
             await supabase.from('sale_items').insert(itemsToInsert)
           }
-          return true
+          await logActivity('UPDATE', 'SALE', rest.invoice_no, { total_amount: rest.total_amount, party_id: rest.party_id })
+          return id
         }
         case 'sales:delete': {
           const [id] = args
+          const { data: sale } = await supabase.from('sales').select('invoice_no, total_amount, party_id').eq('id', id).single()
+          if (sale) {
+            await logActivity('DELETE', 'SALE', sale.invoice_no, { total_amount: sale.total_amount, party_id: sale.party_id })
+          }
           await supabase.from('sales').delete().eq('id', id)
-          return true
+          return id
         }
         case 'sales:changeSeason': {
           const [saleIds, newSeasonId] = args
@@ -806,7 +829,12 @@ export const api = {
           // Fetch relevant data
           const { data: seasonData } = await supabase.from('seasons').select('*').eq('id', seasonId).single()
           
-          const { data: salesData } = await withCompany(supabase.from('sales').select('*, parties(name)')).eq('season_id', seasonId)
+          const { data: salesData } = await withCompany(supabase.from('sales').select('*, parties(name, village, district)')).eq('season_id', seasonId)
+          
+          // Fetch sale items for product analytics
+          const { data: seasonSaleItems } = await withCompany(
+            supabase.from('sale_items').select('qty, amount, products(name), sales!inner(season_id)')
+          ).eq('sales.season_id', seasonId)
           
           let expQuery = withCompany(supabase.from('expenses').select('*, expense_types(name)'))
           if (seasonData) {
@@ -919,13 +947,33 @@ export const api = {
           const expenseBreakdown = Object.entries(expBreakdownMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
 
           const partySalesMap = {}
+          const locationSalesMap = {}
           salesData?.forEach(s => {
              const pName = s.parties?.name || 'Unknown'
              if(!partySalesMap[pName]) partySalesMap[pName] = 0
              partySalesMap[pName] += Number(s.total_amount || 0)
+             
+             // Location Analytics (Normalize strings to group similar ones)
+             const v = s.parties?.village?.trim().toLowerCase() || 'unknown'
+             const d = s.parties?.district?.trim().toLowerCase() || 'unknown'
+             const locKey = `${v}, ${d}`
+             if(!locationSalesMap[locKey]) locationSalesMap[locKey] = { village: s.parties?.village || 'Unknown', district: s.parties?.district || 'Unknown', total: 0 }
+             locationSalesMap[locKey].total += Number(s.total_amount || 0)
           })
           const salesList = Object.entries(partySalesMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total - a.total)
-          const topParties = salesList.slice(0, 5)
+          const topParties = salesList.slice(0, 50)
+          
+          const locationAnalytics = Object.values(locationSalesMap).sort((a,b) => b.total - a.total).slice(0, 20)
+
+          // Product Analytics
+          const productSalesMap = {}
+          seasonSaleItems?.forEach(item => {
+             const pName = item.products?.name || 'Unknown'
+             if(!productSalesMap[pName]) productSalesMap[pName] = { name: pName, qty: 0, amount: 0 }
+             productSalesMap[pName].qty += Number(item.qty || 0)
+             productSalesMap[pName].amount += Number(item.amount || 0)
+          })
+          const productAnalytics = Object.values(productSalesMap).sort((a,b) => b.amount - a.amount).slice(0, 10)
 
           // Recent Sales
           const recentSales = (salesData || [])
@@ -1116,7 +1164,9 @@ export const api = {
             receiptsList,
             couponsList: couponsData,
             schemesAnalytics,
-            couponSummary
+            couponSummary,
+            locationAnalytics,
+            productAnalytics
           }
         }
         case 'settings:get': {
@@ -1124,6 +1174,13 @@ export const api = {
           const s = {}
           data?.forEach(d => { s[d.key] = d.value })
           return s
+        }
+        case 'activity:getAll': {
+          const { data, error } = await withCompany(
+            supabase.from('activity_logs').select('*')
+          ).order('created_at', { ascending: false }).limit(100)
+          if (error) throw error
+          return data
         }
         case 'settings:update': {
           const [settingsObj] = args

@@ -42,6 +42,7 @@ const AttendancePage = React.lazy(() => import('./pages/workers/AttendancePage')
 const WorkerLedgerPage = React.lazy(() => import('./pages/workers/WorkerLedgerPage'))
 const WeeklySummaryPage = React.lazy(() => import('./pages/workers/WeeklySummaryPage'))
 const MonthlySalaryPage = React.lazy(() => import('./pages/workers/MonthlySalaryPage'))
+const ActivityLogPage = React.lazy(() => import('./pages/ActivityLogPage'))
 // ── Page Loading Fallback ────────────────────────────────────────────
 function PageFallback() {
   return (
@@ -151,6 +152,7 @@ function AppWithCompany() {
                       <Route path="/reports" element={<ReportsPage />} />
                       <Route path="/seasons" element={<SeasonsPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/activity-logs" element={<ActivityLogPage />} />
                     </>
                   ) : role === 'salesman' ? (
                     <>

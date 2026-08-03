@@ -21,7 +21,8 @@ import {
   RotateCcw,
   LogOut,
   Briefcase,
-  CalendarDays
+  CalendarDays,
+  History
 } from 'lucide-react'
 import { SeasonContext } from '../context/SeasonContext'
 import { supabase } from '../lib/supabase'
@@ -124,6 +125,12 @@ const NAVIGATION = [
     label: 'Settings',
     icon: Settings,
     path: '/settings',
+    roles: ['admin']
+  },
+  {
+    label: 'Activity Logs',
+    icon: History,
+    path: '/activity-logs',
     roles: ['admin']
   }
 ]

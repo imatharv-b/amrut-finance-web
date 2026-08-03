@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import {
   IndianRupee, Receipt, TrendingUp, AlertCircle, Ticket,
-  LayoutDashboard, Crown, ArrowUpRight, FileText, Wallet
+  LayoutDashboard, Crown, ArrowUpRight, FileText, Wallet, Package, MapPin
 } from 'lucide-react'
 
 const formatCurrency = (num) => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(num || 0))
@@ -427,8 +427,8 @@ export default function Dashboard() {
             </div>
             <Crown className="w-5 h-5 text-accent-500" />
           </div>
-          <div className="space-y-3">
-            {(stats.topParties || []).slice(0, 5).map((party, index) => (
+          <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+            {(stats.topParties || []).map((party, index) => (
               <div
                 key={index}
                 className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
@@ -640,6 +640,78 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Advanced Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 mb-8">
+        {/* Top Selling Products */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">Top Selling Products</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Highest revenue generators</p>
+            </div>
+            <Package className="w-5 h-5 text-indigo-500" />
+          </div>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+            {(stats.productAnalytics || []).map((prod, index) => (
+              <div key={index} className="flex justify-between items-center p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">{prod.name}</p>
+                    <p className="text-xs text-slate-500">{prod.qty} units sold</p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-indigo-700">{formatCurrency(prod.amount)}</span>
+              </div>
+            ))}
+            {(!stats.productAnalytics || stats.productAnalytics.length === 0) && (
+              <p className="text-sm text-slate-400 text-center py-4">No product data available</p>
+            )}
+          </div>
+        </div>
+
+        {/* Location Analytics (Heatmap List) */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">Sales by Location</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Regional performance heatmap</p>
+            </div>
+            <MapPin className="w-5 h-5 text-teal-500" />
+          </div>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+            {(stats.locationAnalytics || []).map((loc, index) => {
+              // Calculate relative width based on max value (index 0 is max because it's sorted)
+              const maxTotal = stats.locationAnalytics[0]?.total || 1;
+              const widthPct = (loc.total / maxTotal) * 100;
+              
+              return (
+                <div key={index} className="relative p-3 rounded-xl bg-slate-50 overflow-hidden hover:bg-slate-100 transition-colors z-0">
+                  {/* Heatmap background bar */}
+                  <div 
+                    className="absolute top-0 left-0 h-full bg-teal-100 opacity-50 z-[-1]"
+                    style={{ width: `${widthPct}%` }}
+                  ></div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700 capitalize">{loc.village}</p>
+                      <p className="text-xs text-slate-500 capitalize">{loc.district}</p>
+                    </div>
+                    <span className="text-sm font-bold text-teal-700">{formatCurrency(loc.total)}</span>
+                  </div>
+                </div>
+              )
+            })}
+            {(!stats.locationAnalytics || stats.locationAnalytics.length === 0) && (
+              <p className="text-sm text-slate-400 text-center py-4">No location data available</p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Detail Modals */}
       
