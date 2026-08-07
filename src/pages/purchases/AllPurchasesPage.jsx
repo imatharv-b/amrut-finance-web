@@ -156,48 +156,26 @@ export default function AllPurchasesPage() {
         const sgstPct = isPakka ? Number(purchase.sgst_percent || 0) : 0;
         const taxableBasis = isPakka ? grossTotal / (1 + (cgstPct + sgstPct) / 100) : grossTotal;
         
-        if (items.length === 0) {
-          // Purchase with no items — export as single row
+        if (items.length === 0) continue; // Skip empty purchases
+
+        for (const item of items) {
+          // Format date as DD-MM-YYYY
+          let vchDate = purchase.date;
+          if (vchDate && vchDate.includes('-')) {
+             const [y, m, d] = vchDate.split('-');
+             if (y.length === 4) vchDate = `${d}-${m}-${y}`;
+          }
+
           rows.push({
-            'Vch Date': purchase.date,
-            'Vch No': purchase.invoice_no,
-            'Vch Type': isPakka ? 'Tax Invoice' : 'Pro Forma',
-            'Party Name': purchase.party_name || '',
-            'Item Name': '',
-            'Quantity': '',
-            'Unit': '',
-            'Rate': '',
-            'Amount': Number(taxableBasis).toFixed(2),
-            'Discount': Number(purchase.discount || 0).toFixed(2),
-            'CGST %': cgstPct,
-            'CGST Amount': isPakka ? (taxableBasis * cgstPct / 100).toFixed(2) : '0.00',
-            'SGST %': sgstPct,
-            'SGST Amount': isPakka ? (taxableBasis * sgstPct / 100).toFixed(2) : '0.00',
-            'Total Amount': Number(purchase.total_amount || 0).toFixed(2),
-            'Amount Paid': Number(purchase.amount_paid || 0).toFixed(2),
-            'Associate': purchase.associate_name || '',
-          });
-        } else {
-          items.forEach((item, idx) => {
-            rows.push({
-              'Vch Date': idx === 0 ? purchase.date : '',
-              'Vch No': idx === 0 ? purchase.invoice_no : '',
-              'Vch Type': idx === 0 ? (isPakka ? 'Tax Invoice' : 'Pro Forma') : '',
-              'Party Name': idx === 0 ? (purchase.party_name || '') : '',
-              'Item Name': item.product_name || '',
-              'Quantity': Number(item.qty || 0),
-              'Unit': item.unit || '',
-              'Rate': Number(item.rate || 0).toFixed(2),
-              'Amount': Number(item.amount || 0).toFixed(2),
-              'Discount': idx === 0 ? Number(purchase.discount || 0).toFixed(2) : '',
-              'CGST %': idx === 0 ? cgstPct : '',
-              'CGST Amount': idx === 0 ? (isPakka ? (taxableBasis * cgstPct / 100).toFixed(2) : '0.00') : '',
-              'SGST %': idx === 0 ? sgstPct : '',
-              'SGST Amount': idx === 0 ? (isPakka ? (taxableBasis * sgstPct / 100).toFixed(2) : '0.00') : '',
-              'Total Amount': idx === 0 ? Number(purchase.total_amount || 0).toFixed(2) : '',
-              'Amount Paid': idx === 0 ? Number(purchase.amount_paid || 0).toFixed(2) : '',
-              'Associate': idx === 0 ? (purchase.associate_name || '') : '',
-            });
+            'VCH/BILL_DATE': vchDate,
+            'VCH/BILL_NO': purchase.invoice_no || '',
+            'SALE/PURC_TYPE': 'L/GST-TaxIncl.',
+            'PARTY_NAME': (purchase.party_name || '').trim().toUpperCase(),
+            'ITEM_NAME': (item.product_name || '').trim().toUpperCase(),
+            'QUANTITY': item.qty,
+            'UNIT': item.unit,
+            'PRICE': item.rate,
+            'AMOUNT': item.amount
           });
         }
       }

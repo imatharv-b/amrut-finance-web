@@ -186,25 +186,15 @@ export default function AllSalesPage() {
           }
 
           rows.push({
-            'VchDate': vchDate,
-            'VchNo': sale.invoice_no || '',
-            'VchType': 'Sale',
-            'VchSeries': 'MAIN',
-            'PartyName': (sale.party_name || '').trim().toUpperCase(),
-            'SaleType': 'Local Sale @5%',
-            'ItemName': (item.itemName).trim().toUpperCase(),
-            'Quantity': item.qty,
-            'Unit': item.unit,
-            'Rate': item.rate,
-            'Amount': item.amount,
-            'Discount': item.lineDiscount,
-            'CGST %': 2.5,
-            'CGST Amount': item.cgstAmount,
-            'SGST %': 2.5,
-            'SGST Amount': item.sgstAmount,
-            'LineTotal': item.lineTotal,
-            'BillAmount': billAmount,
-            'Associate': sale.associate_name || ''
+            'VCH/BILL_DATE': vchDate,
+            'VCH/BILL_NO': sale.invoice_no || '',
+            'SALE/PURC_TYPE': 'L/GST-TaxIncl.',
+            'PARTY_NAME': (sale.party_name || '').trim().toUpperCase(),
+            'ITEM_NAME': (item.itemName).trim().toUpperCase(),
+            'QUANTITY': item.qty,
+            'UNIT': item.unit,
+            'PRICE': item.rate,
+            'AMOUNT': item.amount
           });
         }
       }
