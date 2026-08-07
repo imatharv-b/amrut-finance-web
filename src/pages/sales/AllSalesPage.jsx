@@ -186,6 +186,7 @@ export default function AllSalesPage() {
           }
 
           rows.push({
+            'VCH_SERIES': sale.sale_type === 'pakka' ? 'GST' : 'MAIN',
             'VCH/BILL_DATE': vchDate,
             'VCH/BILL_NO': sale.invoice_no || '',
             'SALE/PURC_TYPE': 'L/GST-TaxIncl.',

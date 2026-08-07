@@ -167,6 +167,7 @@ export default function AllPurchasesPage() {
           }
 
           rows.push({
+            'VCH_SERIES': isPakka ? 'GST' : 'MAIN',
             'VCH/BILL_DATE': vchDate,
             'VCH/BILL_NO': purchase.invoice_no || '',
             'SALE/PURC_TYPE': 'L/GST-TaxIncl.',
