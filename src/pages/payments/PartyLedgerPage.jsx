@@ -191,6 +191,13 @@ export default function PartyLedgerPage() {
               <Printer className="w-4 h-4 sm:mr-1.5" />
               <span className="hidden sm:inline">Print</span>
             </button>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="px-2 py-1.5 bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors shadow-sm ml-2"
+              title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </button>
           </div>
         )}
       </div>
@@ -206,59 +213,45 @@ export default function PartyLedgerPage() {
             <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
           </div>
         ) : ledgerData ? (
-          <>
+          <div className="flex-1 overflow-auto flex flex-col bg-white">
             {/* Ledger Header */}
-            <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-start">
+            <div className="p-4 md:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-start gap-4 shrink-0 bg-slate-50">
               <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-bold text-slate-800">{ledgerData.party.name}</h2>
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-800">{ledgerData.party.name}</h2>
                   {ledgerData.coupons && ledgerData.coupons.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1">
                       {ledgerData.coupons.map((c, i) => (
                         <div key={i} className="inline-flex items-center gap-1 bg-purple-100 border border-purple-200 rounded px-1.5 py-0.5 shadow-sm" title={`Scheme: ${c.scheme_name}\nTarget: ₹${new Intl.NumberFormat('en-IN').format(c.target_amount)}\nGift: ₹${new Intl.NumberFormat('en-IN').format(c.amount)}`}>
                           <Ticket className="w-3 h-3 text-purple-600" />
-                          <span className="text-[11px] font-bold text-purple-800">#{c.coupon_no}</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-purple-800">#{c.coupon_no}</span>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                <p className="text-slate-600 mt-1">{[ledgerData.party.village, ledgerData.party.taluka, ledgerData.party.district].filter(Boolean).join(', ')}</p>
-                <p className="text-slate-500 text-sm mt-1">Mobile: {ledgerData.party.mobile || '-'}</p>
+                <p className="text-sm text-slate-600">{[ledgerData.party.village, ledgerData.party.taluka, ledgerData.party.district].filter(Boolean).join(', ')}</p>
+                <p className="text-slate-500 text-xs mt-0.5">Mobile: {ledgerData.party.mobile || '-'}</p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-sm text-slate-500 mb-1">Current Balance</p>
+                <div className="text-left sm:text-right bg-white sm:bg-transparent p-3 sm:p-0 rounded-lg border border-slate-200 sm:border-none w-full sm:w-auto flex justify-between sm:block">
+                  <p className="text-xs sm:text-sm text-slate-500 mb-0.5 sm:mb-1">Current Balance</p>
                 {(() => {
                   const currentBalance = ledgerData.entries.length > 0 
                     ? ledgerData.entries[ledgerData.entries.length - 1].balance 
                     : Number(ledgerData.openingBalanceForPeriod || 0);
                   return (
-                    <p className={`text-2xl font-bold ${currentBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <p className={`text-lg sm:text-2xl font-bold ${currentBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
                       {currentBalance > 0 ? `₹${currentBalance.toFixed(2)} Dr` : `₹${Math.abs(currentBalance).toFixed(2)} Cr`}
                     </p>
                   );
                 })()}
                 </div>
-                <button
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  className="p-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors shadow-sm ml-2 hidden md:flex"
-                  title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
-                >
-                  {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                </button>
-                <button
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  className="p-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors shadow-sm ml-2 md:hidden"
-                  title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
-                >
-                  {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                </button>
               </div>
             </div>
 
             {/* Ledger Cards (Mobile) */}
-            <div className="md:hidden flex-1 overflow-auto bg-slate-50/50 p-4 space-y-3">
+            <div className="md:hidden p-3 space-y-3 bg-slate-50/50 shrink-0">
               {/* Opening Balance Card */}
               <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
                 <div>
@@ -333,9 +326,9 @@ export default function PartyLedgerPage() {
             </div>
 
             {/* Ledger Table (Desktop) */}
-            <div className="hidden md:block flex-1 overflow-auto p-0">
+            <div className="hidden md:block shrink-0 bg-white">
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-100 text-slate-600 font-medium sticky top-0 z-10">
+                <thead className="bg-slate-100 text-slate-600 font-medium sticky top-0 z-10 shadow-sm">
                   <tr>
                     <th className="px-6 py-3 border-b border-slate-200">Date</th>
                     <th className="px-6 py-3 border-b border-slate-200">Type</th>
@@ -437,7 +430,7 @@ export default function PartyLedgerPage() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         ) : null}
       </div>
 
