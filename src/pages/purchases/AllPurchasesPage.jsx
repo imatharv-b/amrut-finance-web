@@ -268,8 +268,11 @@ export default function AllPurchasesPage() {
     { label: 'WhatsApp', icon: Share2, onClick: handleWhatsApp }
   ];
 
-  if (userRole !== 'data_entry') {
+  if (userRole !== 'salesman') {
     actions.splice(1, 0, { label: 'Edit', icon: Edit, onClick: (purchase) => navigate(`/purchases/edit/${purchase.id}`) });
+  }
+
+  if (userRole === 'admin' || userRole === 'finance_manager') {
     actions.push({ label: 'Move Season', icon: RefreshCw, onClick: (purchase) => {
       setSeasonPurchase(purchase);
       setTargetSeasonId('');
