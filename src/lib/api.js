@@ -176,12 +176,23 @@ export const api = {
           const { data: party } = await supabase.from('parties').select('*').eq('id', partyId).single()
           if (!party) return null
           
-          const [salesRes, paymentsRes, expensesRes, returnsRes] = await Promise.all([
+          const [salesRes, paymentsRes, expensesRes, returnsRes, couponsRes] = await Promise.all([
             supabase.from('sales').select('*, sale_items(*, products(name))').eq('party_id', partyId),
             supabase.from('payments').select('*').eq('party_id', partyId),
             supabase.from('expenses').select('*, expense_types(name)').eq('party_id', partyId),
-            supabase.from('sale_returns').select('*, sale_return_items(*, products(name))').eq('party_id', partyId)
+            supabase.from('sale_returns').select('*, sale_return_items(*, products(name))').eq('party_id', partyId),
+            withCompany(supabase.from('scheme_coupons').select('*, schemes(name, target_amount, season_id)').eq('party_id', partyId))
           ]);
+          
+          const partyCoupons = (couponsRes.data || []).map(c => ({
+            id: c.id,
+            coupon_no: c.coupon_no,
+            scheme_name: c.schemes?.name || 'Unknown',
+            target_amount: Number(c.schemes?.target_amount || 0),
+            amount: Number(c.amount || 0),
+            issue_date: c.issue_date,
+            status: c.status
+          }));
           
           let rawEntries = [];
 
@@ -319,7 +330,7 @@ export const api = {
               })
             }
           }
-          return { party, entries, openingBalanceForPeriod }
+          return { party, entries, openingBalanceForPeriod, coupons: partyCoupons }
         }
 
         // =================== ASSOCIATES ===================

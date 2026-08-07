@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Printer, Share2, Maximize, Minimize, Edit } from 'lucide-react';
+import { BookOpen, Printer, Share2, Maximize, Minimize, Edit, Ticket } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
@@ -244,6 +244,30 @@ export default function PartyLedgerPage() {
                 </button>
               </div>
             </div>
+
+            {/* Coupon Info Banner */}
+            {ledgerData.coupons && ledgerData.coupons.length > 0 && (
+              <div className="mx-4 mt-3 mb-1 sm:mx-6">
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Ticket className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-sm font-bold text-purple-800">Scheme Coupons Issued</h3>
+                    <span className="ml-auto text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-bold">{ledgerData.coupons.length} coupon{ledgerData.coupons.length > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {ledgerData.coupons.map((c, i) => (
+                      <div key={i} className="flex flex-wrap items-center gap-x-4 gap-y-1 bg-white rounded-lg px-3 py-2 border border-purple-100">
+                        <span className="text-xs font-bold text-purple-700">#{c.coupon_no}</span>
+                        <span className="text-xs text-slate-600">{c.scheme_name}</span>
+                        <span className="text-xs text-slate-500">Target: <strong className="text-slate-700">₹{new Intl.NumberFormat('en-IN').format(c.target_amount)}</strong></span>
+                        <span className="text-xs text-slate-500">Gift: <strong className="text-emerald-600">₹{new Intl.NumberFormat('en-IN').format(c.amount)}</strong></span>
+                        {c.issue_date && <span className="text-xs text-slate-400">{new Date(c.issue_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Ledger Cards (Mobile) */}
             <div className="md:hidden flex-1 overflow-auto bg-slate-50/50 p-4 space-y-3">
