@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileBarChart2, Search, Printer, Download, ChevronDown, ChevronRight, Gift, Tag, TrendingUp, Target, Package, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { exportCouponAnalyticsExcel } from '../../lib/couponExcelExport';
 
 export default function ReportsPage({ defaultReport = 'outstanding' }) {
   const [seasons, setSeasons] = useState([]);
@@ -244,13 +245,32 @@ export default function ReportsPage({ defaultReport = 'outstanding' }) {
         </button>
         
         {reportData && (
-          <button
-            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium transition flex items-center ml-auto"
-            onClick={() => window.print()}
-          >
-            <Printer className="w-3.5 h-3.5 mr-1.5" />
-            Print
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            {reportData.type === 'coupon' && (
+              <button
+                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition flex items-center shadow-sm"
+                onClick={() => {
+                  try {
+                    const seasonObj = seasons.find(s => s.id === Number(selectedSeason));
+                    exportCouponAnalyticsExcel(reportData, seasonObj?.name);
+                    toast.success('Excel file downloaded!');
+                  } catch (err) {
+                    toast.error('Failed to export: ' + (err.message || err));
+                  }
+                }}
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                Export Excel
+              </button>
+            )}
+            <button
+              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium transition flex items-center"
+              onClick={() => window.print()}
+            >
+              <Printer className="w-3.5 h-3.5 mr-1.5" />
+              Print
+            </button>
+          </div>
         )}
       </div>
 
