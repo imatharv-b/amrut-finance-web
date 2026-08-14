@@ -116,7 +116,7 @@ export const exportAsPDF = (html, filename = 'document.pdf') => {
       iframe.style.position = 'fixed';
       iframe.style.right = '200vw';
       iframe.style.top = '0';
-      iframe.style.width = '800px';
+      iframe.style.width = '1024px';
       iframe.style.height = '2000px';
       iframe.style.border = '0';
       iframe.style.backgroundColor = 'white';
@@ -134,7 +134,7 @@ export const exportAsPDF = (html, filename = 'document.pdf') => {
           scale: 2,
           useCORS: true,
           logging: false,
-          windowWidth: 800
+          windowWidth: 1024
         }).then(canvas => {
           const imgData = canvas.toDataURL('image/jpeg', 1.0);
           const pdf = new jsPDF('p', 'pt', 'a4');
@@ -167,7 +167,7 @@ export const exportAsPDF = (html, filename = 'document.pdf') => {
           document.body.removeChild(iframe);
           reject(err);
         });
-      }, 1500);
+      }, 2500);
     } catch (err) {
       reject(err);
     }
