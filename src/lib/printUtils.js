@@ -1,8 +1,13 @@
 import html2canvas from 'html2canvas';
 
-export const printHTML = (html) => {
+export const printHTML = (html, filename) => {
   return new Promise((resolve, reject) => {
     try {
+      const originalTitle = document.title;
+      if (filename) {
+        document.title = filename;
+      }
+      
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
       iframe.style.right = '0';
@@ -21,6 +26,9 @@ export const printHTML = (html) => {
         iframe.contentWindow.print();
         setTimeout(() => {
           document.body.removeChild(iframe);
+          if (filename) {
+            document.title = originalTitle;
+          }
           resolve();
         }, 1000);
       };

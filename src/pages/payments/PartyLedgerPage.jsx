@@ -74,11 +74,17 @@ export default function PartyLedgerPage() {
     }
   };
 
+  const getLedgerFileName = (ext) => {
+    const d = new Date();
+    const dateStr = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+    return `${ledgerData.party.name}_${dateStr}${ext}`;
+  };
+
   const handlePrint = async () => {
     if (!ledgerData) return;
     try {
       const html = generateLedgerHTML(ledgerData, firmSettings);
-      await printHTML(html);
+      await printHTML(html, getLedgerFileName(''));
     } catch (err) {
       toast.error(err.message || 'Failed to print ledger');
     }
@@ -88,9 +94,45 @@ export default function PartyLedgerPage() {
     if (!ledgerData) return;
     try {
       const html = generateLedgerHTML(ledgerData, firmSettings);
+      const filename = getLedgerFileName('.jpg');
+      
+      const currentBalance = ledgerData.entries.length > 0 
+        ? ledgerData.entries[ledgerData.entries.length - 1].balance 
+        : Number(ledgerData.openingBalanceForPeriod || 0);
+        
+      const balanceStr = currentBalance > 0 
+        ? `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(currentBalance)} Dr` 
+        : `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(Math.abs(currentBalance))} Cr`;
+        
+      const text = `Hello ${ledgerData.party.name},\n\nPlease find your ledger attached.\n\nCurrent Balance: ${balanceStr}`;
+
       toast.loading('Generating image for WhatsApp...', { id: 'wa-ledger' });
-      await exportAsJPG(html, `Ledger_${ledgerData.party.name}.jpg`);
-      toast.success('Image downloaded! You can now attach it in WhatsApp.', { id: 'wa-ledger' });
+      const imgData = await exportAsJPG(html, filename);
+      
+      try {
+        const res = await fetch(imgData);
+        const blob = await res.blob();
+        const file = new File([blob], filename, { type: 'image/jpeg' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Ledger',
+            text: text
+          });
+          toast.success('Shared successfully!', { id: 'wa-ledger' });
+          return;
+        }
+      } catch (e) {
+        console.log('Share API not supported or failed', e);
+      }
+      
+      toast.success('Image downloaded! Redirecting to WhatsApp...', { id: 'wa-ledger' });
+      const mobile = ledgerData.party.mobile || '';
+      setTimeout(() => {
+        window.open(`https://wa.me/${mobile ? '91'+mobile : ''}?text=${encodeURIComponent(text)}`, '_blank');
+      }, 500);
+      
     } catch (err) {
       toast.error(err.message || 'Failed to generate image', { id: 'wa-ledger' });
     }
