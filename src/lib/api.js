@@ -200,13 +200,14 @@ export const api = {
              rawEntries.push({
                 id: s.id,
                 entry_date: s.date,
-                ref: s.invoice_no + (s.coupon_no ? ` (Coupon: ${s.coupon_no})` : ''),
+                ref: s.invoice_no,
                 vch_no: s.invoice_no,
                 debit: Number(s.total_amount),
                 credit: 0,
                 entry_type: 'sale',
                 particulars: 'Cr Sales',
                 narration: s.remarks || '',
+                coupon_no: s.coupon_no || null,
                 items: s.sale_items?.map(i => ({ name: i.products?.name, qty: i.qty, unit: i.unit, rate: i.rate, amount: i.amount })) || []
              });
           });
@@ -326,7 +327,8 @@ export const api = {
                 debit: Number(e.debit),
                 credit: Number(e.credit),
                 balance: runningBalance,
-                type: e.entry_type
+                type: e.entry_type,
+                coupon_no: e.coupon_no || null
               })
             }
           }

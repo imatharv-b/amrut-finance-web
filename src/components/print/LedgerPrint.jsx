@@ -74,7 +74,10 @@ export const generateLedgerHTML = (ledgerData, settings) => {
               </td>
               <td class="px-4 py-3 text-slate-500 whitespace-nowrap">${entry.vch_no || entry.ref}</td>
               <td class="px-4 py-3 text-slate-700 min-w-[250px] whitespace-normal">
-                <div class="font-semibold text-slate-800">${entry.particulars}</div>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                  <span class="font-semibold text-slate-800">${entry.particulars}</span>
+                  ${entry.coupon_no ? `<span style="display:inline-flex;align-items:center;gap:3px;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;color:#7e22ce;">🎫 #${entry.coupon_no}</span>` : ''}
+                </div>
                 ${entry.narration ? `<div class="text-[10px] italic text-slate-500 mt-0.5">${entry.narration}</div>` : ''}
                 ${entry.items && entry.items.length > 0 ? `
                   <div class="mt-2 ml-4 pl-3 border-l-2 border-slate-200 space-y-1 bg-slate-50/50 py-1.5 pr-2">

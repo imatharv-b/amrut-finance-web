@@ -275,7 +275,15 @@ export default function PartyLedgerPage() {
                   <div className="flex justify-between items-start border-b border-slate-100 pb-2 mb-1">
                     <div>
                       <p className="text-xs text-slate-500 mb-0.5">{formatDate(entry.date)} • {entry.type === 'sale' ? 'Sale' : entry.type === 'payment' ? 'Rcpt' : entry.type === 'expense' ? 'Jrnl' : 'Return'}</p>
-                      <h4 className="font-semibold text-slate-800 leading-tight">{entry.particulars}</h4>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <h4 className="font-semibold text-slate-800 leading-tight">{entry.particulars}</h4>
+                        {entry.coupon_no && (
+                          <span className="inline-flex items-center gap-0.5 bg-purple-100 border border-purple-200 rounded px-1.5 py-0.5">
+                            <Ticket className="w-2.5 h-2.5 text-purple-600" />
+                            <span className="text-[9px] font-bold text-purple-800">#{entry.coupon_no}</span>
+                          </span>
+                        )}
+                      </div>
                       {entry.vch_no && <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 mt-1.5 inline-block">Ref: {entry.vch_no}</span>}
                     </div>
                     <div className="text-right pl-2 shrink-0">
@@ -366,7 +374,15 @@ export default function PartyLedgerPage() {
                       </td>
                       <td className="px-6 py-3 text-slate-500 whitespace-nowrap">{entry.vch_no || entry.ref}</td>
                       <td className="px-6 py-3 text-slate-700 min-w-[300px] whitespace-normal">
-                        <div className="font-semibold text-slate-800">{entry.particulars}</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-800">{entry.particulars}</span>
+                          {entry.coupon_no && (
+                            <span className="inline-flex items-center gap-1 bg-purple-100 border border-purple-200 rounded px-1.5 py-0.5 shadow-sm">
+                              <Ticket className="w-3 h-3 text-purple-600" />
+                              <span className="text-[10px] font-bold text-purple-800">#{entry.coupon_no}</span>
+                            </span>
+                          )}
+                        </div>
                         {entry.narration && <div className="text-xs italic text-slate-500 mt-0.5">{entry.narration}</div>}
                         {entry.items && entry.items.length > 0 && (
                            <div className="mt-2 ml-4 pl-3 border-l-2 border-slate-200/60 space-y-1 bg-slate-50/50 rounded-r-md py-1.5 pr-2">
