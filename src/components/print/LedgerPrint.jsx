@@ -109,11 +109,11 @@ export const generateLedgerHTML = (ledgerData, settings) => {
                 ${entry.items && entry.items.length > 0 ? `
                   <div class="mt-2 ml-4 pl-3 border-l-2 border-slate-200 space-y-1 bg-slate-50/50 py-1.5 pr-2">
                     ${entry.items.map(item => `
-                      <div class="flex text-[10px] text-slate-600 items-center justify-between">
-                         <div class="w-1/3 italic truncate pr-2 font-medium">${item.name}</div>
-                         <div class="w-1/6 text-right whitespace-nowrap">${Number(item.qty).toFixed(2)} <span class="text-[9px] text-slate-400">${item.unit}</span></div>
-                         <div class="w-1/6 text-center whitespace-nowrap"><span class="text-[9px] text-slate-400">@</span> ${Number(item.rate).toFixed(2)}</div>
-                         <div class="w-1/6 text-right whitespace-nowrap"><span class="text-[9px] text-slate-400">=</span> ${Number(item.amount).toFixed(2)}</div>
+                      <div class="flex text-[10px] text-slate-600 items-start justify-between py-0.5">
+                         <div class="flex-1 italic pr-2 font-medium leading-tight whitespace-normal break-words text-slate-700">${item.name}</div>
+                         <div class="w-20 text-right whitespace-nowrap">${Number(item.qty).toFixed(2)} <span class="text-[9px] text-slate-400">${item.unit}</span></div>
+                         <div class="w-20 text-center whitespace-nowrap"><span class="text-[9px] text-slate-400">@</span> ${Number(item.rate).toFixed(2)}</div>
+                         <div class="w-24 text-right whitespace-nowrap font-medium text-slate-700"><span class="text-[9px] text-slate-400">=</span> ${Number(item.amount).toFixed(2)}</div>
                       </div>
                     `).join('')}
                   </div>
