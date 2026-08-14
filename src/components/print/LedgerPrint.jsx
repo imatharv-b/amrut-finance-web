@@ -38,6 +38,25 @@ export const generateLedgerHTML = (ledgerData, settings) => {
         </div>
       </div>
 
+      ${ledgerData.coupons && ledgerData.coupons.length > 0 ? `
+      <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:8px 12px;margin-bottom:16px;">
+        <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#a855f7;letter-spacing:0.05em;margin-bottom:6px;">Scheme Material Balance</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          ${ledgerData.coupons.map(c => {
+            const fmt = (n) => new Intl.NumberFormat('en-IN').format(n);
+            return `
+            <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid #e9d5ff;border-radius:6px;padding:4px 10px;">
+              <span style="font-size:11px;font-weight:700;color:#7e22ce;">🎫 #${c.coupon_no}</span>
+              <span style="width:1px;height:14px;background:#e9d5ff;"></span>
+              <span style="font-size:10px;color:#64748b;">Target: <b style="color:#334155;">₹${fmt(c.target_amount)}</b></span>
+              <span style="font-size:10px;color:#64748b;">Sale: <b style="color:#15803d;">₹${fmt(c.material_sale)}</b></span>
+              <span style="font-size:10px;color:#64748b;">Baki: <b style="color:${c.material_baki > 0 ? '#dc2626' : '#16a34a'};">₹${fmt(c.material_baki)}</b></span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      ` : ''}
+
       <table class="w-full text-left text-xs whitespace-nowrap">
         <thead class="bg-slate-50 text-slate-600 font-medium">
           <tr>

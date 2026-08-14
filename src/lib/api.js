@@ -184,15 +184,30 @@ export const api = {
             withCompany(supabase.from('scheme_coupons').select('*, schemes(name, target_amount, season_id)').eq('party_id', partyId))
           ]);
           
-          const partyCoupons = (couponsRes.data || []).map(c => ({
-            id: c.id,
-            coupon_no: c.coupon_no,
-            scheme_name: c.schemes?.name || 'Unknown',
-            target_amount: Number(c.schemes?.target_amount || 0),
-            amount: Number(c.amount || 0),
-            issue_date: c.issue_date,
-            status: c.status
-          }));
+          // Build coupon sales map: coupon_no -> total sales amount
+          const couponSalesMap = {};
+          (salesRes.data || []).forEach(s => {
+            if (s.coupon_no) {
+              couponSalesMap[s.coupon_no] = (couponSalesMap[s.coupon_no] || 0) + Number(s.total_amount || 0);
+            }
+          });
+
+          const partyCoupons = (couponsRes.data || []).map(c => {
+            const targetAmount = Number(c.schemes?.target_amount || 0);
+            const materialSale = couponSalesMap[c.coupon_no] || 0;
+            const materialBaki = Math.max(0, targetAmount - materialSale);
+            return {
+              id: c.id,
+              coupon_no: c.coupon_no,
+              scheme_name: c.schemes?.name || 'Unknown',
+              target_amount: targetAmount,
+              amount: Number(c.amount || 0),
+              issue_date: c.issue_date,
+              status: c.status,
+              material_sale: materialSale,
+              material_baki: materialBaki
+            };
+          });
           
           let rawEntries = [];
 

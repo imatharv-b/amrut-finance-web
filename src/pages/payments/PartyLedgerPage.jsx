@@ -250,6 +250,46 @@ export default function PartyLedgerPage() {
               </div>
             </div>
 
+            {/* Scheme Material Balance Strip */}
+            {ledgerData.coupons && ledgerData.coupons.length > 0 && (
+              <div className="px-4 md:px-5 py-2.5 border-b border-purple-200 bg-purple-50/60 shrink-0">
+                <p className="text-[10px] uppercase font-bold text-purple-500 tracking-wider mb-1.5">Scheme Material Balance</p>
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {ledgerData.coupons.map((c, i) => {
+                    const pct = c.target_amount > 0 ? Math.min(100, (c.material_sale / c.target_amount) * 100) : 0;
+                    return (
+                      <div key={i} className="flex items-center gap-2 bg-white rounded-lg border border-purple-200 px-3 py-1.5 shadow-sm min-w-0">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Ticket className="w-3 h-3 text-purple-600" />
+                          <span className="text-xs font-bold text-purple-800">#{c.coupon_no}</span>
+                        </div>
+                        <div className="h-4 w-px bg-purple-200 shrink-0"></div>
+                        <div className="flex items-center gap-3 text-[11px]">
+                          <div className="flex flex-col items-center">
+                            <span className="text-[9px] text-slate-400 leading-none">Target</span>
+                            <span className="font-semibold text-slate-700">₹{new Intl.NumberFormat('en-IN').format(c.target_amount)}</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-[9px] text-slate-400 leading-none">Sale</span>
+                            <span className="font-semibold text-green-700">₹{new Intl.NumberFormat('en-IN').format(c.material_sale)}</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-[9px] text-slate-400 leading-none">Baki</span>
+                            <span className={`font-bold ${c.material_baki > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              ₹{new Intl.NumberFormat('en-IN').format(c.material_baki)}
+                            </span>
+                          </div>
+                          <div className="w-16 h-1.5 bg-purple-100 rounded-full overflow-hidden shrink-0 hidden sm:block">
+                            <div className={`h-full rounded-full ${pct >= 100 ? 'bg-green-500' : 'bg-purple-500'}`} style={{ width: `${pct}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Ledger Cards (Mobile) */}
             <div className="md:hidden p-3 space-y-3 bg-slate-50/50 shrink-0">
               {/* Opening Balance Card */}
