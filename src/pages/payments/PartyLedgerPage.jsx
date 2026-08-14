@@ -41,11 +41,12 @@ export default function PartyLedgerPage() {
 
   const loadInitialData = async () => {
     try {
-      const [{ data: partiesData }, { data: settings }] = await Promise.all([
+      const [partiesData, settings] = await Promise.all([
         window.db.invoke('parties:getAll'),
         window.db.invoke('settings:get')
       ]);
-      setParties(partiesData || []);
+      const mappedParties = (partiesData || []).map(p => ({ value: p.id, label: p.name, sublabel: p.village }));
+      setParties(mappedParties);
       setFirmSettings(settings || {});
     } catch (err) {
       toast.error('Failed to load initial data');
