@@ -6,8 +6,8 @@ export const generateLedgerHTML = (ledgerData, settings) => {
     : Number(ledgerData.openingBalanceForPeriod || 0);
   
   const currentBalanceText = currentBalance > 0 
-    ? `₹${currentBalance.toFixed(2)} Dr` 
-    : `₹${Math.abs(currentBalance).toFixed(2)} Cr`;
+    ? `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(currentBalance)} Dr` 
+    : `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(Math.abs(currentBalance))} Cr`;
   const currentBalanceColor = currentBalance > 0 ? 'text-red-600' : 'text-green-600';
 
   return `
@@ -38,22 +38,30 @@ export const generateLedgerHTML = (ledgerData, settings) => {
         </div>
       </div>
 
-      ${ledgerData.coupons && ledgerData.coupons.length > 0 ? `
-      <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:8px 12px;margin-bottom:16px;">
-        <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#a855f7;letter-spacing:0.05em;margin-bottom:6px;">Scheme Material Balance</p>
-        <div style="display:flex;flex-wrap:wrap;gap:12px;">
-          ${ledgerData.coupons.map(c => {
-            const fmt = (n) => new Intl.NumberFormat('en-IN').format(n);
-            return `
-            <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid #e9d5ff;border-radius:6px;padding:4px 10px;">
-              <span style="font-size:11px;font-weight:700;color:#7e22ce;">🎫 #${c.coupon_no}</span>
-              <span style="width:1px;height:14px;background:#e9d5ff;"></span>
-              <span style="font-size:10px;color:#64748b;">Target: <b style="color:#334155;">₹${fmt(c.target_amount)}</b></span>
-              <span style="font-size:10px;color:#64748b;">Sale: <b style="color:#15803d;">₹${fmt(c.material_sale)}</b></span>
-              <span style="font-size:10px;color:#64748b;">Baki: <b style="color:${c.material_baki > 0 ? '#dc2626' : '#16a34a'};">₹${fmt(c.material_baki)}</b></span>
-            </div>`;
-          }).join('')}
-        </div>
+      ${ledgerData.couponAnalyticsSummary ? `
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;">
+        <table style="width:100%;text-align:center;font-size:10px;border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="color:#64748b;font-weight:700;padding-bottom:8px;">MATERIAL SALE (₹)</th>
+              <th style="color:#64748b;font-weight:700;padding-bottom:8px;">OPENING BAL (₹)</th>
+              <th style="color:#16a34a;font-weight:700;padding-bottom:8px;">PAYMENT JAMA (₹)</th>
+              <th style="color:#ef4444;font-weight:700;padding-bottom:8px;">MATERIAL BAKI (₹)</th>
+              <th style="color:#3b82f6;font-weight:700;padding-bottom:8px;">PAYMENT PENDING (₹)</th>
+              <th style="color:#d97706;font-weight:700;padding-bottom:8px;">TOTAL BALANCE (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="font-size:12px;font-weight:700;">
+              <td style="color:#1e293b;">₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.materialSale)}</td>
+              <td style="color:#64748b;">₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.openingBal)}</td>
+              <td style="color:#15803d;">₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.paymentJama)}</td>
+              <td style="color:#dc2626;">₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.materialBaki)}</td>
+              <td style="color:#2563eb;">₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.paymentPending)}</td>
+              <td style="color:#b45309;">₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.totalBalance)}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       ` : ''}
 

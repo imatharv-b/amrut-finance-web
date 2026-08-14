@@ -347,7 +347,43 @@ export const api = {
               })
             }
           }
-          return { party, entries, openingBalanceForPeriod, coupons: partyCoupons }
+          let totalSalesAmt = 0;
+          let totalCouponSaleAmt = 0;
+          salesRes.data?.forEach(s => {
+            totalSalesAmt += Number(s.total_amount || 0);
+            if (s.coupon_no) totalCouponSaleAmt += Number(s.total_amount || 0);
+          });
+
+          let partyReceipts = 0;
+          paymentsRes.data?.forEach(p => { partyReceipts += Number(p.amount || 0); });
+
+          let partyReturnsAmt = 0;
+          returnsRes.data?.forEach(r => { partyReturnsAmt += Number(r.total_amount || 0); });
+
+          let totalTargetAmount = 0;
+          partyCoupons.forEach(c => { totalTargetAmount += c.target_amount; });
+
+          // finalBal is equivalent to the running balance at the end of all entries
+          let finalBal = Number(party.opening_balance || 0);
+          for (const e of rawEntries) {
+            finalBal += (Number(e.debit) - Number(e.credit));
+          }
+
+          const openingBal = finalBal - totalSalesAmt + partyReturnsAmt + partyReceipts;
+          const materialBaki = Math.max(0, totalTargetAmount - totalCouponSaleAmt);
+          const paymentPending = Math.max(totalTargetAmount, totalCouponSaleAmt) - partyReceipts;
+          const totalBalance = openingBal + paymentPending;
+
+          const couponAnalyticsSummary = partyCoupons.length > 0 ? {
+             materialSale: totalCouponSaleAmt,
+             openingBal: openingBal,
+             paymentJama: partyReceipts,
+             materialBaki: materialBaki,
+             paymentPending: paymentPending,
+             totalBalance: totalBalance
+          } : null;
+
+          return { party, entries, openingBalanceForPeriod, coupons: partyCoupons, couponAnalyticsSummary }
         }
 
         // =================== ASSOCIATES ===================

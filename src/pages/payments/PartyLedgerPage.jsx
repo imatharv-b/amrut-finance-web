@@ -215,14 +215,14 @@ export default function PartyLedgerPage() {
         ) : ledgerData ? (
           <div className="flex-1 overflow-auto flex flex-col bg-white">
             {/* Ledger Header */}
-            <div className="p-4 md:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-start gap-4 shrink-0 bg-slate-50">
-              <div>
+            <div className="p-4 md:p-5 border-b border-slate-200 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 shrink-0 bg-white">
+              <div className="shrink-0 w-full xl:w-1/4">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h2 className="text-lg sm:text-xl font-bold text-slate-800">{ledgerData.party.name}</h2>
                   {ledgerData.coupons && ledgerData.coupons.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {ledgerData.coupons.map((c, i) => (
-                        <div key={i} className="inline-flex items-center gap-1 bg-purple-100 border border-purple-200 rounded px-1.5 py-0.5 shadow-sm" title={`Scheme: ${c.scheme_name}\nTarget: ₹${new Intl.NumberFormat('en-IN').format(c.target_amount)}\nGift: ₹${new Intl.NumberFormat('en-IN').format(c.amount)}`}>
+                        <div key={i} className="inline-flex items-center gap-1 bg-purple-100 border border-purple-200 rounded px-1.5 py-0.5 shadow-sm">
                           <Ticket className="w-3 h-3 text-purple-600" />
                           <span className="text-[10px] sm:text-xs font-bold text-purple-800">#{c.coupon_no}</span>
                         </div>
@@ -233,62 +233,51 @@ export default function PartyLedgerPage() {
                 <p className="text-sm text-slate-600">{[ledgerData.party.village, ledgerData.party.taluka, ledgerData.party.district].filter(Boolean).join(', ')}</p>
                 <p className="text-slate-500 text-xs mt-0.5">Mobile: {ledgerData.party.mobile || '-'}</p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-left sm:text-right bg-white sm:bg-transparent p-3 sm:p-0 rounded-lg border border-slate-200 sm:border-none w-full sm:w-auto flex justify-between sm:block">
-                  <p className="text-xs sm:text-sm text-slate-500 mb-0.5 sm:mb-1">Current Balance</p>
+
+              {/* Coupon Analytics Summary Table (Middle) */}
+              {ledgerData.couponAnalyticsSummary && (
+                <div className="flex-1 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0">
+                  <table className="w-full text-center min-w-[600px]">
+                    <thead>
+                      <tr>
+                        <th className="text-[10px] sm:text-xs uppercase font-bold text-slate-500 pb-2 px-2 whitespace-nowrap">MATERIAL SALE (₹)</th>
+                        <th className="text-[10px] sm:text-xs uppercase font-bold text-slate-500 pb-2 px-2 whitespace-nowrap">OPENING BAL (₹)</th>
+                        <th className="text-[10px] sm:text-xs uppercase font-bold text-green-600 pb-2 px-2 whitespace-nowrap">PAYMENT JAMA (₹)</th>
+                        <th className="text-[10px] sm:text-xs uppercase font-bold text-red-500 pb-2 px-2 whitespace-nowrap">MATERIAL BAKI (₹)</th>
+                        <th className="text-[10px] sm:text-xs uppercase font-bold text-blue-500 pb-2 px-2 whitespace-nowrap">PAYMENT PENDING (₹)</th>
+                        <th className="text-[10px] sm:text-xs uppercase font-bold text-amber-600 pb-2 px-2 whitespace-nowrap">TOTAL BALANCE (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="text-base sm:text-lg font-bold">
+                        <td className="text-slate-800 px-2 whitespace-nowrap">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.materialSale)}</td>
+                        <td className="text-slate-500 px-2 whitespace-nowrap">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.openingBal)}</td>
+                        <td className="text-green-700 px-2 whitespace-nowrap">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.paymentJama)}</td>
+                        <td className="text-red-600 px-2 whitespace-nowrap">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.materialBaki)}</td>
+                        <td className="text-blue-600 px-2 whitespace-nowrap">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.paymentPending)}</td>
+                        <td className="text-amber-700 px-2 whitespace-nowrap">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(ledgerData.couponAnalyticsSummary.totalBalance)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="shrink-0 w-full xl:w-auto flex items-center justify-start xl:justify-end">
+                <div className="text-left xl:text-right bg-slate-50 p-3 rounded-lg border border-slate-200 w-full xl:w-auto">
+                  <p className="text-xs sm:text-sm text-slate-500 mb-1">Current Balance</p>
                 {(() => {
                   const currentBalance = ledgerData.entries.length > 0 
                     ? ledgerData.entries[ledgerData.entries.length - 1].balance 
                     : Number(ledgerData.openingBalanceForPeriod || 0);
                   return (
                     <p className={`text-lg sm:text-2xl font-bold ${currentBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {currentBalance > 0 ? `₹${currentBalance.toFixed(2)} Dr` : `₹${Math.abs(currentBalance).toFixed(2)} Cr`}
+                      {currentBalance > 0 ? `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(currentBalance)} Dr` : `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(Math.abs(currentBalance))} Cr`}
                     </p>
                   );
                 })()}
                 </div>
               </div>
             </div>
-
-            {/* Scheme Material Balance Strip */}
-            {ledgerData.coupons && ledgerData.coupons.length > 0 && (
-              <div className="px-4 md:px-5 py-2.5 border-b border-purple-200 bg-purple-50/60 shrink-0">
-                <p className="text-[10px] uppercase font-bold text-purple-500 tracking-wider mb-1.5">Scheme Material Balance</p>
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
-                  {ledgerData.coupons.map((c, i) => {
-                    const pct = c.target_amount > 0 ? Math.min(100, (c.material_sale / c.target_amount) * 100) : 0;
-                    return (
-                      <div key={i} className="flex items-center gap-2 bg-white rounded-lg border border-purple-200 px-3 py-1.5 shadow-sm min-w-0">
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Ticket className="w-3 h-3 text-purple-600" />
-                          <span className="text-xs font-bold text-purple-800">#{c.coupon_no}</span>
-                        </div>
-                        <div className="h-4 w-px bg-purple-200 shrink-0"></div>
-                        <div className="flex items-center gap-3 text-[11px]">
-                          <div className="flex flex-col items-center">
-                            <span className="text-[9px] text-slate-400 leading-none">Target</span>
-                            <span className="font-semibold text-slate-700">₹{new Intl.NumberFormat('en-IN').format(c.target_amount)}</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-[9px] text-slate-400 leading-none">Sale</span>
-                            <span className="font-semibold text-green-700">₹{new Intl.NumberFormat('en-IN').format(c.material_sale)}</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-[9px] text-slate-400 leading-none">Baki</span>
-                            <span className={`font-bold ${c.material_baki > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                              ₹{new Intl.NumberFormat('en-IN').format(c.material_baki)}
-                            </span>
-                          </div>
-                          <div className="w-16 h-1.5 bg-purple-100 rounded-full overflow-hidden shrink-0 hidden sm:block">
-                            <div className={`h-full rounded-full ${pct >= 100 ? 'bg-green-500' : 'bg-purple-500'}`} style={{ width: `${pct}%` }}></div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Ledger Cards (Mobile) */}
             <div className="md:hidden p-3 space-y-3 bg-slate-50/50 shrink-0">
