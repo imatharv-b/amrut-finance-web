@@ -369,10 +369,10 @@ export const api = {
             finalBal += (Number(e.debit) - Number(e.credit));
           }
 
-          const openingBal = finalBal - totalSalesAmt + partyReturnsAmt + partyReceipts;
+          const openingBal = Number(party.opening_balance || 0);
           const materialBaki = Math.max(0, totalTargetAmount - totalCouponSaleAmt);
-          const paymentPending = Math.max(totalTargetAmount, totalCouponSaleAmt) - partyReceipts;
-          const totalBalance = openingBal + paymentPending;
+          const paymentPending = finalBal; // Exact current ledger balance
+          const totalBalance = paymentPending + materialBaki;
 
           const couponAnalyticsSummary = partyCoupons.length > 0 ? {
              materialSale: totalCouponSaleAmt,
