@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../../components/SearchableSelect';
 import { generateLedgerHTML } from '../../components/print/LedgerPrint';
-import { printHTML, exportAsJPG } from '../../lib/printUtils';
+import { printHTML, exportAsJPG, exportAsPDF } from '../../lib/printUtils';
 import { formatDate } from '../../lib/dateUtils';
 import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
@@ -26,34 +26,29 @@ export default function PartyLedgerPage() {
   const [editData, setEditData] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const userRole = window.db.getUserRole ? window.db.getUserRole() : 'admin';
+  const canEdit = userRole === 'admin' || userRole === 'finance_manager' || userRole === 'data_entry';
+
   useEffect(() => {
-    loadParties();
-    loadSettings();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
     if (selectedPartyId) {
       loadLedger();
-    } else {
-      setLedgerData(null);
     }
   }, [selectedPartyId, fromDate, toDate]);
 
-  const loadSettings = async () => {
+  const loadInitialData = async () => {
     try {
-      const s = await window.db.invoke('settings:get');
-      setFirmSettings(s);
-    } catch (e) {
-      console.error('Failed to load settings', e);
-    }
-  };
-
-  const loadParties = async () => {
-    try {
-      const data = await window.db.invoke('parties:getAll');
-      setParties(data.map(p => ({ value: p.id, label: p.name, sublabel: p.village })));
+      const [{ data: partiesData }, { data: settings }] = await Promise.all([
+        window.db.invoke('parties:getAll'),
+        window.db.invoke('settings:get')
+      ]);
+      setParties(partiesData || []);
+      setFirmSettings(settings || {});
     } catch (err) {
-      toast.error('Failed to load parties');
+      toast.error('Failed to load initial data');
     }
   };
 
@@ -94,7 +89,7 @@ export default function PartyLedgerPage() {
     if (!ledgerData) return;
     try {
       const html = generateLedgerHTML(ledgerData, firmSettings);
-      const filename = getLedgerFileName('.jpg');
+      const filename = getLedgerFileName('.pdf');
       
       const currentBalance = ledgerData.entries.length > 0 
         ? ledgerData.entries[ledgerData.entries.length - 1].balance 
@@ -104,16 +99,12 @@ export default function PartyLedgerPage() {
         ? `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(currentBalance)} Dr` 
         : `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(Math.abs(currentBalance))} Cr`;
         
-      const text = `Hello ${ledgerData.party.name},\n\nPlease find your ledger attached.\n\nCurrent Balance: ${balanceStr}`;
+      const text = `Greetings from Amrut Biochem , please find attached Ledger.\n\nParty: ${ledgerData.party.name}\nCurrent Balance: ${balanceStr}`;
 
-      toast.loading('Generating image for WhatsApp...', { id: 'wa-ledger' });
-      const imgData = await exportAsJPG(html, filename);
+      toast.loading('Generating PDF for WhatsApp...', { id: 'wa-ledger' });
+      const { file } = await exportAsPDF(html, filename);
       
       try {
-        const res = await fetch(imgData);
-        const blob = await res.blob();
-        const file = new File([blob], filename, { type: 'image/jpeg' });
-        
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
@@ -127,19 +118,19 @@ export default function PartyLedgerPage() {
         console.log('Share API not supported or failed', e);
       }
       
-      toast.success('Image downloaded! Redirecting to WhatsApp...', { id: 'wa-ledger' });
+      toast.success('PDF downloaded! Redirecting to WhatsApp...', { id: 'wa-ledger' });
       const mobile = ledgerData.party.mobile || '';
       setTimeout(() => {
         window.open(`https://wa.me/${mobile ? '91'+mobile : ''}?text=${encodeURIComponent(text)}`, '_blank');
       }, 500);
       
     } catch (err) {
-      toast.error(err.message || 'Failed to generate image', { id: 'wa-ledger' });
+      toast.error(err.message || 'Failed to generate PDF', { id: 'wa-ledger' });
     }
   };
 
   const handleEditClick = (entry) => {
-    if (!entry.id) {
+    if (!canEdit || !entry.id) {
        toast.error("Cannot edit this entry");
        return;
     }
@@ -149,7 +140,6 @@ export default function PartyLedgerPage() {
     } else if (entry.entry_type === 'sale_return') {
       toast.error("Sale Returns must be edited from the Returns page");
     } else {
-      // payment, expense, worker_ledger
       setEditData({ ...entry });
       setIsEditModalOpen(true);
     }
@@ -224,7 +214,7 @@ export default function PartyLedgerPage() {
               title="Share via WhatsApp"
             >
               <Share2 className="w-4 h-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">WhatsApp (JPG)</span>
+              <span className="hidden sm:inline">WhatsApp (PDF)</span>
             </button>
             <button
               onClick={handlePrint}
