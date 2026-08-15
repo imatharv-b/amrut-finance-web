@@ -1202,6 +1202,14 @@ export const api = {
             else if (couponSales > 0) couponInProgress++
             else couponNotStarted++
             
+            c.analytics = {
+              materialSale: couponSales,
+              target: targetAmount,
+              status: couponSales >= targetAmount && targetAmount > 0 ? 'achieved' : couponSales > 0 ? 'in-progress' : 'idle',
+              paymentJama: partyReceipts,
+              balance: totalBalance
+            }
+
             // Per-scheme breakdown
             const sName = scheme?.name || 'Unknown'
             if (!couponSchemeBreakdown[sName]) {

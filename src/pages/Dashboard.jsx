@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import {
   IndianRupee, Receipt, TrendingUp, AlertCircle, Ticket,
-  LayoutDashboard, Crown, ArrowUpRight, FileText, Wallet, Package, MapPin
+  LayoutDashboard, Crown, ArrowUpRight, FileText, Wallet, Package, MapPin, MoonStar
 } from 'lucide-react'
 
 const formatCurrency = (num) => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(num || 0))
@@ -153,6 +153,8 @@ export default function Dashboard() {
     { title: 'Outstanding', value: formatCurrency(stats.totalReceivables), icon: AlertCircle, color: 'amber', onClick: () => setActiveModal('outstanding') },
     { title: 'Coupons Issued', value: stats.couponsIssued?.toString() || '0', icon: Ticket, color: 'green', onClick: () => setActiveModal('coupons') },
   ]
+
+  const idleStores = stats.couponsList?.filter(c => c.analytics?.status === 'idle') || []
 
   return (
     <div className="space-y-6 p-6">
@@ -304,6 +306,29 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Idle Stores (Wake up call) */}
+              {idleStores.length > 0 && (
+                <div className="mb-5 bg-gradient-to-r from-slate-50 to-white rounded-xl p-3 border border-slate-200/60 shadow-inner">
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <div className="p-1.5 bg-slate-100 rounded-md">
+                      <MoonStar className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-700">Sleepy Stores <span className="text-[10px] font-normal text-slate-500 ml-1">({idleStores.length} stores haven't started buying)</span></h3>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                    {idleStores.map(store => (
+                      <div key={store.id} className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors shadow-sm group">
+                        <div className="w-2 h-2 rounded-full bg-slate-300 group-hover:bg-amber-400 transition-colors"></div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-700">{store.parties?.name || 'Unknown Store'}</p>
+                          <p className="text-[9px] text-slate-400">Coupon: {store.coupon_no}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Per-Scheme Financial Breakdown */}
               {stats.couponSummary.schemeBreakdown && stats.couponSummary.schemeBreakdown.length > 0 && (
