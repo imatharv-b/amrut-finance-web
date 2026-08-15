@@ -198,7 +198,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Coupon Analytics Command Center */}
         <div
-          className="lg:col-span-2 glass-card rounded-2xl p-6 animate-fadeIn"
+          className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
           style={{ animationDelay: '400ms', animationFillMode: 'both' }}
         >
           <div className="flex items-center justify-between mb-5">
@@ -389,7 +389,7 @@ export default function Dashboard() {
 
         {/* Expense Breakdown */}
         <div
-          className="glass-card rounded-2xl p-6 animate-fadeIn"
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
           style={{ animationDelay: '500ms', animationFillMode: 'both' }}
         >
           <div className="mb-4">
@@ -442,7 +442,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Parties */}
         <div
-          className="glass-card rounded-2xl p-6 animate-fadeIn"
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
           style={{ animationDelay: '600ms', animationFillMode: 'both' }}
         >
           <div className="flex items-center justify-between mb-5">
@@ -481,7 +481,7 @@ export default function Dashboard() {
 
         {/* Recent Transactions */}
         <div
-          className="glass-card rounded-2xl p-6 animate-fadeIn"
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
           style={{ animationDelay: '700ms', animationFillMode: 'both' }}
         >
           <div className="flex items-center justify-between mb-5">
@@ -529,7 +529,7 @@ export default function Dashboard() {
       {stats.schemesAnalytics && stats.schemesAnalytics.length > 0 && (
         <div className="grid grid-cols-1 gap-6">
           <div
-            className="glass-card rounded-2xl p-6 animate-fadeIn"
+            className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
             style={{ animationDelay: '800ms', animationFillMode: 'both' }}
           >
             <div className="flex items-center justify-between mb-6">

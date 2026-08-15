@@ -15,7 +15,7 @@ export default function Titlebar() {
 
   return (
     <header
-      className="h-12 bg-white/40 backdrop-blur-2xl text-slate-800 flex items-center justify-between px-4 shrink-0 select-none border-b border-white/60 relative z-50 shadow-[0_4px_16px_rgba(0,0,0,0.02)]"
+      className="h-12 bg-primary-950 text-white flex items-center justify-between px-4 shrink-0 select-none border-b border-primary-900 relative z-50"
       style={{ WebkitAppRegion: 'drag' }}
     >
       {/* Left: App name */}
@@ -28,11 +28,11 @@ export default function Titlebar() {
               setIsOpen(!isOpen)
             }
           }}
-          className="p-1 mr-1 text-slate-500 hover:text-slate-800 hover:bg-white/50 rounded-lg transition-all"
+          className="p-1 mr-1 text-primary-200 hover:text-white hover:bg-primary-800 rounded transition"
         >
           <Menu size={20} />
         </button>
-        <span className="text-sm font-bold tracking-wide text-slate-700 hidden sm:inline-block">
+        <span className="text-sm font-semibold tracking-wide text-primary-200 hidden sm:inline-block">
           Amrut Biochem Finance
         </span>
       </div>
@@ -40,15 +40,15 @@ export default function Titlebar() {
       {/* Center: Company & Season */}
       <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 max-w-[60%] sm:max-w-none overflow-x-auto no-scrollbar justify-center">
         {activeCompany && (
-          <div className="flex items-center gap-2 bg-white/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm">
-            <Building2 className="w-3.5 h-3.5 text-slate-500" />
-            <span className="text-xs text-slate-700 font-bold truncate max-w-[200px]">
+          <div className="flex items-center gap-2 bg-primary-900 px-3 py-1.5 rounded-full border border-primary-800">
+            <Building2 className="w-3.5 h-3.5 text-primary-300" />
+            <span className="text-xs text-primary-50 font-medium truncate max-w-[200px]">
               {activeCompany.name}
             </span>
             {companies.length > 1 && (
               <button 
                 onClick={handleSwitchCompany} 
-                className="text-slate-400 hover:text-slate-700 ml-2 transition-colors cursor-pointer"
+                className="text-primary-400 hover:text-white ml-2 transition-colors cursor-pointer"
                 title="Switch Company"
               >
                 <ArrowLeftRight className="w-3.5 h-3.5" />
@@ -58,19 +58,17 @@ export default function Titlebar() {
         )}
 
         {activeSeason && (
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 backdrop-blur-md text-emerald-600 rounded-full text-xs font-bold border border-emerald-500/20 shadow-sm">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          <div className="flex items-center gap-2 bg-primary-900/50 px-3 py-1.5 rounded-full border border-primary-800/50">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-green-400 shrink-0" />
+            <span className="text-xs text-primary-300 font-medium truncate max-w-[150px]">
+              {activeSeason.name}
             </span>
-            <span className="truncate max-w-[120px]">{activeSeason.name}</span>
           </div>
         )}
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-3">
-        {/* Empty space for window controls if using Electron */}
+      {/* Right: Empty for web */}
+      <div className="flex items-center gap-0.5">
       </div>
     </header>
   )

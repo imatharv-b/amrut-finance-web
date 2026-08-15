@@ -4,7 +4,6 @@ import { Toaster } from 'react-hot-toast'
 import Sidebar from './components/Sidebar'
 import Titlebar from './components/Titlebar'
 import LoadingSpinner from './components/LoadingSpinner'
-import ErrorBoundary from './components/ErrorBoundary'
 import ShortcutListener from './components/ShortcutListener'
 
 import { SeasonContext } from './context/SeasonContext'
@@ -106,7 +105,7 @@ function AppWithCompany() {
     <SeasonContext.Provider value={{ activeSeason, setActiveSeason, allSeasons, refreshSeason }}>
       <MobileMenuProvider>
         <HashRouter>
-          <div className="flex flex-col h-screen liquid-bg overflow-hidden relative">
+          <div className="flex flex-col h-screen bg-slate-50 overflow-hidden relative">
             {/* Titlebar */}
           <Titlebar />
 
@@ -117,9 +116,8 @@ function AppWithCompany() {
             <Sidebar />
 
             {/* Content Area */}
-            <main className="flex-1 overflow-y-auto">
-              <ErrorBoundary>
-                <Suspense fallback={<PageFallback />}>
+            <main className="flex-1 overflow-y-auto bg-slate-50">
+              <Suspense fallback={<PageFallback />}>
                 <Routes>
                   {/* Public/Common Routes */}
                   <Route path="/masters/products" element={<ProductsPage />} />
@@ -172,7 +170,6 @@ function AppWithCompany() {
                   )}
                 </Routes>
               </Suspense>
-              </ErrorBoundary>
             </main>
           </div>
         </div>
