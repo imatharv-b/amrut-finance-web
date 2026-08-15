@@ -34,15 +34,18 @@ export default function StatCard({ title, value, icon: Icon, color = 'green', su
   return (
     <div 
       onClick={onClick}
-      className={`p-6 rounded-2xl ${styles.bg} border border-white/50 shadow-sm transition-all duration-200 glass-card ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]' : ''}`}
+      className={`p-6 rounded-2xl glass-card relative overflow-hidden group ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex items-center">
-        <div className={`p-3 rounded-xl ${styles.iconBg} ${styles.iconColor} mr-4`}>
+      {/* Decorative gradient blob */}
+      <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-30 blur-2xl transition-all duration-500 group-hover:scale-150 ${styles.iconBg.replace('bg-', 'bg-gradient-to-br from-white to-')}`}></div>
+      
+      <div className="flex items-center relative z-10">
+        <div className={`p-3 rounded-xl ${styles.bg} border border-white/60 ${styles.iconColor} mr-4 shadow-sm`}>
           {Icon && <Icon className="w-6 h-6" />}
         </div>
         <div>
-          <h3 className="text-sm font-medium text-slate-500 mb-1">{title}</h3>
-          <p className="text-2xl font-bold text-slate-800">{value}</p>
+          <h3 className="text-sm font-bold text-slate-500 mb-1">{title}</h3>
+          <p className="text-2xl font-black text-slate-800 tracking-tight">{value}</p>
           {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
         </div>
       </div>

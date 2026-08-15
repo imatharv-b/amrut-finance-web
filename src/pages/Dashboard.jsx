@@ -198,7 +198,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Coupon Analytics Command Center */}
         <div
-          className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
+          className="lg:col-span-2 glass-card rounded-2xl p-6 animate-fadeIn"
           style={{ animationDelay: '400ms', animationFillMode: 'both' }}
         >
           <div className="flex items-center justify-between mb-5">
@@ -389,7 +389,7 @@ export default function Dashboard() {
 
         {/* Expense Breakdown */}
         <div
-          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
+          className="glass-card rounded-2xl p-6 animate-fadeIn"
           style={{ animationDelay: '500ms', animationFillMode: 'both' }}
         >
           <div className="mb-4">
@@ -442,7 +442,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Parties */}
         <div
-          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
+          className="glass-card rounded-2xl p-6 animate-fadeIn"
           style={{ animationDelay: '600ms', animationFillMode: 'both' }}
         >
           <div className="flex items-center justify-between mb-5">
@@ -481,7 +481,7 @@ export default function Dashboard() {
 
         {/* Recent Transactions */}
         <div
-          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
+          className="glass-card rounded-2xl p-6 animate-fadeIn"
           style={{ animationDelay: '700ms', animationFillMode: 'both' }}
         >
           <div className="flex items-center justify-between mb-5">
@@ -529,7 +529,7 @@ export default function Dashboard() {
       {stats.schemesAnalytics && stats.schemesAnalytics.length > 0 && (
         <div className="grid grid-cols-1 gap-6">
           <div
-            className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn"
+            className="glass-card rounded-2xl p-6 animate-fadeIn"
             style={{ animationDelay: '800ms', animationFillMode: 'both' }}
           >
             <div className="flex items-center justify-between mb-6">
@@ -601,7 +601,7 @@ export default function Dashboard() {
 
       {/* Store Target Progression */}
       {stats.schemesAnalytics && stats.schemesAnalytics.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn mt-6" style={{ animationDelay: '900ms', animationFillMode: 'both' }}>
+        <div className="glass-card rounded-2xl p-6 animate-fadeIn mt-6" style={{ animationDelay: '900ms', animationFillMode: 'both' }}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Store Target Progression</h2>
@@ -669,7 +669,7 @@ export default function Dashboard() {
       {/* Advanced Analytics */}
       <div className="grid grid-cols-1 gap-6 mt-8 mb-8">
         {/* Location Analytics (Heatmap List) */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Sales by Location</h2>

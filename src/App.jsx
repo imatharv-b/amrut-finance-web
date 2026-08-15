@@ -105,7 +105,7 @@ function AppWithCompany() {
     <SeasonContext.Provider value={{ activeSeason, setActiveSeason, allSeasons, refreshSeason }}>
       <MobileMenuProvider>
         <HashRouter>
-          <div className="flex flex-col h-screen bg-slate-50 overflow-hidden relative">
+          <div className="flex flex-col h-screen liquid-bg overflow-hidden relative">
             {/* Titlebar */}
           <Titlebar />
 
@@ -116,7 +116,7 @@ function AppWithCompany() {
             <Sidebar />
 
             {/* Content Area */}
-            <main className="flex-1 overflow-y-auto bg-slate-50">
+            <main className="flex-1 overflow-y-auto">
               <Suspense fallback={<PageFallback />}>
                 <Routes>
                   {/* Public/Common Routes */}
