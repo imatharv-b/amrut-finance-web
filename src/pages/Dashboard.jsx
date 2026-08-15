@@ -601,7 +601,7 @@ export default function Dashboard() {
 
       {/* Store Target Progression */}
       {stats.schemesAnalytics && stats.schemesAnalytics.length > 0 && (
-        <div className="glass-card rounded-2xl p-6 animate-fadeIn mt-6" style={{ animationDelay: '900ms', animationFillMode: 'both' }}>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn mt-6" style={{ animationDelay: '900ms', animationFillMode: 'both' }}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Store Target Progression</h2>
@@ -669,7 +669,7 @@ export default function Dashboard() {
       {/* Advanced Analytics */}
       <div className="grid grid-cols-1 gap-6 mt-8 mb-8">
         {/* Location Analytics (Heatmap List) */}
-        <div className="glass-card rounded-2xl p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Sales by Location</h2>
