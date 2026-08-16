@@ -11,15 +11,47 @@ const withCompany = (query) => globalCompanyId ? query.eq('company_id', globalCo
 async function logActivity(action, entity_type, entity_name, details = {}) {
   if (!globalCompanyId) return;
   try {
+    // Get current user email
+    let userEmail = null;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      userEmail = session?.user?.email || null;
+    } catch (_) {}
+
+    // Resolve party_id to party_name if present
+    if (details.party_id && !details.party_name) {
+      try {
+        const { data: party } = await supabase.from('parties').select('name').eq('id', details.party_id).single();
+        if (party) details.party_name = party.name;
+      } catch (_) {}
+    }
+
     await supabase.from('activity_logs').insert([{
       company_id: globalCompanyId,
       action,
       entity_type,
       entity_name,
-      details
+      details,
+      user_email: userEmail
     }]);
   } catch (err) {
     console.error('Failed to log activity:', err);
+  }
+}
+
+// Log auth events (login/logout) — can be called without globalCompanyId
+export async function logAuthActivity(action, email) {
+  try {
+    await supabase.from('activity_logs').insert([{
+      company_id: globalCompanyId || null,
+      action,
+      entity_type: 'AUTH',
+      entity_name: email,
+      details: { timestamp: new Date().toISOString() },
+      user_email: email
+    }]);
+  } catch (err) {
+    console.error('Failed to log auth activity:', err);
   }
 }
 // Helper to inject company_id (for inserts)
@@ -1274,9 +1306,17 @@ export const api = {
           return s
         }
         case 'activity:getAll': {
-          const { data, error } = await withCompany(
-            supabase.from('activity_logs').select('*')
-          ).order('created_at', { ascending: false }).limit(100)
+          const [filters = {}] = args
+          let q = supabase.from('activity_logs').select('*')
+          // Filter by company if set (but also show AUTH logs without company)
+          if (globalCompanyId) {
+            q = q.or(`company_id.eq.${globalCompanyId},and(entity_type.eq.AUTH,company_id.is.null)`)
+          }
+          if (filters.action) q = q.eq('action', filters.action)
+          if (filters.entity_type) q = q.eq('entity_type', filters.entity_type)
+          if (filters.fromDate) q = q.gte('created_at', filters.fromDate)
+          if (filters.toDate) q = q.lte('created_at', filters.toDate + 'T23:59:59')
+          const { data, error } = await q.order('created_at', { ascending: false }).limit(200)
           if (error) throw error
           return data
         }

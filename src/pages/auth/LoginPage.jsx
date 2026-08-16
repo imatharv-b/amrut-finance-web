@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { logAuthActivity } from '../../lib/api';
 import toast from 'react-hot-toast';
 import { Lock, Mail, Leaf } from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -24,6 +25,8 @@ export default function LoginPage({ onLogin }) {
       }
 
       toast.success('Logged in successfully!');
+      // Log login activity
+      logAuthActivity('LOGIN', data.session?.user?.email || email);
       if (onLogin) onLogin(data.session);
     } catch (error) {
       toast.error(error.message || 'Failed to login');

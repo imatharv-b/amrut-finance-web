@@ -28,6 +28,7 @@ import { SeasonContext } from '../context/SeasonContext'
 import { supabase } from '../lib/supabase'
 import { useCompany } from '../context/CompanyContext'
 import { MobileMenuContext } from '../context/MobileMenuContext'
+import { logAuthActivity } from '../lib/api'
 
 // ── Navigation Structure ─────────────────────────────────────────────
 const NAVIGATION = [
@@ -245,6 +246,9 @@ export default function Sidebar() {
   }, [])
 
   const handleLogout = async () => {
+    if (userEmail) {
+      await logAuthActivity('LOGOUT', userEmail)
+    }
     await supabase.auth.signOut()
   }
 
