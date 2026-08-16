@@ -376,12 +376,10 @@ export default function ActivityLogPage() {
 
                             {/* User + Time */}
                             <div className="flex items-center gap-3 mt-2">
-                              {log.user_email && (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-                                  <UserCircle className="w-3 h-3" />
-                                  {log.user_email}
-                                </span>
-                              )}
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                <UserCircle className="w-3.5 h-3.5" />
+                                {log.user_email || 'System'}
+                              </span>
                               <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
                                 <Clock className="w-3 h-3" />
                                 {new Date(log.created_at).toLocaleTimeString('en-IN', {
