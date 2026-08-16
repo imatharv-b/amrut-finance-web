@@ -132,7 +132,7 @@ const NAVIGATION = [
     label: 'Activity Logs',
     icon: History,
     path: '/activity-logs',
-    roles: ['admin']
+    roles: ['admin', 'data_entry', 'salesman', 'finance_manager', 'accountant']
   }
 ]
 
