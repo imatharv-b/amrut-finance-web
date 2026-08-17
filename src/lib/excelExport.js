@@ -31,7 +31,7 @@ export async function exportToExcel({
   // ── Company Header ─────────────────────────────────────────
   ws.mergeCells(currentRow, 1, currentRow, columns.length + 3)
   const companyCell = ws.getCell(currentRow, 1)
-  companyCell.value = 'AMRUT BIOCHEM PRIVATE LIMITED'
+  companyCell.value = 'AMRUT BIOCHEM'
   companyCell.font = { name: 'Calibri', size: 14, bold: true, color: { argb: colors.accent } }
   companyCell.alignment = { horizontal: 'center', vertical: 'middle' }
   ws.getRow(currentRow).height = 28
