@@ -13,8 +13,9 @@ import {
 } from 'recharts'
 import {
   IndianRupee, Receipt, TrendingUp, AlertCircle, Ticket,
-  LayoutDashboard, Crown, ArrowUpRight, FileText, Wallet, Package, MapPin, MoonStar
+  LayoutDashboard, Crown, ArrowUpRight, FileText, Wallet, Package, MapPin, MoonStar, Download
 } from 'lucide-react'
+import { exportToExcel } from '../lib/excelExport'
 
 const formatCurrency = (num) => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(num || 0))
 const formatCompact = (num) => {
@@ -712,6 +713,21 @@ export default function Dashboard() {
       
       {/* Sales Modal */}
       <Modal isOpen={activeModal === 'sales'} onClose={() => setActiveModal(null)} title="Total Sales Breakdown" size="lg">
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={() => exportToExcel({
+              title: `Sales Breakdown - ${activeSeason.name}`,
+              columns: [{ key: 'name', label: 'Party Name' }, { key: 'total', label: 'Amount (₹)' }],
+              data: stats.salesList || [],
+              valueKey: 'total',
+              accentColor: '15803d',
+              filename: 'Sales_Breakdown'
+            })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors border border-emerald-200"
+          >
+            <Download className="w-3.5 h-3.5" /> Export Excel
+          </button>
+        </div>
         <div className="max-h-[60vh] overflow-y-auto">
           <DataTable 
             columns={[
@@ -725,6 +741,21 @@ export default function Dashboard() {
 
       {/* Expenses Modal */}
       <Modal isOpen={activeModal === 'expenses'} onClose={() => setActiveModal(null)} title="Expense Breakdown" size="md">
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={() => exportToExcel({
+              title: `Expense Breakdown - ${activeSeason.name}`,
+              columns: [{ key: 'name', label: 'Category' }, { key: 'total', label: 'Amount (₹)' }],
+              data: stats.expenseBreakdown || [],
+              valueKey: 'total',
+              accentColor: 'DC2626',
+              filename: 'Expense_Breakdown'
+            })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors border border-red-200"
+          >
+            <Download className="w-3.5 h-3.5" /> Export Excel
+          </button>
+        </div>
         <div className="max-h-[60vh] overflow-y-auto">
           <DataTable 
             columns={[
@@ -738,6 +769,21 @@ export default function Dashboard() {
 
       {/* Outstanding Modal */}
       <Modal isOpen={activeModal === 'outstanding'} onClose={() => setActiveModal(null)} title="Outstanding Balances" size="lg">
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={() => exportToExcel({
+              title: `Outstanding Balances - ${activeSeason.name}`,
+              columns: [{ key: 'name', label: 'Party Name' }, { key: 'balance', label: 'Outstanding (₹)' }],
+              data: stats.outstandingList || [],
+              valueKey: 'balance',
+              accentColor: 'D97706',
+              filename: 'Outstanding_Balances'
+            })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg text-xs font-semibold transition-colors border border-amber-200"
+          >
+            <Download className="w-3.5 h-3.5" /> Export Excel
+          </button>
+        </div>
         <div className="max-h-[60vh] overflow-y-auto">
           <DataTable 
             columns={[
@@ -766,6 +812,21 @@ export default function Dashboard() {
 
       {/* Receipts Modal */}
       <Modal isOpen={activeModal === 'receipts'} onClose={() => setActiveModal(null)} title="Total Receipts Breakdown" size="lg">
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={() => exportToExcel({
+              title: `Receipts Breakdown - ${activeSeason.name}`,
+              columns: [{ key: 'name', label: 'Party Name' }, { key: 'total', label: 'Amount (₹)' }],
+              data: stats.receiptsList || [],
+              valueKey: 'total',
+              accentColor: '2563EB',
+              filename: 'Receipts_Breakdown'
+            })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors border border-blue-200"
+          >
+            <Download className="w-3.5 h-3.5" /> Export Excel
+          </button>
+        </div>
         <div className="max-h-[60vh] overflow-y-auto">
           <DataTable 
             columns={[
