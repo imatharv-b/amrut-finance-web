@@ -933,7 +933,7 @@ export const api = {
           }
           const { data: expData } = await expQuery
           
-          const { data: allCoupons } = await withCompany(supabase.from('scheme_coupons').select('*, schemes(season_id), parties(name)'))
+          const { data: allCoupons } = await withCompany(supabase.from('scheme_coupons').select('*, schemes(season_id), parties(name, opening_balance)'))
           const couponsData = allCoupons?.filter(c => c.schemes?.season_id === seasonId) || []
           
           // For outstanding, we need all parties, all sales (all time), all payments, all returns
@@ -1233,10 +1233,8 @@ export const api = {
             const couponSales = cpCouponSalesMap[c.coupon_no] || 0
             const partyReceipts = cpReceiptMap[c.party_id] || 0
             const partyCurrentBal = cpBalanceMap[c.party_id] || 0
-            const partySeasonSalesAmt = cpSalesMap[c.party_id] || 0
-            const partySeasonReturnsAmt = cpReturnsMap[c.party_id] || 0
-            
-            const openingBal = partyCurrentBal - partySeasonSalesAmt + partySeasonReturnsAmt + partyReceipts
+            // Opening Balance = actual DB opening balance (same as ledger)
+            const openingBal = Number(c.parties?.opening_balance || 0)
             const materialBaki = Math.max(0, targetAmount - couponSales)
             // Payment Pending = actual current balance from ledger (same as parties:getLedger)
             const paymentPending = partyCurrentBal
@@ -1359,7 +1357,7 @@ export const api = {
           
           // 2. Fetch all coupons for these schemes
           const { data: coupons } = await withCompany(
-            supabase.from('scheme_coupons').select('*, parties(name, village, district)').in('scheme_id', schemeIds)
+            supabase.from('scheme_coupons').select('*, parties(name, village, district, opening_balance)').in('scheme_id', schemeIds)
           )
           
           const partyIds = [...new Set((coupons || []).map(c => c.party_id).filter(Boolean))]
@@ -1471,11 +1469,8 @@ export const api = {
 
             const partyCurrentBal = balanceMap[c.party_id] || 0
             const partyReceipts = receiptMap[c.party_id] || 0
-            const partySeasonSalesAmt = salesMap[c.party_id] || 0
-            const partySeasonReturnsAmt = returnsMap[c.party_id] || 0
-            
-            // Calculate Opening Balance at start of season
-            const openingBal = partyCurrentBal - partySeasonSalesAmt + partySeasonReturnsAmt + partyReceipts
+            // Opening Balance = actual DB opening balance (same as ledger)
+            const openingBal = Number(c.parties?.opening_balance || 0)
             
             const materialBaki = Math.max(0, targetAmount - totalSales)
             
