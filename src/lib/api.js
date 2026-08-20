@@ -88,7 +88,7 @@ async function getTruePartyBalances(supabase, partyIds = null, withCompanyFn) {
   }
 
   const map = {};
-  parties.forEach(p => { map[p.id] = Number(p.opening_balance || 0); });
+  parties?.forEach(p => { map[p.id] = Number(p.opening_balance || 0); });
 
   sales?.forEach(s => { if(s.party_id) map[s.party_id] = (map[s.party_id] || 0) + Number(s.total_amount || 0); });
   payments?.forEach(p => { if(p.party_id) map[p.party_id] = (map[p.party_id] || 0) - Number(p.amount || 0); });
