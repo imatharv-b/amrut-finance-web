@@ -1191,6 +1191,24 @@ export const api = {
           if (couponPartyIds.length > 0) {
             const { data: cpBal } = await withCompany(supabase.from('parties_with_balance').select('id, balance').in('id', couponPartyIds))
             ;(cpBal || []).forEach(pb => { cpBalanceMap[pb.id] = Number(pb.balance || 0) })
+            
+            // Add worker_ledger adjustments so balances match ledger exactly
+            const { data: cpWorkers } = await supabase.from('workers').select('id, party_id').in('party_id', couponPartyIds)
+            if (cpWorkers && cpWorkers.length > 0) {
+              const cpWorkerIds = cpWorkers.map(w => w.id)
+              const { data: cpWorkerLedgers } = await supabase.from('worker_ledger').select('worker_id, type, amount').in('worker_id', cpWorkerIds)
+              if (cpWorkerLedgers) {
+                for (const w of cpWorkers) {
+                  if (!w.party_id) continue
+                  let bal = 0
+                  cpWorkerLedgers.filter(l => l.worker_id === w.id).forEach(l => {
+                    if (l.type === 'Debit') bal += Number(l.amount)
+                    if (l.type === 'Credit') bal -= Number(l.amount)
+                  })
+                  if (bal !== 0) cpBalanceMap[w.party_id] = (cpBalanceMap[w.party_id] || 0) + bal
+                }
+              }
+            }
           }
           
           // Build coupon sales map by coupon_no
@@ -1220,8 +1238,9 @@ export const api = {
             
             const openingBal = partyCurrentBal - partySeasonSalesAmt + partySeasonReturnsAmt + partyReceipts
             const materialBaki = Math.max(0, targetAmount - couponSales)
-            const paymentPending = Math.max(targetAmount, couponSales) - partyReceipts
-            const totalBalance = openingBal + paymentPending
+            // Payment Pending = actual current balance from ledger (same as parties:getLedger)
+            const paymentPending = partyCurrentBal
+            const totalBalance = paymentPending + materialBaki
             
             totalCouponTarget += targetAmount
             totalCouponMaterialSale += couponSales
@@ -1352,6 +1371,26 @@ export const api = {
           const balanceMap = {}
           ;(partyBalances || []).forEach(pb => { balanceMap[pb.id] = Number(pb.balance || 0) })
 
+          // Add worker_ledger adjustments (same as parties:getAll) so balances match ledger exactly
+          if (partyIds.length > 0) {
+            const { data: workers } = await supabase.from('workers').select('id, party_id').in('party_id', partyIds)
+            if (workers && workers.length > 0) {
+              const workerIds = workers.map(w => w.id)
+              const { data: workerLedgers } = await supabase.from('worker_ledger').select('worker_id, type, amount').in('worker_id', workerIds)
+              if (workerLedgers) {
+                for (const w of workers) {
+                  if (!w.party_id) continue
+                  let bal = 0
+                  workerLedgers.filter(l => l.worker_id === w.id).forEach(l => {
+                    if (l.type === 'Debit') bal += Number(l.amount)
+                    if (l.type === 'Credit') bal -= Number(l.amount)
+                  })
+                  if (bal !== 0) balanceMap[w.party_id] = (balanceMap[w.party_id] || 0) + bal
+                }
+              }
+            }
+          }
+
           // Fetch receipts received (payments) for these parties in the current season
           // Using season start/end dates is more reliable as season_id might not be fully backfilled on all payments
           const { data: season } = await supabase.from('seasons').select('start_date, end_date').eq('id', seasonId).single()
@@ -1440,12 +1479,11 @@ export const api = {
             
             const materialBaki = Math.max(0, targetAmount - totalSales)
             
-            // Payment Pending (Outstanding for the season): 
-            // If they bought more than target, they owe for the sales. If they bought less, they still owe for the target.
-            const couponPaymentPending = Math.max(targetAmount, totalSales) - partyReceipts
+            // Payment Pending = actual current balance from ledger (same as parties:getLedger)
+            const couponPaymentPending = partyCurrentBal
             
-            // Total Balance = Opening Balance + Outstanding for the season
-            const totalBalance = openingBal + couponPaymentPending
+            // Total Balance = Payment Pending + Material Baki
+            const totalBalance = couponPaymentPending + materialBaki
 
             return {
               id: c.id,
