@@ -1191,7 +1191,7 @@ export const api = {
              return {
                 id: s.id,
                 name: s.name,
-                target: target,
+                target: baseTarget,
                 achievedCount,
                 enrolledCount: participatingPartyIds.length,
                 totalCoupons: couponsForScheme.length,
