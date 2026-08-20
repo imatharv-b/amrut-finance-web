@@ -51,8 +51,67 @@ export async function logAuthActivity(action, email) {
       user_email: email
     }]);
   } catch (err) {
-    console.error('Failed to log auth activity:', err);
+    console.error('Failed to log auth activity:', err)
   }
+}
+
+// --- HELPER TO COMPUTE TRUE BALANCES ---
+async function getTruePartyBalances(supabase, partyIds = null, withCompanyFn) {
+  let pQuery = withCompanyFn(supabase.from('parties').select('id, opening_balance'));
+  if (partyIds) pQuery = pQuery.in('id', partyIds);
+  const { data: parties } = await pQuery;
+
+  let sQuery = withCompanyFn(supabase.from('sales').select('party_id, total_amount, coupon_no'));
+  if (partyIds) sQuery = sQuery.in('party_id', partyIds);
+  const { data: sales } = await sQuery;
+
+  let pmtQuery = withCompanyFn(supabase.from('payments').select('party_id, amount'));
+  if (partyIds) pmtQuery = pmtQuery.in('party_id', partyIds);
+  const { data: payments } = await pmtQuery;
+
+  let rQuery = withCompanyFn(supabase.from('sale_returns').select('party_id, total_amount'));
+  if (partyIds) rQuery = rQuery.in('party_id', partyIds);
+  const { data: returns } = await rQuery;
+
+  let eQuery = withCompanyFn(supabase.from('expenses').select('party_id, amount, expense_types(name)'));
+  if (partyIds) eQuery = eQuery.in('party_id', partyIds);
+  const { data: expenses } = await eQuery;
+
+  let wQuery = supabase.from('workers').select('id, party_id');
+  if (partyIds) wQuery = wQuery.in('party_id', partyIds);
+  const { data: workers } = await wQuery;
+
+  let workerLedgers = [];
+  if (workers && workers.length > 0) {
+    const { data: wl } = await supabase.from('worker_ledger').select('worker_id, type, amount, source_type');
+    workerLedgers = wl || [];
+  }
+
+  const map = {};
+  parties.forEach(p => { map[p.id] = Number(p.opening_balance || 0); });
+
+  sales?.forEach(s => { if(s.party_id) map[s.party_id] = (map[s.party_id] || 0) + Number(s.total_amount || 0); });
+  payments?.forEach(p => { if(p.party_id) map[p.party_id] = (map[p.party_id] || 0) - Number(p.amount || 0); });
+  returns?.forEach(r => { if(r.party_id) map[r.party_id] = (map[r.party_id] || 0) - Number(r.total_amount || 0); });
+
+  expenses?.forEach(e => {
+    if(!e.party_id) return;
+    if (e.expense_types?.name === 'Advance to Party') map[e.party_id] = (map[e.party_id] || 0) + Number(e.amount || 0);
+    if (e.expense_types?.name === 'Bad Debt') map[e.party_id] = (map[e.party_id] || 0) - Number(e.amount || 0);
+  });
+
+  if (workers) {
+    workers.forEach(w => {
+      if(!w.party_id) return;
+      const wl = workerLedgers.filter(l => l.worker_id === w.id);
+      wl.forEach(l => {
+        if (l.source_type === 'payment') return; // avoid double counting if recorded as both
+        if (l.type === 'Debit') map[w.party_id] = (map[w.party_id] || 0) + Number(l.amount || 0);
+        if (l.type === 'Credit') map[w.party_id] = (map[w.party_id] || 0) - Number(l.amount || 0);
+      });
+    });
+  }
+  return map;
 }
 // Helper to inject company_id (for inserts)
 const injectCompany = (data) => globalCompanyId ? { ...data, company_id: globalCompanyId } : data;
@@ -144,42 +203,14 @@ export const api = {
           const { data: allParties, error } = await withCompany(supabase.from('parties').select('*')).order('name')
           if (error) throw error
           
-          // Fetch balances from the view and map them
-          const { data: viewParties } = await withCompany(supabase.from('parties_with_balance').select('id, balance'))
-          const balanceMap = {}
-          if (viewParties) {
-             viewParties.forEach(vp => { balanceMap[vp.id] = Number(vp.balance || 0); })
-          }
+          // Fetch EXACT outstanding balances (bug-free, includes all returns/expenses/workers)
+          const balanceMap = await getTruePartyBalances(supabase, null, withCompany)
           
           allParties.forEach(p => {
              p.balance = balanceMap[p.id] !== undefined ? balanceMap[p.id] : Number(p.opening_balance || 0);
           })
 
           const data = allParties;
-          
-          // Merge worker_ledger balances for workers
-          const { data: workers } = await supabase.from('workers').select('id, party_id')
-          if (workers && workers.length > 0) {
-            const { data: workerLedgers } = await supabase.from('worker_ledger').select('worker_id, type, amount')
-            if (workerLedgers) {
-              const workerBalances = {}
-              for (const w of workers) {
-                if (!w.party_id) continue;
-                let bal = 0;
-                const wl = workerLedgers.filter(l => l.worker_id === w.id);
-                wl.forEach(l => {
-                  if (l.type === 'Debit') bal += Number(l.amount);
-                  if (l.type === 'Credit') bal -= Number(l.amount);
-                });
-                workerBalances[w.party_id] = bal;
-              }
-              data.forEach(p => {
-                if (workerBalances[p.id] !== undefined) {
-                  p.balance = Number(p.balance || 0) + workerBalances[p.id];
-                }
-              });
-            }
-          }
           
           return data
         }
@@ -1169,11 +1200,11 @@ export const api = {
           
           // Fetch season-filtered data for coupon parties
           let couponPaymentsData = [], couponPartySalesData = [], couponReturnsData = []
-          if (couponPartyIds.length > 0 && seasonData) {
+          if (couponPartyIds.length > 0) {
             const [cpRes, csRes, crRes] = await Promise.all([
-              withCompany(supabase.from('payments').select('party_id, amount, date').in('party_id', couponPartyIds).gte('date', seasonData.start_date).lte('date', seasonData.end_date)),
-              withCompany(supabase.from('sales').select('party_id, total_amount, date, coupon_no').in('party_id', couponPartyIds).gte('date', seasonData.start_date).lte('date', seasonData.end_date)),
-              withCompany(supabase.from('sale_returns').select('party_id, total_amount, date').in('party_id', couponPartyIds).gte('date', seasonData.start_date).lte('date', seasonData.end_date))
+              withCompany(supabase.from('payments').select('party_id, amount, date').in('party_id', couponPartyIds)),
+              withCompany(supabase.from('sales').select('party_id, total_amount, date, coupon_no').in('party_id', couponPartyIds)),
+              withCompany(supabase.from('sale_returns').select('party_id, total_amount, date').in('party_id', couponPartyIds))
             ])
             couponPaymentsData = cpRes.data || []
             couponPartySalesData = csRes.data || []
@@ -1186,29 +1217,10 @@ export const api = {
           couponPartySalesData.forEach(s => { cpSalesMap[s.party_id] = (cpSalesMap[s.party_id] || 0) + Number(s.total_amount || 0) })
           couponReturnsData.forEach(r => { cpReturnsMap[r.party_id] = (cpReturnsMap[r.party_id] || 0) + Number(r.total_amount || 0) })
           
-          // Fetch party balances for coupon parties
+          // Fetch party balances for coupon parties (bug-free, includes all returns/expenses)
           let cpBalanceMap = {}
           if (couponPartyIds.length > 0) {
-            const { data: cpBal } = await withCompany(supabase.from('parties_with_balance').select('id, balance').in('id', couponPartyIds))
-            ;(cpBal || []).forEach(pb => { cpBalanceMap[pb.id] = Number(pb.balance || 0) })
-            
-            // Add worker_ledger adjustments so balances match ledger exactly
-            const { data: cpWorkers } = await supabase.from('workers').select('id, party_id').in('party_id', couponPartyIds)
-            if (cpWorkers && cpWorkers.length > 0) {
-              const cpWorkerIds = cpWorkers.map(w => w.id)
-              const { data: cpWorkerLedgers } = await supabase.from('worker_ledger').select('worker_id, type, amount').in('worker_id', cpWorkerIds)
-              if (cpWorkerLedgers) {
-                for (const w of cpWorkers) {
-                  if (!w.party_id) continue
-                  let bal = 0
-                  cpWorkerLedgers.filter(l => l.worker_id === w.id).forEach(l => {
-                    if (l.type === 'Debit') bal += Number(l.amount)
-                    if (l.type === 'Credit') bal -= Number(l.amount)
-                  })
-                  if (bal !== 0) cpBalanceMap[w.party_id] = (cpBalanceMap[w.party_id] || 0) + bal
-                }
-              }
-            }
+            cpBalanceMap = await getTruePartyBalances(supabase, couponPartyIds, withCompany)
           }
           
           // Build coupon sales map by coupon_no
@@ -1362,32 +1374,8 @@ export const api = {
           
           const partyIds = [...new Set((coupons || []).map(c => c.party_id).filter(Boolean))]
 
-          // Fetch outstanding balances for these parties
-          const { data: partyBalances } = await withCompany(
-            supabase.from('parties_with_balance').select('id, balance').in('id', partyIds)
-          )
-          const balanceMap = {}
-          ;(partyBalances || []).forEach(pb => { balanceMap[pb.id] = Number(pb.balance || 0) })
-
-          // Add worker_ledger adjustments (same as parties:getAll) so balances match ledger exactly
-          if (partyIds.length > 0) {
-            const { data: workers } = await supabase.from('workers').select('id, party_id').in('party_id', partyIds)
-            if (workers && workers.length > 0) {
-              const workerIds = workers.map(w => w.id)
-              const { data: workerLedgers } = await supabase.from('worker_ledger').select('worker_id, type, amount').in('worker_id', workerIds)
-              if (workerLedgers) {
-                for (const w of workers) {
-                  if (!w.party_id) continue
-                  let bal = 0
-                  workerLedgers.filter(l => l.worker_id === w.id).forEach(l => {
-                    if (l.type === 'Debit') bal += Number(l.amount)
-                    if (l.type === 'Credit') bal -= Number(l.amount)
-                  })
-                  if (bal !== 0) balanceMap[w.party_id] = (balanceMap[w.party_id] || 0) + bal
-                }
-              }
-            }
-          }
+          // Fetch EXACT outstanding balances for these parties (bug-free, includes all returns/expenses)
+          const balanceMap = await getTruePartyBalances(supabase, partyIds, withCompany)
 
           // Fetch receipts received (payments) for these parties in the current season
           // Using season start/end dates is more reliable as season_id might not be fully backfilled on all payments
@@ -1397,11 +1385,8 @@ export const api = {
           let partySalesQuery = supabase.from('sales').select('party_id, total_amount, date').in('party_id', partyIds)
           let partyReturnsQuery = supabase.from('sale_returns').select('party_id, total_amount, date').in('party_id', partyIds)
           
-          if (season) {
-            partyPaymentsQuery = partyPaymentsQuery.gte('date', season.start_date).lte('date', season.end_date)
-            partySalesQuery = partySalesQuery.gte('date', season.start_date).lte('date', season.end_date)
-            partyReturnsQuery = partyReturnsQuery.gte('date', season.start_date).lte('date', season.end_date)
-          }
+          // Do NOT filter by season date. The ledger shows ALL payments for the party in "Payment Jama",
+          // so to match the Ledger exactly, we fetch all-time payments.
           
           const [ { data: partyPayments }, { data: partySales }, { data: partyReturns } ] = await Promise.all([
             withCompany(partyPaymentsQuery),
