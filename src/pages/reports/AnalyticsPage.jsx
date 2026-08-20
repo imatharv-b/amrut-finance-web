@@ -7,11 +7,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, 
   ResponsiveContainer 
 } from 'recharts'
-import { LineChart, PieChart as PieChartIcon, AlertTriangle, TrendingUp, DollarSign, Package, Printer, Search, Users, Clock } from 'lucide-react'
+import { LineChart, PieChart as PieChartIcon, AlertTriangle, TrendingUp, DollarSign, Package, Printer, Search, Users, Clock, FileSpreadsheet } from 'lucide-react'
 import Modal from '../../components/Modal'
 import DataTable from '../../components/DataTable'
 import { formatDate } from '../../lib/dateUtils'
 import { printHTML } from '../../lib/printUtils'
+import { exportToExcel } from '../../lib/excelExport'
 
 const formatCurrency = (num) => '₹' + new Intl.NumberFormat('en-IN').format(Math.round(num || 0))
 const formatCompact = (num) => {
@@ -189,6 +190,59 @@ export default function AnalyticsPage() {
     }
   };
 
+  const handleExportRiskMatrix = () => {
+    if (!data?.topRisks) return;
+
+    const exportData = data.topRisks.map(party => {
+      let daysSincePay = null;
+      if (party.lastPaymentDate) {
+         daysSincePay = Math.floor((new Date() - new Date(party.lastPaymentDate)) / (1000 * 60 * 60 * 24));
+      }
+      
+      let riskLevel = "Medium";
+      if (party.outstanding > 100000 && (daysSincePay === null || daysSincePay > 60)) {
+         riskLevel = "High";
+      } else if (party.outstanding < 20000 || (daysSincePay !== null && daysSincePay < 30)) {
+         riskLevel = "Low";
+      }
+
+      return {
+        name: party.name,
+        outstanding: party.outstanding,
+        last_payment: party.lastPaymentDate 
+          ? new Date(party.lastPaymentDate).toLocaleDateString('en-IN') + ` (${daysSincePay} days ago)`
+          : 'No payments recorded',
+        days_15: party.aging?.days_15 || 0,
+        month_1: party.aging?.month_1 || 0,
+        month_2: party.aging?.month_2 || 0,
+        month_3: party.aging?.month_3 || 0,
+        above_3_months: party.aging?.above_3_months || 0,
+        risk: riskLevel
+      }
+    });
+
+    const columns = [
+      { key: 'name', label: 'Dealer Name', width: 35 },
+      { key: 'outstanding', label: 'Outstanding Balance', isCurrency: true, width: 20 },
+      { key: 'last_payment', label: 'Last Payment', width: 25 },
+      { key: 'days_15', label: 'Last 15 Days', isCurrency: true, width: 15 },
+      { key: 'month_1', label: '1 Month', isCurrency: true, width: 15 },
+      { key: 'month_2', label: '2 Months', isCurrency: true, width: 15 },
+      { key: 'month_3', label: '3 Months', isCurrency: true, width: 15 },
+      { key: 'above_3_months', label: '> 3 Months', isCurrency: true, width: 15 },
+      { key: 'risk', label: 'Risk Level', width: 15 }
+    ];
+
+    exportToExcel({
+      title: 'Dealer Risk Matrix - ' + activeSeason.name,
+      columns: columns,
+      data: exportData,
+      valueKey: 'outstanding',
+      accentColor: 'E11D48', // Rose color for Risk
+      filename: 'Dealer_Risk_Matrix_' + activeSeason.name.replace(/\s+/g, '_')
+    });
+  };
+
   const productColumns = [
     { key: 'date', label: 'Date', render: (val) => formatDate(val) },
     { key: 'invoice_no', label: 'Invoice No' },
@@ -348,22 +402,36 @@ export default function AnalyticsPage() {
 
         {/* Dealer Risk Matrix */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <AlertTriangle className="w-5 h-5 text-rose-500" />
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Dealer Risk Matrix</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Top outstanding accounts and their last payment dates</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Dealer Risk Matrix</h2>
+                <p className="text-xs text-slate-400 mt-0.5">All outstanding accounts and payment pending aging</p>
+              </div>
             </div>
+            <button
+              onClick={handleExportRiskMatrix}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 font-semibold transition-colors text-sm border border-emerald-200"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Export Excel
+            </button>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-y border-slate-200">
+          <div className="overflow-x-auto max-h-[600px] rounded-lg border border-slate-200">
+            <table className="w-full text-left text-sm whitespace-nowrap relative">
+              <thead className="bg-slate-50 text-slate-600 font-semibold sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-4 py-3">Dealer Name</th>
-                  <th className="px-4 py-3">Outstanding Balance</th>
-                  <th className="px-4 py-3">Last Payment Received</th>
-                  <th className="px-4 py-3">Risk Level</th>
+                  <th className="px-4 py-3 bg-slate-50">Dealer Name</th>
+                  <th className="px-4 py-3 bg-slate-50">Outstanding</th>
+                  <th className="px-4 py-3 bg-slate-50">Last Payment</th>
+                  <th className="px-4 py-3 bg-slate-50">Last 15 Days</th>
+                  <th className="px-4 py-3 bg-slate-50">1 Month</th>
+                  <th className="px-4 py-3 bg-slate-50">2 Months</th>
+                  <th className="px-4 py-3 bg-slate-50">3 Months</th>
+                  <th className="px-4 py-3 bg-slate-50">&gt; 3 Months</th>
+                  <th className="px-4 py-3 bg-slate-50">Risk Level</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -391,8 +459,13 @@ export default function AnalyticsPage() {
                       <td className="px-4 py-3 text-slate-500">
                         {party.lastPaymentDate 
                           ? new Date(party.lastPaymentDate).toLocaleDateString('en-IN') + ` (${daysSincePay} days ago)`
-                          : 'No payments recorded'}
+                          : 'No payments'}
                       </td>
+                      <td className="px-4 py-3 text-slate-600">{party.aging?.days_15 > 0 ? formatCurrency(party.aging.days_15) : '-'}</td>
+                      <td className="px-4 py-3 text-slate-600">{party.aging?.month_1 > 0 ? formatCurrency(party.aging.month_1) : '-'}</td>
+                      <td className="px-4 py-3 text-amber-600 font-medium">{party.aging?.month_2 > 0 ? formatCurrency(party.aging.month_2) : '-'}</td>
+                      <td className="px-4 py-3 text-rose-500 font-medium">{party.aging?.month_3 > 0 ? formatCurrency(party.aging.month_3) : '-'}</td>
+                      <td className="px-4 py-3 font-bold text-rose-600">{party.aging?.above_3_months > 0 ? formatCurrency(party.aging.above_3_months) : '-'}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${riskColor}`}>
                           {riskLevel}
@@ -403,7 +476,7 @@ export default function AnalyticsPage() {
                 })}
                 {(!data.topRisks || data.topRisks.length === 0) && (
                   <tr>
-                    <td colSpan="4" className="px-4 py-8 text-center text-slate-400">No outstanding risk data found.</td>
+                    <td colSpan="9" className="px-4 py-8 text-center text-slate-400">No outstanding risk data found.</td>
                   </tr>
                 )}
               </tbody>

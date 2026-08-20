@@ -1585,19 +1585,14 @@ export const api = {
           if (err3) throw err3
 
           const { data: salesForParties, error: err4 } = await withCompany(
-            supabase.from('sales').select('total_amount, party_id')
+            supabase.from('sales').select('total_amount, party_id, date')
           )
           if (err4) throw err4
 
           const { data: paymentsForParties, error: err5 } = await withCompany(
-            supabase.from('payments').select('amount, party_id')
+            supabase.from('payments').select('amount, party_id, date')
           )
           if (err5) throw err5
-
-          const { data: returnsForParties, error: err6 } = await withCompany(
-            supabase.from('sale_returns').select('total_amount, party_id')
-          )
-          if (err6) throw err6
 
           // 1. Product Sales Analysis (Revenue & Volume)
           const productMap = {}
@@ -1611,35 +1606,63 @@ export const api = {
           const topProductsByVol = Object.values(productMap).sort((a,b) => b.volume - a.volume).slice(0, 10)
 
           // 2. Party Risk Analysis (Outstanding)
+          // Fetch exact balances using our helper
+          const partyBalances = await getTruePartyBalances(supabase, null, withCompany)
+          
           const partyRisks = []
-          parties?.forEach(p => {
-             let bal = Number(p.opening_balance || 0)
-             const pSales = salesForParties?.filter(s => s.party_id === p.id) || []
-             bal += pSales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0)
-             const pPayments = paymentsForParties?.filter(pay => pay.party_id === p.id) || []
-             bal -= pPayments.reduce((sum, pay) => sum + Number(pay.amount || 0), 0)
-             const pReturns = returnsForParties?.filter(r => r.party_id === p.id) || []
-             bal -= pReturns.reduce((sum, r) => sum + Number(r.total_amount || 0), 0)
-             
-             // Advances & Bad Debts
-             const pExp = expenses?.filter(e => e.party_id === p.id) || []
-             pExp.forEach(e => {
-               if (e.expense_types?.name === 'Advance to Party') bal += Number(e.amount || 0)
-               if (e.expense_types?.name === 'Bad Debt') bal -= Number(e.amount || 0)
-             })
+          const now = new Date()
 
+          parties?.forEach(p => {
+             const bal = partyBalances[p.id] || 0
              if (bal > 0) {
-                // Find last payment date if any
+                const pPayments = paymentsForParties?.filter(pay => pay.party_id === p.id) || []
                 const latestPay = pPayments.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0))[0]
+                
+                // Compute Aging
+                let remainingBal = bal
+                let aging = {
+                  days_15: 0,
+                  month_1: 0,
+                  month_2: 0,
+                  month_3: 0,
+                  above_3_months: 0
+                }
+
+                const pSales = salesForParties?.filter(s => s.party_id === p.id).sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)) || []
+                
+                for (const sale of pSales) {
+                   if (remainingBal <= 0) break
+                   const amt = Math.min(remainingBal, Number(sale.total_amount || 0))
+                   if (amt <= 0) continue
+
+                   const saleDate = new Date(sale.date)
+                   const diffTime = Math.abs(now - saleDate)
+                   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+                   if (diffDays <= 15) aging.days_15 += amt
+                   else if (diffDays <= 30) aging.month_1 += amt
+                   else if (diffDays <= 60) aging.month_2 += amt
+                   else if (diffDays <= 90) aging.month_3 += amt
+                   else aging.above_3_months += amt
+
+                   remainingBal -= amt
+                }
+
+                // Any leftover balance (opening bal, etc) goes to oldest bucket
+                if (remainingBal > 0) {
+                   aging.above_3_months += remainingBal
+                }
+
                 partyRisks.push({
                    id: p.id,
                    name: p.name,
                    outstanding: bal,
-                   lastPaymentDate: latestPay ? latestPay.date : null
+                   lastPaymentDate: latestPay && latestPay.date ? latestPay.date : null,
+                   aging: aging
                 })
              }
           })
-          const topRisks = partyRisks.sort((a,b) => b.outstanding - a.outstanding).slice(0, 15)
+          const topRisks = partyRisks.sort((a,b) => b.outstanding - a.outstanding)
 
           return {
              topProductsByRev,
