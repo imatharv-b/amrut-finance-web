@@ -1141,39 +1141,44 @@ export const api = {
               total_amount: s.total_amount
             }))
 
-          const partySalesById = {}
-          const partiesNameById = {}
+          const couponSalesMap = {}
           salesData?.forEach(s => {
-             const pId = s.party_id
-             if (pId) {
-                 if (!partySalesById[pId]) partySalesById[pId] = 0
-                 partySalesById[pId] += Number(s.total_amount || 0)
-                 partiesNameById[pId] = s.parties?.name || 'Unknown'
+             if (s.coupon_no) {
+                 couponSalesMap[s.coupon_no] = (couponSalesMap[s.coupon_no] || 0) + Number(s.total_amount || 0)
              }
           })
           
           const { data: schemesData } = await withCompany(supabase.from('schemes').select('*')).eq('season_id', seasonId)
           const schemesAnalytics = (schemesData || []).map(s => {
-             const target = Number(s.target_amount || 0)
+             const baseTarget = Number(s.target_amount || 0)
              let achievedCount = 0
              const partiesProgress = []
              const couponsForScheme = couponsData.filter(c => c.scheme_id === s.id)
              const participatingPartyIds = [...new Set(couponsForScheme.map(c => c.party_id))]
 
-             if (target > 0) {
+             if (baseTarget > 0) {
                  participatingPartyIds.forEach(pId => {
-                     const totalSales = partySalesById[pId] || 0
-                     const percentage = Math.min((totalSales / target) * 100, 100)
-                     const achieved = totalSales >= target
-                     const partyName = partiesNameById[pId] || couponsForScheme.find(c => c.party_id === pId)?.parties?.name || 'Unknown'
+                     const partyCoupons = couponsForScheme.filter(c => c.party_id === pId)
+                     
+                     let totalSales = 0
+                     let partyTarget = 0
+                     
+                     partyCoupons.forEach(c => {
+                         totalSales += (couponSalesMap[c.coupon_no] || 0)
+                         partyTarget += baseTarget
+                     })
+
+                     const percentage = Math.min((totalSales / partyTarget) * 100, 100)
+                     const achieved = totalSales >= partyTarget
+                     const partyName = partyCoupons[0]?.parties?.name || 'Unknown'
 
                      partiesProgress.push({
                         party_id: pId,
                         party_name: partyName,
                         total_sales: totalSales,
-                        target: target,
+                        target: partyTarget,
                         percentage: percentage,
-                        remaining: Math.max(target - totalSales, 0),
+                        remaining: Math.max(partyTarget - totalSales, 0),
                         achieved: achieved
                      })
                      if (achieved) achievedCount++
