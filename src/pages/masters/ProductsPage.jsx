@@ -9,9 +9,9 @@ import { SeasonContext } from '../../context/SeasonContext'
 import { useCompany } from '../../context/CompanyContext'
 import * as XLSX from 'xlsx'
 
-const UNITS = ['Bottle', 'Ltr', 'Kg', 'Box', 'Jar', 'Bag', 'Pouch', 'Pcs', 'Can', 'Drum', 'Bucket']
-const CATEGORIES = ['Fertilizer', 'Pesticide', 'Biostimulant']
-const PRODUCT_GROUPS = ['ORGANIC NUTRITION', 'BIO PESTICIDE', 'BIO STIMULANT', 'MICRONUTRIENT', 'PLANT GROWTH REGULATOR', 'SPECIALITY FERTILIZER', 'OTHER']
+const UNITS = ['Bottle', 'Ltr', 'Kg', 'Box', 'Jar', 'Bag', 'Pouch', 'Pcs', 'Can', 'Drum', 'Bucket', 'Roll', 'Meter', 'Ton']
+const CATEGORIES = ['Fertilizer', 'Pesticide', 'Biostimulant', 'Raw Material', 'Packaging', 'Other']
+const PRODUCT_GROUPS = ['ORGANIC NUTRITION', 'BIO PESTICIDE', 'BIO STIMULANT', 'MICRONUTRIENT', 'PLANT GROWTH REGULATOR', 'SPECIALITY FERTILIZER', 'PACKAGING MATERIAL', 'RAW CHEMICALS', 'OTHER']
 
 const emptyProduct = {
   name: '',

@@ -80,6 +80,10 @@ async function getTruePartyBalances(supabase, partyIds = null, withCompanyFn) {
   let wQuery = supabase.from('workers').select('id, party_id');
   if (partyIds) wQuery = wQuery.in('party_id', partyIds);
   const { data: workers } = await wQuery;
+  
+  let purQuery = withCompanyFn(supabase.from('purchases').select('party_id, total_amount'));
+  if (partyIds) purQuery = purQuery.in('party_id', partyIds);
+  const { data: purchases } = await purQuery;
 
   let workerLedgers = [];
   if (workers && workers.length > 0) {
@@ -93,6 +97,7 @@ async function getTruePartyBalances(supabase, partyIds = null, withCompanyFn) {
   sales?.forEach(s => { if(s.party_id) map[s.party_id] = (map[s.party_id] || 0) + Number(s.total_amount || 0); });
   payments?.forEach(p => { if(p.party_id) map[p.party_id] = (map[p.party_id] || 0) - Number(p.amount || 0); });
   returns?.forEach(r => { if(r.party_id) map[r.party_id] = (map[r.party_id] || 0) - Number(r.total_amount || 0); });
+  purchases?.forEach(p => { if(p.party_id) map[p.party_id] = (map[p.party_id] || 0) - Number(p.total_amount || 0); });
 
   expenses?.forEach(e => {
     if(!e.party_id) return;
@@ -239,12 +244,13 @@ export const api = {
           const { data: party } = await supabase.from('parties').select('*').eq('id', partyId).single()
           if (!party) return null
           
-          const [salesRes, paymentsRes, expensesRes, returnsRes, couponsRes] = await Promise.all([
+          const [salesRes, paymentsRes, expensesRes, returnsRes, couponsRes, purRes] = await Promise.all([
             supabase.from('sales').select('*, sale_items(*, products(name))').eq('party_id', partyId),
             supabase.from('payments').select('*').eq('party_id', partyId),
             supabase.from('expenses').select('*, expense_types(name)').eq('party_id', partyId),
             supabase.from('sale_returns').select('*, sale_return_items(*, products(name))').eq('party_id', partyId),
-            withCompany(supabase.from('scheme_coupons').select('*, schemes(name, target_amount, season_id)').eq('party_id', partyId))
+            withCompany(supabase.from('scheme_coupons').select('*, schemes(name, target_amount, season_id)').eq('party_id', partyId)),
+            supabase.from('purchases').select('*, purchase_items(*, products(name))').eq('party_id', partyId)
           ]);
           
           // Build coupon sales map: coupon_no -> total sales amount
@@ -287,6 +293,21 @@ export const api = {
                 narration: s.remarks || '',
                 coupon_no: s.coupon_no || null,
                 items: s.sale_items?.map(i => ({ name: i.products?.name, qty: i.qty, unit: i.unit, rate: i.rate, amount: i.amount })) || []
+             });
+          });
+
+          purRes.data?.forEach(p => {
+             rawEntries.push({
+                id: p.id,
+                entry_date: p.date,
+                ref: p.invoice_no,
+                vch_no: p.invoice_no,
+                debit: 0,
+                credit: Number(p.total_amount),
+                entry_type: 'purchase',
+                particulars: 'Dr Purchases',
+                narration: p.remarks || '',
+                items: p.purchase_items?.map(i => ({ name: i.products?.name, qty: i.qty, unit: i.unit, rate: i.rate, amount: i.amount })) || []
              });
           });
 
@@ -990,8 +1011,19 @@ export const api = {
              }
           })
 
+          const { data: allPurchases } = await withCompany(supabase.from('purchases').select('total_amount, party_id, date'))
+          let seasonPurchases = allPurchases || []
+          if (seasonData) {
+             seasonPurchases = seasonPurchases.filter(p => {
+               const pDate = p.date ? p.date.substring(0, 10) : ''
+               return pDate >= seasonData.start_date && pDate <= seasonData.end_date
+             })
+          }
+          const totalPurchases = seasonPurchases.reduce((sum, p) => sum + Number(p.total_amount || 0), 0)
+
           let totalExpenses = expData?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0
           totalExpenses -= advanceFromPartyTotal
+          totalExpenses += totalPurchases
 
           const netBalance = totalSales - totalExpenses
           const couponsIssued = couponsData.length
@@ -1020,6 +1052,9 @@ export const api = {
                // Subtract returns
                const pReturns = allReturns?.filter(r => r.party_id === p.id) || []
                bal -= pReturns.reduce((sum, r) => sum + Number(r.total_amount || 0), 0)
+               // Subtract purchases
+               const pPurchases = allPurchases?.filter(pur => pur.party_id === p.id) || []
+               bal -= pPurchases.reduce((sum, pur) => sum + Number(pur.total_amount || 0), 0)
                // Add advances/subtract bad debts
                const pExp = expData?.filter(e => e.party_id === p.id) || []
                pExp.forEach(e => {

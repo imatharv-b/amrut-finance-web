@@ -16,7 +16,6 @@ export default function EditPurchasePage() {
   const [partiesRaw, setPartiesRaw] = useState([]);
   const [associates, setAssociates] = useState([]);
   const [products, setProducts] = useState([]);
-  const [coupons, setCoupons] = useState([]);
   const [partyOutstanding, setPartyOutstanding] = useState(null);
   const [partyRating, setPartyRating] = useState(null);
   const [showDelayWarning, setShowDelayWarning] = useState(false);
@@ -67,10 +66,9 @@ export default function EditPurchasePage() {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [partiesData, productsData, couponsData, purchaseDetails] = await Promise.all([
+      const [partiesData, productsData, purchaseDetails] = await Promise.all([
         window.db.invoke('parties:getAll'),
         window.db.invoke('products:getAll'),
-        window.db.invoke('coupons:getAll', activeSeason.id),
         window.db.invoke('purchases:getById', id)
       ]);
       
@@ -91,7 +89,7 @@ export default function EditPurchasePage() {
         sgst_percent: purchase.sgst_percent,
         amount_paid: purchase.amount_paid,
         remarks: purchase.remarks || '',
-        coupon_no: purchase.coupon_no || ''
+        
       });
       setInvoiceNo(purchase.invoice_no);
 
@@ -117,7 +115,6 @@ export default function EditPurchasePage() {
       setPartiesRaw(partiesData);
       setParties(partiesData.map(p => ({ value: p.id, label: p.name, sublabel: p.village })));
       setProducts(productsData);
-      setCoupons(couponsData || []);
 
       // Set initial outstanding and rating for the loaded party
       const selectedParty = partiesData.find(p => p.id === purchase.party_id);
@@ -141,29 +138,10 @@ export default function EditPurchasePage() {
         item.unit = product.unit || '';
         item.rate = product.dealer_price || 0;
       }
-      try {
-        const batches = await window.db.invoke('batches:getByProduct', value);
-        item.batches = batches || [];
-        
-        const date = formData.date ? new Date(formData.date) : new Date();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        let prefix = 'ABX';
-        let year2 = String(date.getFullYear()).slice(2);
-        if (activeSeason) {
-          prefix = activeSeason.name?.toLowerCase().includes('kharif') ? 'ABK' : 'ABR';
-          const seasonYearMatch = activeSeason.name?.match(/\d{4}/);
-          if (seasonYearMatch) {
-            year2 = seasonYearMatch[0].slice(2);
-          }
-        }
-        item.batch_no = `${prefix}${year2}${m}`;
-        item.batch_id = '';
-        
-        item.mfg_date = batches.length > 0 ? batches[0].mfg_date : `${date.getFullYear()}-${m}`;
-      } catch (err) {
-        toast.error('Failed to load batches');
-        item.batches = [];
-      }
+      item.batches = [];
+      item.batch_no = '';
+      item.batch_id = '';
+      item.mfg_date = '';
     } else if (field === 'batch_id') {
       item.batch_id = value;
       const batch = item.batches.find(b => b.id === Number(value));
@@ -367,21 +345,6 @@ export default function EditPurchasePage() {
               </label>
             </div>
           </FormField>
-
-          {formData.party_id && (
-            <FormField label="Coupon (Optional)">
-              <select
-                value={formData.coupon_no}
-                onChange={e => setFormData({ ...formData, coupon_no: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white"
-              >
-                <option value="">No Coupon</option>
-                {coupons.filter(c => c.party_id === formData.party_id).map(c => (
-                  <option key={c.id} value={c.coupon_no}>{c.coupon_no} - {c.scheme_name}</option>
-                ))}
-              </select>
-            </FormField>
-          )}
         </div>
 
         {/* Invoice Info */}

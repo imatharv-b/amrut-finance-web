@@ -248,12 +248,13 @@ export default function PartiesPage() {
         gstin: party.gstin || '',
         opening_balance: party.opening_balance || 0,
         associate_name: party.associate_name || '',
-        rating: party.rating || 'B'
+        rating: party.rating || 'B',
+        party_type: party.party_type || 'Dealer'
       });
     } else {
       setFormData({
         name: '', owner_name: '', village: '', taluka: '', district: '',
-        mobile: '', gstin: '', opening_balance: '', associate_name: '', rating: 'B'
+        mobile: '', gstin: '', opening_balance: '', associate_name: '', rating: 'B', party_type: 'Dealer'
       });
     }
     setErrors({});
@@ -319,6 +320,9 @@ export default function PartiesPage() {
           <span>{val}</span>
           {row.party_type === 'Worker' && (
             <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full border border-blue-200">Worker</span>
+          )}
+          {row.party_type === 'Vendor' && (
+            <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-bold rounded-full border border-purple-200">Vendor</span>
           )}
         </div>
       )
@@ -442,6 +446,9 @@ export default function PartiesPage() {
                   </div>
                   {row.party_type === 'Worker' && (
                     <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full border border-blue-200">Worker</span>
+                  )}
+                  {row.party_type === 'Vendor' && (
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-bold rounded-full border border-purple-200">Vendor</span>
                   )}
                 </div>
                 
@@ -595,6 +602,16 @@ export default function PartiesPage() {
               onChange={e => setFormData({ ...formData, owner_name: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition"
             />
+          </FormField>
+          <FormField label="Party Type">
+            <select
+              value={formData.party_type}
+              onChange={e => setFormData({ ...formData, party_type: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition bg-white"
+            >
+              <option value="Dealer">Dealer</option>
+              <option value="Vendor">Vendor/Supplier</option>
+            </select>
           </FormField>
           <FormField label="Mobile">
             <input
