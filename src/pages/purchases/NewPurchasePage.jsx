@@ -23,7 +23,6 @@ export default function NewPurchasePage() {
     date: new Date().toISOString().split('T')[0],
     purchase_type: 'kaccha',
     party_id: '',
-    discount: 0,
     cgst_percent: 0,
     sgst_percent: 0,
     amount_paid: 0,
@@ -128,8 +127,7 @@ export default function NewPurchasePage() {
 
   // Calculations
   const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const discount = Number(formData.discount) || 0;
-  const taxableAmount = subtotal - discount;
+  const taxableAmount = subtotal;
   
   const cgstAmount = formData.purchase_type === 'pakka' ? (taxableAmount * (Number(formData.cgst_percent) || 0)) / 100 : 0;
   const sgstAmount = formData.purchase_type === 'pakka' ? (taxableAmount * (Number(formData.sgst_percent) || 0)) / 100 : 0;
@@ -157,13 +155,10 @@ export default function NewPurchasePage() {
     try {
       const validItems = items.filter(i => i.product_id && i.qty > 0 && i.rate > 0).map(i => ({
         product_id: i.product_id,
-        batch_id: i.batch_id || null,
-        batch_no: i.batch_no || '',
         qty: Number(i.qty),
         unit: i.unit,
         rate: Number(i.rate),
-        amount: Number(i.amount),
-        mfg_date: i.mfg_date || ''
+        amount: Number(i.amount)
       }));
 
       const purchaseData = {
@@ -171,7 +166,6 @@ export default function NewPurchasePage() {
         season_id: activeSeason.id,
         invoice_no: invoiceNo,
         total_amount: grandTotal,
-        discount: discount,
         cgst_percent: formData.purchase_type === 'pakka' ? Number(formData.cgst_percent) : 0,
         sgst_percent: formData.purchase_type === 'pakka' ? Number(formData.sgst_percent) : 0,
         amount_paid: amountPaid,
@@ -311,8 +305,6 @@ export default function NewPurchasePage() {
               <tr>
                 <th className="px-4 py-3 w-10">#</th>
                 <th className="px-4 py-3 min-w-[250px]">Product</th>
-                <th className="px-4 py-3 w-40">Batch</th>
-                <th className="px-4 py-3 w-32">MFG Date</th>
                 <th className="px-4 py-3 w-24">Qty</th>
                 <th className="px-4 py-3 w-24">Unit</th>
                 <th className="px-4 py-3 w-32">Rate (₹)</th>
@@ -330,42 +322,6 @@ export default function NewPurchasePage() {
                       value={item.product_id}
                       onChange={v => handleItemChange(index, 'product_id', v)}
                       placeholder="Select Product"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="text"
-                      list={`batches-list-${index}`}
-                      value={item.batch_no || ''}
-                      onChange={e => {
-                        const val = e.target.value;
-                        const matchingBatch = item.batches.find(b => b.batch_no === val);
-                        handleItemChange(index, 'batch_no', val);
-                        if (matchingBatch) {
-                          handleItemChange(index, 'batch_id', matchingBatch.id);
-                          if (matchingBatch.mfg_date) {
-                            handleItemChange(index, 'mfg_date', matchingBatch.mfg_date);
-                          }
-                        } else {
-                          handleItemChange(index, 'batch_id', '');
-                        }
-                      }}
-                      className="w-full px-2 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary-500 outline-none"
-                      disabled={!item.product_id}
-                      placeholder="Type batch"
-                    />
-                    <datalist id={`batches-list-${index}`}>
-                      {item.batches.map(b => (
-                        <option key={b.id} value={b.batch_no} />
-                      ))}
-                    </datalist>
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="month"
-                      value={item.mfg_date}
-                      onChange={e => handleItemChange(index, 'mfg_date', e.target.value)}
-                      className="w-full px-2 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-primary-500 outline-none uppercase"
                     />
                   </td>
                   <td className="px-4 py-2">
@@ -461,20 +417,6 @@ export default function NewPurchasePage() {
               <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
             </div>
             
-            <div className="flex justify-between items-center py-1">
-              <span className="text-slate-600 font-medium flex items-center">
-                Discount (₹):
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.discount}
-                onChange={e => setFormData({ ...formData, discount: e.target.value })}
-                className="w-32 px-2 py-1 text-right border border-slate-300 rounded focus:ring-1 focus:ring-primary-500 outline-none"
-              />
-            </div>
-
             {formData.purchase_type === 'pakka' && (
               <>
                 <div className="flex justify-between items-center py-1">
