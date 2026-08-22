@@ -284,7 +284,7 @@ export default function SaleReturnPage() {
         data: exportData,
         valueKey: 'total_amount',
         accentColor: 'D4AF37', // Beautiful golden color as requested
-        filename: `Sale_Returns_${formatDate(new Date()).replace(/\//g, '-')}`
+        filename: `Sale_Returns_${formatDate(new Date().toISOString()).replace(/\//g, '-')}`
       })
     } catch (err) {
       console.error(err)
