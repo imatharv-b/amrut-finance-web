@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react'
-import { Plus, Search, FileText, Trash2, RotateCcw, Eye, Edit, Package, FileWarning, RefreshCw, Box } from 'lucide-react'
+import { Plus, Search, FileText, Trash2, RotateCcw, Eye, Edit, Package, FileWarning, RefreshCw, Box, Download } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
@@ -8,6 +8,7 @@ import SearchableSelect from '../../components/SearchableSelect'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { SeasonContext } from '../../context/SeasonContext'
 import { formatDate } from '../../lib/dateUtils'
+import { exportToExcel } from '../../lib/excelExport'
 
 export default function SaleReturnPage() {
   const { activeSeason } = useContext(SeasonContext)
@@ -255,6 +256,41 @@ export default function SaleReturnPage() {
     { label: 'Delete', icon: Trash2, onClick: (row) => setDeleteId(row.id), variant: 'danger' }
   ]
 
+  const handleExport = () => {
+    const exportData = filteredReturns.map(r => ({
+      date: formatDate(r.date),
+      return_no: r.return_no,
+      party_name: r.party_name,
+      original_invoice: r.original_invoice,
+      total_amount: Number(r.total_amount || 0),
+      reason: r.reason
+    }))
+
+    const excelColumns = [
+      { header: 'Date', key: 'date', width: 15 },
+      { header: 'Return No', key: 'return_no', width: 15 },
+      { header: 'Party Name', key: 'party_name', width: 30 },
+      { header: 'Original Invoice', key: 'original_invoice', width: 20 },
+      { header: 'Total Amount (₹)', key: 'total_amount', width: 20, style: { numFmt: '₹#,##0.00' } },
+      { header: 'Reason', key: 'reason', width: 30 }
+    ]
+    
+    const totalAmount = exportData.reduce((sum, r) => sum + r.total_amount, 0)
+    
+    exportToExcel({
+      title: 'Sale Returns Report',
+      columns: excelColumns,
+      data: exportData,
+      valueKey: 'total_amount',
+      accentColor: 'D4AF37', // Beautiful golden color as requested
+      filename: `Sale_Returns_${formatDate(new Date()).replace(/\//g, '-')}`,
+      summary: [
+        { label: 'Total Returns', value: exportData.length },
+        { label: 'Total Value', value: `₹${totalAmount.toFixed(2)}` }
+      ]
+    })
+  }
+
   if (!activeSeason) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-500">
@@ -274,13 +310,22 @@ export default function SaleReturnPage() {
             {returns.length} returns recorded
           </p>
         </div>
-        <button
-          onClick={handleOpenModal}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors"
-        >
-          <Plus size={20} />
-          Record Sale Return
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium transition-colors border border-slate-300"
+          >
+            <Download size={20} />
+            Export Excel
+          </button>
+          <button
+            onClick={handleOpenModal}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors"
+          >
+            <Plus size={20} />
+            Record Sale Return
+          </button>
+        </div>
       </div>
 
       <div className="p-6 flex-1 overflow-hidden flex flex-col">
