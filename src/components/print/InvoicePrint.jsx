@@ -30,7 +30,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Invoice ${sale.invoice_no}</title>
+      <title>${isPakka ? 'Tax Invoice' : 'Pro Forma / DM'} ${sale.invoice_no}</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -57,7 +57,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
           </div>
         </div>
         <div class="text-right">
-          <h2 class="text-lg font-bold text-indigo-600 mb-0.5">${isPakka ? 'TAX INVOICE' : 'PRO FORMA INVOICE'}</h2>
+          <h2 class="text-lg font-bold text-indigo-600 mb-0.5">${isPakka ? 'TAX INVOICE' : 'PRO FORMA / DM'}</h2>
           <p class="text-slate-600 font-semibold"># ${sale.invoice_no}</p>
           <div class="flex justify-end gap-3 mt-1 text-[11px]">
             <p class="text-slate-500">Date: <span class="text-slate-800 font-medium">${formatDate(sale.date)}</span></p>
