@@ -256,39 +256,40 @@ export default function SaleReturnPage() {
     { label: 'Delete', icon: Trash2, onClick: (row) => setDeleteId(row.id), variant: 'danger' }
   ]
 
-  const handleExport = () => {
-    const exportData = filteredReturns.map(r => ({
-      date: formatDate(r.date),
-      return_no: r.return_no,
-      party_name: r.party_name,
-      original_invoice: r.original_invoice,
-      total_amount: Number(r.total_amount || 0),
-      reason: r.reason
-    }))
+  const handleExport = async () => {
+    try {
+      const exportData = filteredReturns.map(r => ({
+        date: formatDate(r.date),
+        return_no: r.return_no,
+        party_name: r.party_name,
+        original_invoice: r.original_invoice,
+        total_amount: Number(r.total_amount || 0),
+        reason: r.reason
+      }))
 
-    const excelColumns = [
-      { header: 'Date', key: 'date', width: 15 },
-      { header: 'Return No', key: 'return_no', width: 15 },
-      { header: 'Party Name', key: 'party_name', width: 30 },
-      { header: 'Original Invoice', key: 'original_invoice', width: 20 },
-      { header: 'Total Amount (₹)', key: 'total_amount', width: 20, style: { numFmt: '₹#,##0.00' } },
-      { header: 'Reason', key: 'reason', width: 30 }
-    ]
-    
-    const totalAmount = exportData.reduce((sum, r) => sum + r.total_amount, 0)
-    
-    exportToExcel({
-      title: 'Sale Returns Report',
-      columns: excelColumns,
-      data: exportData,
-      valueKey: 'total_amount',
-      accentColor: 'D4AF37', // Beautiful golden color as requested
-      filename: `Sale_Returns_${formatDate(new Date()).replace(/\//g, '-')}`,
-      summary: [
-        { label: 'Total Returns', value: exportData.length },
-        { label: 'Total Value', value: `₹${totalAmount.toFixed(2)}` }
+      const excelColumns = [
+        { label: 'Date', key: 'date', width: 15 },
+        { label: 'Return No', key: 'return_no', width: 15 },
+        { label: 'Party Name', key: 'party_name', width: 30 },
+        { label: 'Original Invoice', key: 'original_invoice', width: 20 },
+        { label: 'Total Amount (₹)', key: 'total_amount', width: 20, style: { numFmt: '₹#,##0.00' } },
+        { label: 'Reason', key: 'reason', width: 30 }
       ]
-    })
+      
+      const totalAmount = exportData.reduce((sum, r) => sum + r.total_amount, 0)
+      
+      await exportToExcel({
+        title: 'Sale Returns Report',
+        columns: excelColumns,
+        data: exportData,
+        valueKey: 'total_amount',
+        accentColor: 'D4AF37', // Beautiful golden color as requested
+        filename: `Sale_Returns_${formatDate(new Date()).replace(/\//g, '-')}`
+      })
+    } catch (err) {
+      console.error(err)
+      toast.error('Export failed: ' + err.message)
+    }
   }
 
   if (!activeSeason) {
