@@ -9,9 +9,19 @@ export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    // Check if locked out
+    if (lockoutUntil && new Date() < lockoutUntil) {
+      const remainingSeconds = Math.ceil((lockoutUntil - new Date()) / 1000);
+      toast.error(`Too many failed attempts. Try again in ${remainingSeconds}s`);
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -24,12 +34,25 @@ export default function LoginPage({ onLogin }) {
         throw error;
       }
 
+      // Reset attempts on success
+      setFailedAttempts(0);
+      setLockoutUntil(null);
+
       toast.success('Logged in successfully!');
       // Log login activity
       logAuthActivity('LOGIN', data.session?.user?.email || email);
       if (onLogin) onLogin(data.session);
     } catch (error) {
-      toast.error(error.message || 'Failed to login');
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      
+      if (newAttempts >= 5) {
+        const lockoutTime = new Date(new Date().getTime() + 30000); // 30 seconds
+        setLockoutUntil(lockoutTime);
+        toast.error('Account temporarily locked due to too many failed attempts. Please wait 30 seconds.');
+      } else {
+        toast.error(error.message || 'Failed to login');
+      }
     } finally {
       setLoading(false);
     }

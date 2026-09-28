@@ -1,3 +1,14 @@
+// 🔒 Escape user-supplied strings before interpolating into HTML to prevent XSS
+const escapeHtml = (str) => {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 export const generateInvoiceHTML = (sale, items, settings) => {
   const isPakka = sale.sale_type === 'pakka';
   
@@ -52,16 +63,16 @@ export const generateInvoiceHTML = (sale, items, settings) => {
           <img src="LOCAL_LOGO_PLACEHOLDER" class="h-12 object-contain" onerror="this.style.display='none'" />
           <div>
             <h1 class="text-xl font-bold text-indigo-800 tracking-tight">AMRUT BIOCHEM</h1>
-            <p class="text-slate-500 text-[10px] mt-0.5">${settings?.address || 'Maharashtra (27)'}</p>
-            ${settings?.mobile ? `<p class="text-slate-500 text-[10px]">Mob: ${settings.mobile}</p>` : ''}
+            <p class="text-slate-500 text-[10px] mt-0.5">${escapeHtml(settings?.address || 'Maharashtra (27)')}</p>
+            ${settings?.mobile ? `<p class="text-slate-500 text-[10px]">Mob: ${escapeHtml(settings.mobile)}</p>` : ''}
           </div>
         </div>
         <div class="text-right">
           <h2 class="text-lg font-bold text-indigo-600 mb-0.5">${isPakka ? 'TAX INVOICE' : 'PRO FORMA / DM'}</h2>
-          <p class="text-slate-600 font-semibold"># ${sale.invoice_no}</p>
+          <p class="text-slate-600 font-semibold"># ${escapeHtml(sale.invoice_no)}</p>
           <div class="flex justify-end gap-3 mt-1 text-[11px]">
-            <p class="text-slate-500">Date: <span class="text-slate-800 font-medium">${formatDate(sale.date)}</span></p>
-            <p class="text-slate-500">Mode: <span class="text-slate-800 font-medium">${sale.payment_mode || 'Cash'}</span></p>
+            <p class="text-slate-500">Date: <span class="text-slate-800 font-medium">${escapeHtml(formatDate(sale.date))}</span></p>
+            <p class="text-slate-500">Mode: <span class="text-slate-800 font-medium">${escapeHtml(sale.payment_mode || 'Cash')}</span></p>
           </div>
         </div>
       </div>
@@ -70,7 +81,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
       <div class="mb-4 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 flex justify-between items-center">
         <div>
           <p class="text-[10px] text-indigo-600 font-bold mb-0.5 uppercase tracking-wider">Bill To</p>
-          <h3 class="text-base font-bold text-slate-800">${sale.party_name}</h3>
+          <h3 class="text-base font-bold text-slate-800">${escapeHtml(sale.party_name)}</h3>
         </div>
       </div>
 
@@ -93,9 +104,9 @@ export const generateInvoiceHTML = (sale, items, settings) => {
             ${items.map((item, i) => `
               <tr class="hover:bg-slate-50 transition-colors">
                 <td class="px-3 py-2 text-slate-500">${i + 1}</td>
-                <td class="px-3 py-2 font-medium text-slate-800">${item.product_name}</td>
+                <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(item.product_name)}</td>
                 <td class="px-3 py-2 text-center text-slate-700">${item.qty}</td>
-                <td class="px-3 py-2 text-center text-slate-500 text-[10px]">${item.unit}</td>
+                <td class="px-3 py-2 text-center text-slate-500 text-[10px]">${escapeHtml(item.unit)}</td>
                 <td class="px-3 py-2 text-center text-slate-500">0.00</td>
                 <td class="px-3 py-2 text-center text-slate-500">0.00</td>
                 <td class="px-3 py-2 text-right text-slate-700">${item.rate.toFixed(2)}</td>
@@ -110,7 +121,7 @@ export const generateInvoiceHTML = (sale, items, settings) => {
       ${sale.remarks ? `
       <div class="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
         <p class="text-[10px] text-slate-500 font-bold mb-0.5 uppercase tracking-wider">Remarks</p>
-        <p class="text-xs text-slate-800">${sale.remarks}</p>
+        <p class="text-xs text-slate-800">${escapeHtml(sale.remarks)}</p>
       </div>
       ` : ''}
 

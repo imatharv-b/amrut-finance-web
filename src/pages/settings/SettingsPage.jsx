@@ -64,6 +64,13 @@ export default function SettingsPage() {
       return;
     }
     
+    // Validate password strength: min 8 chars, 1 uppercase, 1 lowercase, 1 number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(newUser.password)) {
+      toast.error('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.', { duration: 5000 });
+      return;
+    }
+
     toast.loading('Creating user...', { id: 'createUser' });
     try {
       const { supabase } = await import('../../lib/supabase');

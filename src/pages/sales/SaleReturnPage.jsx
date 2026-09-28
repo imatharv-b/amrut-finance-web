@@ -258,6 +258,11 @@ export default function SaleReturnPage() {
 
   const handleExport = async () => {
     try {
+      if (filteredReturns.length === 0) {
+        toast.error('No data to export!');
+        return;
+      }
+      
       const exportData = filteredReturns.map(r => ({
         date: formatDate(r.date),
         return_no: r.return_no,
@@ -266,6 +271,8 @@ export default function SaleReturnPage() {
         total_amount: Number(r.total_amount || 0),
         reason: r.reason
       }))
+
+      toast.success(`Exporting ${exportData.length} items...`);
 
       const excelColumns = [
         { label: 'Date', key: 'date', width: 15 },
