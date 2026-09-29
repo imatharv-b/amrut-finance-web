@@ -143,74 +143,91 @@ export default function AllSalesPage() {
         return;
       }
 
-      // Fetch item-level details for each sale
-      const rows = [];
+      // Define headers exactly matching the Busy template
+      const headers = [
+        'VCH_SERIES', 'VCH/BILL_DATE', 'VCH/BILL_NO', 'SALE/PURC_TYPE',
+        'PARTY_NAME', '', 'ITEM_NAME', 'QUANTITY', 'UNIT', 'PRICE',
+        'DISCOUNT AMOUNT', 'TAXABLE AMOUNT ',
+        'CGST PERCENT', 'CGST AMOUNT', 'SGST PERCENT', 'SGST AMOUNT', 'AMOUNT'
+      ];
+
+      // Build rows
+      const dataRows = [];
       for (const sale of filteredSales) {
         const details = await window.db.invoke('sales:getById', sale.id);
         const items = details.items || [];
-        if (items.length === 0) continue; // Skip empty sales
+        if (items.length === 0) continue;
 
+        const isPakka = sale.sale_type === 'pakka';
         const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         const billDiscount = Number(sale.discount || 0);
 
-        // Pre-calculate line totals for the BillAmount
-        let billAmount = 0;
-        const processedItems = items.map(item => {
+        // Format date as DD-MM-YYYY
+        let vchDate = sale.date;
+        if (vchDate && vchDate.includes('-')) {
+          const [y, m, d] = vchDate.split('-');
+          if (y.length === 4) vchDate = `${d}-${m}-${y}`;
+        }
+
+        for (const item of items) {
           const qty = Number(item.qty || 0);
           const rate = Number(item.rate || 0);
-          const amount = qty * rate; // using exact Qty * Rate as per prompt
-          
+          const amount = qty * rate;
+
+          // Proportional discount for this line item
           let lineDiscount = 0;
-          if (subtotal > 0) {
-             lineDiscount = (amount / subtotal) * billDiscount;
-          }
-          
-          const taxable = amount - lineDiscount;
-          const cgstAmount = Math.round(taxable * 0.025 * 100) / 100;
-          const sgstAmount = Math.round(taxable * 0.025 * 100) / 100;
-          const lineTotal = taxable + cgstAmount + sgstAmount;
-          billAmount += lineTotal;
-
-          return {
-            qty, rate, amount, lineDiscount, cgstAmount, sgstAmount, lineTotal, itemName: item.product_name || '', unit: item.unit || ''
-          };
-        });
-
-        // Add rows
-        for (const item of processedItems) {
-          // Format date as DD-MM-YYYY
-          let vchDate = sale.date;
-          if (vchDate && vchDate.includes('-')) {
-             const [y, m, d] = vchDate.split('-');
-             if (y.length === 4) vchDate = `${d}-${m}-${y}`;
+          if (subtotal > 0 && billDiscount > 0) {
+            lineDiscount = Math.round((amount / subtotal) * billDiscount * 100) / 100;
           }
 
-          rows.push({
-            'VCH_SERIES': sale.sale_type === 'pakka' ? 'GST' : 'MAIN',
-            'VCH/BILL_DATE': vchDate,
-            'VCH/BILL_NO': sale.invoice_no || '',
-            'SALE/PURC_TYPE': 'L/GST-TaxIncl.',
-            'PARTY_NAME': (sale.party_name || '').trim().toUpperCase(),
-            'ITEM_NAME': (item.itemName).trim().toUpperCase(),
-            'QUANTITY': item.qty,
-            'UNIT': item.unit,
-            'PRICE': item.rate,
-            'AMOUNT': item.amount
-          });
+          const taxableAmount = amount - lineDiscount;
+
+          // GST only for pakka bills
+          const cgstPercent = isPakka ? (sale.cgst_percent || 2.5) : '';
+          const sgstPercent = isPakka ? (sale.sgst_percent || 2.5) : '';
+          const cgstAmount = isPakka ? Math.round(taxableAmount * (sale.cgst_percent || 2.5) / 100 * 100) / 100 : '';
+          const sgstAmount = isPakka ? Math.round(taxableAmount * (sale.sgst_percent || 2.5) / 100 * 100) / 100 : '';
+
+          const lineTotal = isPakka
+            ? taxableAmount + (cgstAmount || 0) + (sgstAmount || 0)
+            : amount;
+
+          dataRows.push([
+            isPakka ? 'GST' : 'MAIN',                               // VCH_SERIES
+            vchDate,                                                  // VCH/BILL_DATE
+            sale.invoice_no || '',                                    // VCH/BILL_NO
+            'L/GST-TaxIncl.',                                        // SALE/PURC_TYPE
+            (sale.party_name || '').trim().toUpperCase(),              // PARTY_NAME
+            isPakka ? 'GST' : 'MAIN',                               // Col F (series repeat)
+            (item.product_name || '').trim().toUpperCase(),            // ITEM_NAME
+            qty,                                                      // QUANTITY
+            item.unit || '',                                          // UNIT
+            rate,                                                     // PRICE
+            lineDiscount > 0 ? lineDiscount : '',                    // DISCOUNT AMOUNT
+            isPakka ? taxableAmount : '',                             // TAXABLE AMOUNT
+            cgstPercent,                                              // CGST PERCENT
+            cgstAmount,                                               // CGST AMOUNT
+            sgstPercent,                                              // SGST PERCENT
+            sgstAmount,                                               // SGST AMOUNT
+            lineTotal                                                 // AMOUNT
+          ]);
         }
       }
 
-      // Generate Excel workbook
-      const ws = XLSX.utils.json_to_sheet(rows);
-      
+      // Build worksheet with header row + data rows
+      const allRows = [headers, ...dataRows];
+      const ws = XLSX.utils.aoa_to_sheet(allRows);
+
       // Auto-size columns
-      const colWidths = Object.keys(rows[0] || {}).map(key => ({
-        wch: Math.max(key.length, ...rows.map(r => String(r[key] || '').length)) + 2
+      ws['!cols'] = headers.map((h, i) => ({
+        wch: Math.max(
+          (h || '').length,
+          ...dataRows.map(r => String(r[i] || '').length)
+        ) + 2
       }));
-      ws['!cols'] = colWidths;
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Sale');
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
       // Generate filename
       const dateRange = fromDate && toDate ? `_${fromDate}_to_${toDate}` : '';
