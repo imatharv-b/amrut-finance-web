@@ -697,6 +697,54 @@ export const api = {
           return { moved: ids.length }
         }
 
+        // =================== ISSUES ===================
+        case 'issues:getAll': {
+          const [filters] = args || [{}];
+          let q = withCompany(supabase.from('issues').select('*, issue_items(qty)')).order('date', { ascending: false }).order('id', { ascending: false });
+          if (filters?.season_id) q = q.eq('season_id', filters.season_id);
+          const { data, error } = await q;
+          if (error) throw error;
+          return data.map(d => ({...d, total_qty: d.issue_items.reduce((s, i) => s + Number(i.qty), 0)}));
+        }
+        case 'issues:getById': {
+          const [id] = args;
+          const { data: issue, error } = await supabase.from('issues').select('*').eq('id', id).single();
+          if (error) throw error;
+          const { data: items } = await supabase.from('issue_items').select('*, products(name)').eq('issue_id', id);
+          return { issue, items: items.map(i => ({...i, product_name: i.products?.name})) };
+        }
+        case 'issues:getNextNo': {
+          const { data } = await withCompany(supabase.from('issues').select('issue_no')).order('created_at', { ascending: false }).limit(1);
+          if (!data || data.length === 0) return 'ISSUE-001';
+          const match = data[0].issue_no.match(/(\d+)$/);
+          const num = match ? parseInt(match[1], 10) + 1 : 1;
+          return `ISSUE-${String(num).padStart(3, '0')}`;
+        }
+        case 'issues:add': {
+          const [issueData] = args;
+          const { items, ...rest } = issueData;
+          const { data: issue, error } = await supabase.from('issues').insert(injectCompany(rest)).select().single();
+          if (error) throw error;
+          if (items && items.length > 0) {
+            const itemsToInsert = items.map(i => ({ ...i, issue_id: issue.id }));
+            await supabase.from('issue_items').insert(itemsToInsert);
+          }
+          await logActivity('CREATE', 'ISSUE', issue.issue_no, {});
+          return { id: issue.id, issue_no: issue.issue_no };
+        }
+        case 'issues:delete': {
+          const [id] = args;
+          const { error } = await supabase.from('issues').delete().eq('id', id);
+          if (error) throw error;
+          return true;
+        }
+        case 'issues:getStockSummary': {
+          const [seasonId] = args;
+          const { data, error } = await withCompany(supabase.from('uncle_stock_summary').select('*')).eq('season_id', seasonId);
+          if (error) throw error;
+          return data;
+        }
+
         // =================== SALES ===================
         case 'sales:getAll': {
           const [filters] = args || [{}]
