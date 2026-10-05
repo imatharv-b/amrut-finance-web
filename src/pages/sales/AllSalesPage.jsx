@@ -143,13 +143,24 @@ export default function AllSalesPage() {
         return;
       }
 
-      // Define headers exactly matching the Busy template
+      // Define headers exactly matching the Busy import template
       const headers = [
         'VCH_SERIES', 'VCH/BILL_DATE', 'VCH/BILL_NO', 'SALE/PURC_TYPE',
-        'PARTY_NAME', '', 'ITEM_NAME', 'QUANTITY', 'UNIT', 'PRICE',
-        'DISCOUNT AMOUNT', 'TAXABLE AMOUNT ',
-        'CGST PERCENT', 'CGST AMOUNT', 'SGST PERCENT', 'SGST AMOUNT', 'AMOUNT'
+        'PARTY_NAME', 'MATERIAL_CENTRE', 'ITEM_NAME', 'QUANTITY', 'UNIT',
+        'PRICE', 'DISCOUNT_AMOUNT', 'AMOUNT'
       ];
+
+      // Helper: convert YYYY-MM-DD to Excel serial number
+      // Excel epoch is 1900-01-01 = serial 1 (with the 1900 leap year bug: serial 60 = Feb 29 1900)
+      const dateToExcelSerial = (dateStr) => {
+        if (!dateStr) return '';
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        // Days from 1899-12-30 (Excel epoch with the leap year bug)
+        const epoch = new Date(1899, 11, 30);
+        const diff = Math.round((date - epoch) / (24 * 60 * 60 * 1000));
+        return diff;
+      };
 
       // Build rows
       const dataRows = [];
@@ -158,16 +169,9 @@ export default function AllSalesPage() {
         const items = details.items || [];
         if (items.length === 0) continue;
 
-        const isPakka = sale.sale_type === 'pakka';
         const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         const billDiscount = Number(sale.discount || 0);
-
-        // Format date as DD-MM-YYYY
-        let vchDate = sale.date;
-        if (vchDate && vchDate.includes('-')) {
-          const [y, m, d] = vchDate.split('-');
-          if (y.length === 4) vchDate = `${d}-${m}-${y}`;
-        }
+        const vchDate = dateToExcelSerial(sale.date);
 
         for (const item of items) {
           const qty = Number(item.qty || 0);
@@ -180,36 +184,21 @@ export default function AllSalesPage() {
             lineDiscount = Math.round((amount / subtotal) * billDiscount * 100) / 100;
           }
 
-          const taxableAmount = amount - lineDiscount;
-
-          // GST only for pakka bills
-          const cgstPercent = isPakka ? (sale.cgst_percent || 2.5) : '';
-          const sgstPercent = isPakka ? (sale.sgst_percent || 2.5) : '';
-          const cgstAmount = isPakka ? Math.round(taxableAmount * (sale.cgst_percent || 2.5) / 100 * 100) / 100 : '';
-          const sgstAmount = isPakka ? Math.round(taxableAmount * (sale.sgst_percent || 2.5) / 100 * 100) / 100 : '';
-
-          const lineTotal = isPakka
-            ? taxableAmount + (cgstAmount || 0) + (sgstAmount || 0)
-            : amount;
+          const lineTotal = amount - lineDiscount;
 
           dataRows.push([
-            isPakka ? 'GST' : 'MAIN',                               // VCH_SERIES
-            vchDate,                                                  // VCH/BILL_DATE
-            sale.invoice_no || '',                                    // VCH/BILL_NO
-            'L/GST-TaxIncl.',                                        // SALE/PURC_TYPE
-            (sale.party_name || '').trim().toUpperCase(),              // PARTY_NAME
-            isPakka ? 'GST' : 'MAIN',                               // Col F (series repeat)
-            (item.product_name || '').trim().toUpperCase(),            // ITEM_NAME
-            qty,                                                      // QUANTITY
-            item.unit || '',                                          // UNIT
-            rate,                                                     // PRICE
-            lineDiscount > 0 ? lineDiscount : '',                    // DISCOUNT AMOUNT
-            isPakka ? taxableAmount : '',                             // TAXABLE AMOUNT
-            cgstPercent,                                              // CGST PERCENT
-            cgstAmount,                                               // CGST AMOUNT
-            sgstPercent,                                              // SGST PERCENT
-            sgstAmount,                                               // SGST AMOUNT
-            lineTotal                                                 // AMOUNT
+            'MAIN',                                                    // VCH_SERIES
+            vchDate,                                                   // VCH/BILL_DATE (Excel serial)
+            sale.invoice_no || '',                                     // VCH/BILL_NO
+            'Local-TaxIncl.',                                          // SALE/PURC_TYPE
+            (sale.party_name || '').trim().toUpperCase(),               // PARTY_NAME
+            'MAIN',                                                    // MATERIAL_CENTRE
+            (item.product_name || '').trim().toUpperCase(),             // ITEM_NAME
+            qty,                                                       // QUANTITY
+            item.unit || '',                                           // UNIT
+            rate,                                                      // PRICE
+            lineDiscount > 0 ? lineDiscount : '',                     // DISCOUNT_AMOUNT
+            lineTotal                                                  // AMOUNT
           ]);
         }
       }
@@ -227,7 +216,7 @@ export default function AllSalesPage() {
       }));
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+      XLSX.utils.book_append_sheet(wb, ws, 'Import');
 
       // Generate filename
       const dateRange = fromDate && toDate ? `_${fromDate}_to_${toDate}` : '';
