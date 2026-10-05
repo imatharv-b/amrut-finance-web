@@ -756,12 +756,19 @@ export const api = {
           if (error) throw error
 
           if (filters?.is_issue_sale !== undefined) {
-             const { data: flags } = await supabase.from('sales').select('id, is_issue_sale');
-             const issueMap = new Set(flags.filter(s => s.is_issue_sale === true).map(s => s.id));
-             data = data.filter(s => {
-               const isIssue = issueMap.has(s.id);
-               return isIssue === filters.is_issue_sale;
-             });
+             const { data: flags, error: flagsErr } = await supabase.from('sales').select('id, is_issue_sale');
+             if (flagsErr || !flags) {
+               // Column doesn't exist yet, so no issue sales exist
+               if (filters.is_issue_sale === true) {
+                 data = [];
+               }
+             } else {
+               const issueMap = new Set(flags.filter(s => s.is_issue_sale === true).map(s => s.id));
+               data = data.filter(s => {
+                 const isIssue = issueMap.has(s.id);
+                 return isIssue === filters.is_issue_sale;
+               });
+             }
           }
           return data
         }
