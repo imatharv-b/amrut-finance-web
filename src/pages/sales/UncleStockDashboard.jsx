@@ -57,6 +57,8 @@ export default function UncleStockDashboard() {
   };
 
   const stockColumns = [
+    { key: 'issue_no', label: 'Issue No', sortable: true },
+    { key: 'issue_date', label: 'Issue Date', sortable: true, render: (val) => formatDate(val) },
     { key: 'product_name', label: 'Product Name', sortable: true },
     { key: 'total_issued', label: 'Total Issued', sortable: true },
     { key: 'total_billed', label: 'Total Sold', sortable: true },

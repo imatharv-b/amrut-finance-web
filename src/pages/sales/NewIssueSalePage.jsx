@@ -15,6 +15,8 @@ export default function NewIssueSalePage() {
   const [partiesRaw, setPartiesRaw] = useState([]);
   const [associates, setAssociates] = useState([]);
   const [products, setProducts] = useState([]);
+  const [issuesList, setIssuesList] = useState([]);
+  const [stockSummary, setStockSummary] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [partyOutstanding, setPartyOutstanding] = useState(null);
   const [partyRating, setPartyRating] = useState(null);
@@ -24,6 +26,7 @@ export default function NewIssueSalePage() {
     date: new Date().toISOString().split('T')[0],
     sale_type: 'kaccha',
     party_id: '',
+    issue_id: '',
     discount: 0,
     cgst_percent: 0,
     sgst_percent: 0,
@@ -58,11 +61,13 @@ export default function NewIssueSalePage() {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [partiesData, productsData, nextInvoice, couponsData] = await Promise.all([
+      const [partiesData, productsData, nextInvoice, couponsData, issuesData, stockData] = await Promise.all([
         window.db.invoke('parties:getAll'),
         window.db.invoke('products:getAll'),
         window.db.invoke('sales:getNextInvoice', activeSeason.id),
-        window.db.invoke('coupons:getAll', activeSeason.id)
+        window.db.invoke('coupons:getAll', activeSeason.id),
+        window.db.invoke('issues:getAll', { season_id: activeSeason.id }),
+        window.db.invoke('issues:getStockSummary', activeSeason.id)
       ]);
       
       setPartiesRaw(partiesData);
@@ -70,6 +75,10 @@ export default function NewIssueSalePage() {
       setProducts(productsData);
       setInvoiceNo(nextInvoice);
       setCoupons(couponsData || []);
+      
+      const issueOpts = (issuesData || []).map(i => ({ value: i.id, label: i.issue_no, sublabel: i.date }));
+      setIssuesList(issueOpts);
+      setStockSummary(stockData || []);
     } catch (err) {
       toast.error('Failed to load initial data');
     } finally {
@@ -228,6 +237,32 @@ export default function NewIssueSalePage() {
       <div className="grid grid-cols-12 gap-6 mb-6">
         {/* Header Details */}
         <div className="col-span-12 lg:col-span-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="Issue No (Source)" required>
+            <SearchableSelect
+              options={issuesList}
+              value={formData.issue_id}
+              onChange={v => {
+                setFormData({ ...formData, issue_id: v });
+                const issueStock = stockSummary.filter(s => s.issue_id === v && s.pending_qty > 0);
+                const newItems = issueStock.map(s => ({
+                  id: Date.now() + Math.random(),
+                  product_id: s.product_id,
+                  qty: s.pending_qty,
+                  rate: '',
+                  unit: 'Bag',
+                  batch_no: '',
+                  mfg_date: ''
+                }));
+                if (newItems.length > 0) {
+                  setItems(newItems);
+                } else {
+                  setItems([{ id: Date.now(), product_id: '', qty: '', rate: '', unit: 'Bag', batch_no: '', mfg_date: '' }]);
+                }
+              }}
+              placeholder="Select Issue No..."
+            />
+          </FormField>
+
           <FormField label="Party" required>
             <SearchableSelect
               options={parties}
