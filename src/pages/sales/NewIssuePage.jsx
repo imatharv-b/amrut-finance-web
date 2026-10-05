@@ -152,7 +152,7 @@ export default function NewIssuePage() {
                     <td className="py-3 text-sm text-slate-500">{index + 1}</td>
                     <td className="py-3 pr-4">
                       <SearchableSelect
-                        options={products}
+                        options={products.map(p => ({ value: p.id, label: p.name, sublabel: p.unit }))}
                         value={item.product_id}
                         onChange={(val) => updateItem(item.id, 'product_id', val)}
                         placeholder="Select Product..."
