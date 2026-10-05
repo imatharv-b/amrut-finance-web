@@ -56,7 +56,8 @@ const NAVIGATION = [
       { label: 'New Sale', icon: PlusCircle, path: '/sales/new' },
       { label: 'All Sales', icon: FileText, path: '/sales/all' },
       { label: 'Sale Returns', icon: RotateCcw, path: '/sales/return' },
-      { label: 'Stock Issues', icon: Package, path: '/sales/issues' }
+      { label: 'Stock Issues', icon: Package, path: '/sales/issues' },
+      { label: 'Issue Sales', icon: FileText, path: '/sales/issue-sales' }
     ]
   },
   {

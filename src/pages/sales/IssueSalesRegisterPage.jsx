@@ -5,14 +5,14 @@ import * as XLSX from 'xlsx';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { SeasonContext } from '../../context/SeasonContext';
 import { useCompany } from '../../context/CompanyContext';
 import { generateInvoiceHTML } from '../../components/print/InvoicePrint';
 import { printHTML, exportAsJPG } from '../../lib/printUtils';
 import { formatDate } from '../../lib/dateUtils';
 
-export default function AllSalesPage() {
+export default function IssueSalesRegisterPage() {
   const navigate = useNavigate();
   const { activeSeason, allSeasons } = useContext(SeasonContext);
   const { userRole } = useCompany();
@@ -59,7 +59,7 @@ export default function AllSalesPage() {
         season_id: activeSeason.id,
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
-        is_issue_sale: false
+        is_issue_sale: true
       });
       setSales(data || []);
     } catch (err) {
@@ -309,12 +309,18 @@ export default function AllSalesPage() {
     <div className="p-6 h-full flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">All Sales</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Issue Sales Register</h1>
           <p className="text-slate-500">
-            {activeSeason?.name} | Total Sales: <span className="text-slate-800 font-semibold">₹{totalSales.toFixed(2)}</span> | Balance Due: <span className="text-red-600 font-semibold">₹{totalBalance.toFixed(2)}</span>
+            {activeSeason?.name} | Total Issue Sales: <span className="text-slate-800 font-semibold">₹{totalSales.toFixed(2)}</span>
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+          <Link
+            to="/sales/issues/new-sale"
+            className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition flex items-center shadow-sm text-sm"
+          >
+            Sell from Stock
+          </Link>
           <div className="flex flex-col">
             <span className="text-xs text-slate-500 font-medium mb-1">From Date</span>
             <input 

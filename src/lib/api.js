@@ -752,6 +752,9 @@ export const api = {
           if (filters?.season_id) q = q.eq('season_id', filters.season_id)
           if (filters?.fromDate) q = q.gte('date', filters.fromDate)
           if (filters?.toDate) q = q.lte('date', filters.toDate)
+          if (filters?.is_issue_sale !== undefined) {
+             q = q.eq('is_issue_sale', filters.is_issue_sale)
+          }
           const { data, error } = await q
           if (error) throw error
           return data

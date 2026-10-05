@@ -24,6 +24,8 @@ const AllSalesPage = React.lazy(() => import('./pages/sales/AllSalesPage'))
 const AllIssuesPage = React.lazy(() => import('./pages/sales/AllIssuesPage'))
 const NewIssuePage = React.lazy(() => import('./pages/sales/NewIssuePage'))
 const UncleStockPage = React.lazy(() => import('./pages/sales/UncleStockPage'))
+const NewIssueSalePage = React.lazy(() => import('./pages/sales/NewIssueSalePage'))
+const IssueSalesRegisterPage = React.lazy(() => import('./pages/sales/IssueSalesRegisterPage'))
 
 const NewPurchasePage = React.lazy(() => import('./pages/purchases/NewPurchasePage'))
 const EditPurchasePage = React.lazy(() => import('./pages/purchases/EditPurchasePage'))
@@ -131,6 +133,8 @@ function AppWithCompany() {
                   <Route path="/sales/return" element={<SaleReturnPage />} />
                   <Route path="/sales/issues" element={<AllIssuesPage />} />
                   <Route path="/sales/issues/new" element={<NewIssuePage />} />
+                  <Route path="/sales/issues/new-sale" element={<NewIssueSalePage />} />
+                  <Route path="/sales/issue-sales" element={<IssueSalesRegisterPage />} />
                   <Route path="/sales/uncle-stock" element={<UncleStockPage />} />
                   
                   <Route path="/purchases/new" element={<NewPurchasePage />} />
