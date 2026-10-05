@@ -752,11 +752,17 @@ export const api = {
           if (filters?.season_id) q = q.eq('season_id', filters.season_id)
           if (filters?.fromDate) q = q.gte('date', filters.fromDate)
           if (filters?.toDate) q = q.lte('date', filters.toDate)
-          if (filters?.is_issue_sale !== undefined) {
-             q = q.eq('is_issue_sale', filters.is_issue_sale)
-          }
-          const { data, error } = await q
+          let { data, error } = await q
           if (error) throw error
+
+          if (filters?.is_issue_sale !== undefined) {
+             const { data: flags } = await supabase.from('sales').select('id, is_issue_sale');
+             const issueMap = new Set(flags.filter(s => s.is_issue_sale === true).map(s => s.id));
+             data = data.filter(s => {
+               const isIssue = issueMap.has(s.id);
+               return isIssue === filters.is_issue_sale;
+             });
+          }
           return data
         }
         case 'sales:getNextInvoice': {
