@@ -23,7 +23,7 @@ const SaleReturnPage = React.lazy(() => import('./pages/sales/SaleReturnPage'))
 const AllSalesPage = React.lazy(() => import('./pages/sales/AllSalesPage'))
 const AllIssuesPage = React.lazy(() => import('./pages/sales/AllIssuesPage'))
 const NewIssuePage = React.lazy(() => import('./pages/sales/NewIssuePage'))
-const UncleStockPage = React.lazy(() => import('./pages/sales/UncleStockPage'))
+const UncleStockDashboard = React.lazy(() => import('./pages/sales/UncleStockDashboard'))
 const NewIssueSalePage = React.lazy(() => import('./pages/sales/NewIssueSalePage'))
 const IssueSalesRegisterPage = React.lazy(() => import('./pages/sales/IssueSalesRegisterPage'))
 
@@ -131,11 +131,12 @@ function AppWithCompany() {
                   <Route path="/sales/edit/:id" element={<EditSalePage />} />
                   <Route path="/sales/all" element={<AllSalesPage />} />
                   <Route path="/sales/return" element={<SaleReturnPage />} />
-                  <Route path="/sales/issues" element={<AllIssuesPage />} />
                   <Route path="/sales/issues/new" element={<NewIssuePage />} />
                   <Route path="/sales/issues/new-sale" element={<NewIssueSalePage />} />
-                  <Route path="/sales/issue-sales" element={<IssueSalesRegisterPage />} />
-                  <Route path="/sales/uncle-stock" element={<UncleStockPage />} />
+                  <Route path="/sales/uncle-stock" element={<UncleStockDashboard />} />
+                  {/* Redirect old issue-sales to unified dashboard */}
+                  <Route path="/sales/issues" element={<Navigate to="/sales/uncle-stock" />} />
+                  <Route path="/sales/issue-sales" element={<Navigate to="/sales/uncle-stock" />} />
                   
                   <Route path="/purchases/new" element={<NewPurchasePage />} />
                   <Route path="/purchases/edit/:id" element={<EditPurchasePage />} />
