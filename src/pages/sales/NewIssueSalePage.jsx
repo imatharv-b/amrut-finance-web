@@ -251,12 +251,15 @@ export default function NewIssueSalePage() {
                   rate: '',
                   unit: 'Bag',
                   batch_no: '',
+                  batch_id: '',
+                  batches: [],
+                  amount: 0,
                   mfg_date: ''
                 }));
                 if (newItems.length > 0) {
                   setItems(newItems);
                 } else {
-                  setItems([{ id: Date.now(), product_id: '', qty: '', rate: '', unit: 'Bag', batch_no: '', mfg_date: '' }]);
+                  setItems([{ id: Date.now(), product_id: '', qty: '', rate: '', unit: 'Bag', batch_no: '', batch_id: '', batches: [], amount: 0, mfg_date: '' }]);
                 }
               }}
               placeholder="Select Issue No..."
