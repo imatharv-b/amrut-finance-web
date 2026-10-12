@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Users as UsersIcon, Plus } from 'lucide-react';
+import { Settings, Save, Users as UsersIcon, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import FormField from '../../components/FormField';
 import { useCompany } from '../../context/CompanyContext';
 
 export default function SettingsPage() {
-  const { companies } = useCompany();
+  const { companies, activeCompany } = useCompany();
+  const [companyUsers, setCompanyUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [settings, setSettings] = useState({
     firm_name: '',
     address: '',
@@ -30,7 +32,42 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+    if (activeCompany) loadCompanyUsers();
+  }, [activeCompany]);
+
+  const loadCompanyUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { data, error } = await supabase
+        .from('company_users')
+        .select('*')
+        .eq('company_id', activeCompany.id);
+      if (error) throw error;
+      setCompanyUsers(data || []);
+    } catch (err) {
+      console.error('Failed to load company users:', err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleRemoveAccess = async (cu) => {
+    if (!confirm(`Are you sure you want to remove access for user ${cu.user_id.slice(0, 8)}...?`)) return;
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { error } = await supabase
+        .from('company_users')
+        .delete()
+        .eq('company_id', cu.company_id)
+        .eq('user_id', cu.user_id);
+      if (error) throw error;
+      toast.success('User access removed successfully');
+      loadCompanyUsers();
+    } catch (err) {
+      toast.error('Failed to remove user: ' + err.message);
+    }
+  };
 
   const loadSettings = async () => {
     setLoading(true);
@@ -367,6 +404,61 @@ export default function SettingsPage() {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* Current Users with Access */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mt-8">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">
+              Current Users with Access — {activeCompany?.name || 'N/A'}
+            </h2>
+            <p className="text-sm text-slate-500 mb-6">
+              All user accounts that can access <strong>{activeCompany?.name}</strong>. Remove access by clicking the delete button.
+            </p>
+
+            {loadingUsers ? (
+              <p className="text-slate-400 text-sm">Loading users...</p>
+            ) : companyUsers.length === 0 ? (
+              <p className="text-slate-400 text-sm">No users found for this company.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600 font-medium">
+                    <tr>
+                      <th className="px-4 py-3 rounded-tl-lg">#</th>
+                      <th className="px-4 py-3">User ID</th>
+                      <th className="px-4 py-3">Role</th>
+                      <th className="px-4 py-3 rounded-tr-lg text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {companyUsers.map((cu, i) => (
+                      <tr key={cu.user_id} className="hover:bg-slate-50 transition">
+                        <td className="px-4 py-3 text-slate-500">{i + 1}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{cu.user_id}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase ${
+                            cu.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                            cu.role === 'data_entry' ? 'bg-blue-100 text-blue-800' :
+                            'bg-slate-100 text-slate-800'
+                          }`}>
+                            {cu.role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => handleRemoveAccess(cu)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"
+                            title="Remove access"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
