@@ -734,8 +734,15 @@ export const api = {
         }
         case 'issues:delete': {
           const [id] = args;
+          try {
+            await supabase.from('sales').update({ issue_id: null }).eq('issue_id', id);
+          } catch (_) {}
+          try {
+            await supabase.from('issue_items').delete().eq('issue_id', id);
+          } catch (_) {}
           const { error } = await supabase.from('issues').delete().eq('id', id);
           if (error) throw error;
+          await logActivity('DELETE', 'ISSUE', `Issue ID: ${id}`, {});
           return true;
         }
         case 'issues:getStockSummary': {

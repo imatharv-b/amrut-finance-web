@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Package, PlusCircle, ShoppingCart, List, Tag, Eye } from 'lucide-react';
+import { Package, PlusCircle, ShoppingCart, List, Tag, Eye, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../../components/DataTable';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import Modal from '../../components/Modal';
 import { SeasonContext } from '../../context/SeasonContext';
 import { formatDate } from '../../lib/dateUtils';
@@ -22,6 +23,11 @@ export default function UncleStockDashboard() {
   const [issueDetails, setIssueDetails] = useState(null);
   const [isViewIssueOpen, setIsViewIssueOpen] = useState(false);
   
+  // Issue Delete state
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     if (activeSeason) loadData();
   }, [activeSeason, activeTab]);
@@ -56,6 +62,22 @@ export default function UncleStockDashboard() {
     }
   };
 
+  const handleDeleteIssue = async () => {
+    if (!selectedIssue) return;
+    setDeleting(true);
+    try {
+      await window.db.invoke('issues:delete', selectedIssue.id);
+      toast.success('Issue deleted successfully');
+      setIsConfirmOpen(false);
+      setSelectedIssue(null);
+      await loadData();
+    } catch (e) {
+      toast.error('Failed to delete issue: ' + (e?.message || e));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const stockColumns = [
     { key: 'issue_no', label: 'Issue No', sortable: true },
     { key: 'issue_date', label: 'Issue Date', sortable: true, render: (val) => formatDate(val) },
@@ -84,8 +106,22 @@ export default function UncleStockDashboard() {
       label: 'Actions',
       render: (_, row) => (
         <div className="flex justify-end gap-2">
-          <button onClick={() => handleViewIssue(row)} className="p-1.5 text-slate-400 hover:text-primary-600 rounded-lg hover:bg-primary-50">
+          <button
+            onClick={() => handleViewIssue(row)}
+            className="p-1.5 text-slate-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition"
+            title="View Details"
+          >
             <Eye className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedIssue(row);
+              setIsConfirmOpen(true);
+            }}
+            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"
+            title="Delete Issue"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       )
@@ -203,14 +239,47 @@ export default function UncleStockDashboard() {
               </tbody>
             </table>
             
-            <div className="flex justify-end pt-4 mt-4 border-t border-slate-200">
-               <button onClick={() => setIsViewIssueOpen(false)} className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-medium transition">
-                  Close
-               </button>
+            <div className="flex justify-between items-center pt-4 mt-4 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  const toDelete = issueDetails?.issue;
+                  setIsViewIssueOpen(false);
+                  if (toDelete) {
+                    setSelectedIssue(toDelete);
+                    setIsConfirmOpen(true);
+                  }
+                }}
+                className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition flex items-center gap-1.5 text-sm"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Issue
+              </button>
+              <button
+                onClick={() => setIsViewIssueOpen(false)}
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-medium transition"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onClose={() => {
+          if (!deleting) {
+            setIsConfirmOpen(false);
+            setSelectedIssue(null);
+          }
+        }}
+        onConfirm={handleDeleteIssue}
+        title="Delete Issue"
+        message={`Are you sure you want to delete ${selectedIssue?.issue_no || 'this issue'}? All issued items in this lot will be removed from Uncle's stock records.`}
+        confirmText={deleting ? 'Deleting...' : 'Delete'}
+        type="danger"
+      />
 
     </div>
   );
